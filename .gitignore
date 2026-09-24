@@ -8,6 +8,9 @@ xcuserdata/
 # macOS
 .DS_Store
 
+# env
+.env
+
 ## Obj-C/Swift specific
 *.hmap
 
