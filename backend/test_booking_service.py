@@ -1,30 +1,31 @@
 from datetime import date, timedelta
 
 from app.db.database import SessionLocal
-from app.repositories.booking_repository import BookingRepository
-from app.repositories.preference_repository import PreferenceRepository
-from app.repositories.shuttle_repository import ShuttleRepository
-from app.repositories.user_repository import UserRepository
-from app.services.booking_service import BookingService
+from app.graph.booking_graph import create_booking_graph
+from app.models.booking import Booking
 
 
 db = SessionLocal()
 
-service = BookingService(
-    db,
-    UserRepository(db),
-    PreferenceRepository(db),
-    ShuttleRepository(db),
-    BookingRepository(db),
-)
-
 tomorrow = date.today() + timedelta(days=1)
 
 try:
-    booking = service.book_usual_shuttle(
-        user_id=1,
-        booking_date=tomorrow,
+    graph = create_booking_graph(db)
+
+    result = graph.invoke(
+        {
+            "user_id": 1,
+            "booking_date": tomorrow,
+        }
     )
+
+    booking_id = result["booking_id"]
+
+    assert result["response"] == (
+        f"Shuttle booked successfully. Booking ID: {booking_id}."
+    )
+
+    booking = db.get(Booking, booking_id)
 
     print("BOOKING CREATED")
     print("Booking ID:", booking.id)
@@ -34,6 +35,7 @@ try:
     print("Booking Date:", booking.booking_date)
     print("Pickup Time:", booking.pickup_time)
     print("Status:", booking.status)
+    print("Response:", result["response"])
 
 finally:
     db.close()

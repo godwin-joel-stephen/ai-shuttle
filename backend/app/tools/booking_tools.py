@@ -1,5 +1,6 @@
 from datetime import date
 
+from langchain_core.tools import tool
 from sqlalchemy.orm import Session
 
 from app.repositories.booking_repository import BookingRepository
@@ -26,3 +27,21 @@ def book_shuttle(
         user_id=user_id,
         booking_date=booking_date,
     )
+
+
+def create_booking_tool(db: Session):
+
+    @tool
+    def book_shuttle_tool(
+        user_id: int,
+        booking_date: date,
+    ):
+        """Book the user's usual shuttle for a specific date."""
+
+        return book_shuttle(
+            db=db,
+            user_id=user_id,
+            booking_date=booking_date,
+        )
+
+    return book_shuttle_tool
