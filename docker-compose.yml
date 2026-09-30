@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ai-shuttle-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_shuttle
+      POSTGRES_USER: ai_shuttle
+      POSTGRES_PASSWORD: ai_shuttle_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - ai_shuttle_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ai_shuttle_postgres_data:
