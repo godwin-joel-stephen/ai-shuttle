@@ -30,10 +30,20 @@ public final class BookingAPIClient: Sendable {
     private let session: URLSession
 
     nonisolated public init(
-        baseURL: URL = URL(string: "http://127.0.0.1:8000")!,
+        baseURL: URL? = nil,
         session: URLSession = .shared
     ) {
-        self.baseURL = baseURL
+        #if targetEnvironment(simulator)
+        let defaultURL = URL(
+            string: "http://127.0.0.1:8000"
+        )!
+        #else
+        let defaultURL = URL(
+            string: "http://192.168.1.6:8000"
+        )!
+        #endif
+
+        self.baseURL = baseURL ?? defaultURL
         self.session = session
     }
 

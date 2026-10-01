@@ -1,14 +1,12 @@
-//
-//  AIShuttleApp.swift
-//  AIShuttle
-//
-//  Created by godwinjoel.j on 24/09/26.
-//
-
 import SwiftUI
+import AppIntents
 
 @main
 struct AIShuttleApp: App {
+    init() {
+        AIShuttleShortcuts.updateAppShortcutParameters()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
