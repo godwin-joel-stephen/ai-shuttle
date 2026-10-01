@@ -29,13 +29,14 @@ public final class BookingAPIClient: Sendable {
     public let baseURL: URL
     private let session: URLSession
 
-    public init(
+    nonisolated public init(
         baseURL: URL = URL(string: "http://127.0.0.1:8000")!,
         session: URLSession = .shared
     ) {
         self.baseURL = baseURL
         self.session = session
     }
+
 
     public func bookUsualShuttle(
         userId: Int = 1,
@@ -75,6 +76,43 @@ public final class BookingAPIClient: Sendable {
 
         do {
             return try JSONDecoder().decode(BookingResponse.self, from: data)
+        } catch {
+            throw BookingAPIError.decodingError(error.localizedDescription)
+        }
+    }
+
+    public func fetchUpcomingBookings(userId: Int = 1) async throws -> [BookingDetailDTO] {
+        var components = URLComponents(url: baseURL.appendingPathComponent("bookings"), resolvingAgainstBaseURL: true)
+        components?.queryItems = [
+            URLQueryItem(name: "user_id", value: String(userId))
+        ]
+
+        guard let endpoint = components?.url, endpoint.scheme != nil, endpoint.host != nil else {
+            throw BookingAPIError.invalidURL
+        }
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw BookingAPIError.networkError(error.localizedDescription)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw BookingAPIError.networkError("Invalid HTTP response.")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw BookingAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        do {
+            return try JSONDecoder().decode([BookingDetailDTO].self, from: data)
         } catch {
             throw BookingAPIError.decodingError(error.localizedDescription)
         }

@@ -39,6 +39,7 @@ final class MockURLProtocol: URLProtocol, @unchecked Sendable {
 }
 
 @Suite(.serialized)
+@MainActor
 struct BookingAPIClientTests {
     private func makeTestClient() -> BookingAPIClient {
         let configuration = URLSessionConfiguration.ephemeral
@@ -112,7 +113,112 @@ struct BookingAPIClientTests {
         }
     }
 
+    @Test func fetchUpcomingBookingsDecodesSuccessfully() async throws {
+        let client = makeTestClient()
+        let expectedJSON = """
+        [
+            {
+                "id": 101,
+                "booking_date": "2026-10-02",
+                "pickup_time": "07:30:00",
+                "status": "confirmed",
+                "child_name": "Emma",
+                "shuttle_name": "Morning Shuttle A",
+                "route_name": "Home → School Morning Route",
+                "pickup_location": "Home",
+                "destination": "AI Shuttle Academy"
+            }
+        ]
+        """
+
+        MockURLProtocol.requestHandler = { request in
+            #expect(request.url?.absoluteString == "http://127.0.0.1:8000/bookings?user_id=1")
+            #expect(request.httpMethod == "GET")
+            #expect(request.value(forHTTPHeaderField: "Accept") == "application/json")
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, expectedJSON.data(using: .utf8)!)
+        }
+
+        let bookings = try await client.fetchUpcomingBookings(userId: 1)
+        #expect(bookings.count == 1)
+        let first = bookings[0]
+        #expect(first.id == 101)
+        #expect(first.bookingDate == "2026-10-02")
+        #expect(first.pickupTime == "07:30:00")
+        #expect(first.formattedPickupTime == "7:30 AM")
+        #expect(first.childName == "Emma")
+        #expect(first.shuttleName == "Morning Shuttle A")
+        #expect(first.routeName == "Home → School Morning Route")
+        #expect(first.pickupLocation == "Home")
+        #expect(first.destination == "AI Shuttle Academy")
+    }
+
+    @Test func fetchUpcomingBookingsEmptyListDecodesCorrectly() async throws {
+        let client = makeTestClient()
+        let expectedJSON = "[]"
+
+        MockURLProtocol.requestHandler = { request in
+            #expect(request.url?.absoluteString == "http://127.0.0.1:8000/bookings?user_id=1")
+            #expect(request.httpMethod == "GET")
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, expectedJSON.data(using: .utf8)!)
+        }
+
+        let bookings = try await client.fetchUpcomingBookings(userId: 1)
+        #expect(bookings.isEmpty)
+    }
+
+    @Test func fetchUpcomingBookingsNon2xxThrowsError() async {
+        let client = makeTestClient()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 500,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data())
+        }
+
+        await #expect(throws: BookingAPIError.self) {
+            _ = try await client.fetchUpcomingBookings(userId: 1)
+        }
+    }
+
+    @Test func fetchUpcomingBookingsMalformedJSONThrowsDecodingError() async {
+        let client = makeTestClient()
+        let badJSON = "{\"not\": \"an array\"}"
+
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, badJSON.data(using: .utf8)!)
+        }
+
+        await #expect(throws: BookingAPIError.self) {
+            _ = try await client.fetchUpcomingBookings(userId: 1)
+        }
+    }
+
     @Test func intentExecutesWithMockedClient() async throws {
+
         let client = makeTestClient()
         let expectedJSON = """
         {
@@ -152,6 +258,84 @@ struct BookingAPIClientTests {
         await #expect(throws: BookingIntentError.self) {
             try await intent.perform()
         }
+    }
+
+    @Test func viewModelLoadsBookingsSuccessfully() async {
+        let client = makeTestClient()
+        let expectedJSON = """
+        [
+            {
+                "id": 1,
+                "booking_date": "2026-10-02",
+                "pickup_time": "07:30:00",
+                "status": "confirmed",
+                "child_name": "Emma",
+                "shuttle_name": "Morning Shuttle A",
+                "route_name": "Home → School Morning Route",
+                "pickup_location": "Home",
+                "destination": "AI Shuttle Academy"
+            }
+        ]
+        """
+        MockURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "http://127.0.0.1:8000/bookings?user_id=1")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, expectedJSON.data(using: .utf8)!)
+        }
+
+        let viewModel = RidesViewModel(apiClient: client)
+        #expect(viewModel.state == .idle)
+        #expect(viewModel.upcomingBooking == nil)
+
+        await viewModel.loadBookings()
+
+        #expect(viewModel.bookings.count == 1)
+        #expect(viewModel.upcomingBooking?.id == 1)
+        #expect(viewModel.upcomingBooking?.childName == "Emma")
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test func viewModelHandlesEmptyBookings() async {
+        let client = makeTestClient()
+        MockURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "http://127.0.0.1:8000/bookings?user_id=1")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, "[]".data(using: .utf8)!)
+        }
+
+        let viewModel = RidesViewModel(apiClient: client)
+        await viewModel.loadBookings()
+
+        #expect(viewModel.bookings.isEmpty)
+        #expect(viewModel.upcomingBooking == nil)
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test func viewModelHandlesErrorState() async {
+        let client = makeTestClient()
+        MockURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "http://127.0.0.1:8000/bookings?user_id=1")!,
+                statusCode: 500,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data())
+        }
+
+        let viewModel = RidesViewModel(apiClient: client)
+        await viewModel.loadBookings()
+
+        #expect(viewModel.bookings.isEmpty)
+        #expect(viewModel.errorMessage != nil)
     }
 }
 

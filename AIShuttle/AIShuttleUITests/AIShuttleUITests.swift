@@ -23,21 +23,23 @@ final class AIShuttleUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testHomeScreenAndNavigation() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
-    }
+        XCTAssertTrue(app.staticTexts["AI Shuttle"].waitForExistence(timeout: 10), "AI Shuttle title should appear")
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+        let rideCard = app.staticTexts["Emma"]
+        if rideCard.waitForExistence(timeout: 3) {
+            rideCard.tap()
+
+            let rideDetailsTitle = app.navigationBars["Ride Details"]
+            XCTAssertTrue(rideDetailsTitle.waitForExistence(timeout: 5), "Navigation bar Ride Details should appear")
+            XCTAssertTrue(app.staticTexts["Route Details"].exists, "Route Details section should be present")
+            XCTAssertTrue(app.staticTexts["Home → School Morning Route"].exists, "Route name should match database")
+            XCTAssertTrue(app.staticTexts["AI Shuttle Academy"].exists, "Destination should match database")
+        } else {
+            XCTAssertTrue(app.staticTexts["No upcoming rides"].waitForExistence(timeout: 5), "Empty state should appear when no rides exist")
         }
     }
 }

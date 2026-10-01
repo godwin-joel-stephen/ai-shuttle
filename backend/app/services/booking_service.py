@@ -99,3 +99,18 @@ class BookingService:
         self.db.commit()
 
         return booking
+
+    def get_upcoming_bookings(
+        self,
+        user_id: int,
+        from_date: date | None = None,
+    ) -> list[Booking]:
+        self._resolve_user(user_id)
+
+        if from_date is None:
+            from_date = date.today()
+
+        return self.booking_repository.get_upcoming_by_user_id(
+            user_id=user_id,
+            from_date=from_date,
+        )
