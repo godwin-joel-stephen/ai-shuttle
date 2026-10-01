@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlalchemy import func, select
 
+from app.agent.fake_llm import FakeLLM
 from app.db.database import SessionLocal
 from app.graph.booking_graph import create_booking_graph
 from app.models.booking import Booking
@@ -15,14 +16,24 @@ def test_booking_graph_creates_booking():
             select(func.count(Booking.id))
         )
 
-        graph = create_booking_graph(db)
+        llm = FakeLLM(
+            reference_date=date(2026, 9, 30),
+        )
+
+        graph = create_booking_graph(
+            db,
+            llm,
+        )
 
         result = graph.invoke(
             {
                 "user_id": 1,
-                "booking_date": date(2026, 10, 1),
+                "user_input": "Book my usual shuttle for tomorrow.",
             }
         )
+
+        assert result["intent"] == "book_usual_shuttle"
+        assert result["booking_date"] == date(2026, 10, 1)
 
         booking_id = result["booking_id"]
 

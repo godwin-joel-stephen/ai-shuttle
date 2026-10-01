@@ -4,6 +4,8 @@ from typing import TypedDict
 
 class BookingState(TypedDict, total=False):
     user_id: int
+    user_input: str
+    intent: str | None
     booking_date: date
     booking_id: int | None
     response: str | None

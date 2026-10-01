@@ -1,8 +1,27 @@
 from sqlalchemy.orm import Session
 from langgraph.graph import END, START, StateGraph
 
+from app.agent.llm import LLM
 from app.graph.state import BookingState
 from app.tools.booking_tools import create_booking_tool
+
+
+def understand_request(
+    state: BookingState,
+    llm: LLM,
+) -> BookingState:
+    user_input = state.get("user_input")
+
+    if not user_input:
+        raise ValueError("user_input is required.")
+
+    request = llm.invoke(user_input)
+
+    return {
+        **state,
+        "intent": request.intent.value,
+        "booking_date": request.booking_date,
+    }
 
 
 def resolve_parameters(state: BookingState) -> BookingState:
@@ -53,10 +72,18 @@ def respond(state: BookingState) -> BookingState:
     }
 
 
-def create_booking_graph(db: Session):
+def create_booking_graph(
+    db: Session,
+    llm: LLM,
+):
     book_shuttle = create_booking_tool(db)
 
     graph = StateGraph(BookingState)
+
+    graph.add_node(
+        "understand_request",
+        lambda state: understand_request(state, llm),
+    )
 
     graph.add_node(
         "resolve_parameters",
@@ -80,6 +107,11 @@ def create_booking_graph(db: Session):
 
     graph.add_edge(
         START,
+        "understand_request",
+    )
+
+    graph.add_edge(
+        "understand_request",
         "resolve_parameters",
     )
 
