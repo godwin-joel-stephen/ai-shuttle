@@ -39,7 +39,7 @@ public final class BookingAPIClient: Sendable {
         )!
         #else
         let defaultURL = URL(
-            string: "http://192.168.1.6:8000"
+            string: "http://172.20.1.13:8000"
         )!
         #endif
 
