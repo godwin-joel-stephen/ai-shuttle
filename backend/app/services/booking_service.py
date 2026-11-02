@@ -197,6 +197,74 @@ class BookingService:
 
         return self._resolve_booking(user_id, booking_id)
 
+    def list_usual_route_shuttles(
+        self,
+        user_id: int,
+        booking_date: date,
+    ) -> list[tuple[Shuttle, bool]]:
+        """Shuttles on the user's usual route, each with seat availability."""
+
+        usual = self._resolve_usual_shuttle(user_id)
+
+        return [
+            (
+                shuttle,
+                self.shuttle_repository.has_available_seat(
+                    shuttle.id,
+                    booking_date,
+                ),
+            )
+            for shuttle in self.shuttle_repository.list_by_route(
+                usual.route_id
+            )
+        ]
+
+    def move_booking(
+        self,
+        user_id: int,
+        booking_id: int,
+        shuttle_id: int,
+    ) -> Booking:
+        booking = self._resolve_booking(user_id, booking_id)
+        target = self.shuttle_repository.get_by_id(shuttle_id)
+
+        if target is None:
+            raise NotFoundError(f"Shuttle {shuttle_id} not found.")
+
+        if target.route_id != booking.shuttle.route_id:
+            raise ShuttleUnavailableError(
+                "That shuttle runs on a different route."
+            )
+
+        if target.id == booking.shuttle_id:
+            return booking
+
+        if not self.shuttle_repository.has_available_seat(
+            target.id,
+            booking.booking_date,
+        ):
+            raise ShuttleUnavailableError(
+                f"The {target.departure_time:%-I:%M %p} shuttle is full "
+                f"on {booking.booking_date:%A}."
+            )
+
+        booking.shuttle_id = target.id
+        booking.pickup_time = target.departure_time
+
+        self.db.commit()
+        self.db.expire(booking)
+
+        return self._resolve_booking(user_id, booking_id)
+
+    def cancel_booking(self, user_id: int, booking_id: int) -> Booking:
+        booking = self._resolve_booking(user_id, booking_id)
+
+        booking.status = "cancelled"
+
+        self.db.commit()
+
+        return booking
+
     def get_upcoming_bookings(
         self,
         user_id: int,

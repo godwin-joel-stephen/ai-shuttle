@@ -1,0 +1,161 @@
+import json
+import logging
+from datetime import date
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from sqlalchemy.orm import Session
+
+from app.agent.factory import create_chat_model
+from app.agent.memory import get_checkpointer
+from app.core.config import settings
+from app.db.database import get_db
+from app.graph.assistant_graph import (
+    RECURSION_LIMIT,
+    build_system_prompt,
+    create_assistant_graph,
+)
+from app.repositories.user_repository import UserRepository
+from app.schemas.assistant import (
+    AssistantAction,
+    AssistantMessageRequest,
+    AssistantMessageResponse,
+)
+from app.tools.assistant_tools import MUTATING_TOOLS, create_assistant_tools
+
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(
+    prefix="/assistant",
+    tags=["assistant"],
+)
+
+
+def get_chat_model() -> BaseChatModel:
+    return create_chat_model()
+
+
+def get_fallback_chat_model() -> BaseChatModel | None:
+    return create_chat_model(settings.agent_fallback_model)
+
+
+def get_conversation_memory() -> BaseCheckpointSaver:
+    return get_checkpointer()
+
+
+def get_today() -> date:
+    return date.today()
+
+
+def _actions_this_turn(messages: list) -> list[AssistantAction]:
+    """Tool calls made since the latest user message."""
+
+    last_human = max(
+        i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
+    )
+    turn = messages[last_human + 1:]
+
+    results = {
+        m.tool_call_id: m for m in turn if isinstance(m, ToolMessage)
+    }
+
+    actions = []
+    for message in turn:
+        if not isinstance(message, AIMessage):
+            continue
+
+        for call in message.tool_calls:
+            result = results.get(call["id"])
+            error = None
+
+            if result is None or result.status == "error":
+                error = result.text if result else "Tool did not run."
+            else:
+                try:
+                    payload = json.loads(result.text)
+                except ValueError:
+                    payload = {}
+                if isinstance(payload, dict):
+                    error = payload.get("error")
+
+            actions.append(
+                AssistantAction(
+                    tool=call["name"],
+                    arguments=call["args"],
+                    succeeded=error is None,
+                    error=error,
+                )
+            )
+
+    return actions
+
+
+@router.post("/messages", response_model=AssistantMessageResponse)
+def send_message(
+    request: AssistantMessageRequest,
+    db: Session = Depends(get_db),
+    model: BaseChatModel = Depends(get_chat_model),
+    fallback_model: BaseChatModel | None = Depends(get_fallback_chat_model),
+    memory: BaseCheckpointSaver = Depends(get_conversation_memory),
+    today: date = Depends(get_today),
+):
+    user = UserRepository(db).get_by_id(request.user_id)
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    conversation_id = request.conversation_id or uuid4().hex
+
+    graph = create_assistant_graph(
+        model=model,
+        tools=create_assistant_tools(db, user.id, today),
+        checkpointer=memory,
+        system_prompt=build_system_prompt(today, user.name),
+        fallback_model=fallback_model,
+    )
+    config = {
+        # Prefix with the user id so one user can never continue another
+        # user's conversation.
+        "configurable": {"thread_id": f"{user.id}:{conversation_id}"},
+        "recursion_limit": RECURSION_LIMIT,
+    }
+
+    try:
+        result = graph.invoke(
+            {"messages": [HumanMessage(request.message)]},
+            config=config,
+        )
+        reply = result["messages"][-1].text
+        messages = result["messages"]
+    except Exception as e:
+        logger.exception("Assistant turn failed")
+
+        # Tools may have changed bookings before the model failed. Never
+        # report "unavailable" when something was actually done.
+        messages = graph.get_state(config).values.get("messages", [])
+        actions = _actions_this_turn(messages) if messages else []
+        if not any(a.succeeded and a.tool in MUTATING_TOOLS for a in actions):
+            raise HTTPException(
+                status_code=503,
+                detail="Clear Path's assistant is unavailable right now.",
+            ) from e
+
+        reply = (
+            "I made changes to your bookings but couldn't finish replying. "
+            "Check your rides to see the latest."
+        )
+
+    actions = _actions_this_turn(messages)
+
+    return AssistantMessageResponse(
+        conversation_id=conversation_id,
+        reply=reply,
+        actions=actions,
+        bookings_changed=any(
+            a.succeeded and a.tool in MUTATING_TOOLS for a in actions
+        ),
+    )

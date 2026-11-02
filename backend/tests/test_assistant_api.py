@@ -1,0 +1,201 @@
+import json
+from datetime import date, timedelta
+
+import pytest
+from fastapi.testclient import TestClient
+from langchain_core.messages import AIMessage, ToolMessage
+from langgraph.checkpoint.memory import InMemorySaver
+
+from app.api.assistant import (
+    get_chat_model,
+    get_conversation_memory,
+    get_fallback_chat_model,
+    get_today,
+)
+from app.db.database import get_db
+from app.main import app
+from app.models.booking import Booking
+from tests.scripted_chat_model import ScriptedChatModel, call
+
+
+TODAY = date.today()
+TOMORROW = TODAY + timedelta(days=1)
+
+
+def last_tool_result(messages) -> dict:
+    tool_message = next(m for m in reversed(messages) if isinstance(m, ToolMessage))
+    return json.loads(tool_message.text)
+
+
+@pytest.fixture
+def memory():
+    return InMemorySaver()
+
+
+@pytest.fixture
+def client(db, memory):
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_conversation_memory] = lambda: memory
+    app.dependency_overrides[get_today] = lambda: TODAY
+    app.dependency_overrides[get_fallback_chat_model] = lambda: None
+
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def use_model(model: ScriptedChatModel):
+    app.dependency_overrides[get_chat_model] = lambda: model
+
+
+def send(client, user_id, message, conversation_id=None):
+    return client.post(
+        "/assistant/messages",
+        json={
+            "user_id": user_id,
+            "message": message,
+            "conversation_id": conversation_id,
+        },
+    )
+
+
+def test_agent_books_through_tool(client, db, user_id):
+    use_model(ScriptedChatModel(script=[
+        call("book_usual_shuttle", booking_date=TOMORROW.isoformat()),
+        AIMessage("Done. You're on the 7:30 AM shuttle tomorrow."),
+    ]))
+
+    response = send(client, user_id, "Book my usual shuttle for tomorrow")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["reply"] == "Done. You're on the 7:30 AM shuttle tomorrow."
+    assert data["bookings_changed"] is True
+    assert data["actions"] == [{
+        "tool": "book_usual_shuttle",
+        "arguments": {"booking_date": TOMORROW.isoformat()},
+        "succeeded": True,
+        "error": None,
+    }]
+    assert db.query(Booking).filter_by(booking_date=TOMORROW).count() == 1
+
+
+def test_follow_up_uses_conversation_memory(client, db, user_id, shuttles):
+    def earlier_from_options(messages):
+        # The second turn must still see the first turn's booking.
+        booking_result = next(
+            json.loads(m.text) for m in messages
+            if isinstance(m, ToolMessage) and "booking" in json.loads(m.text)
+        )
+        options = last_tool_result(messages)["shuttles"]
+        target = next(s for s in options if s["departure"] == "07:00")
+        return call(
+            "change_booking_shuttle",
+            call_id="call-3",
+            booking_id=booking_result["booking"]["booking_id"],
+            shuttle_id=target["shuttle_id"],
+        )
+
+    model = ScriptedChatModel(script=[
+        call("book_usual_shuttle", booking_date=TOMORROW.isoformat()),
+        AIMessage("Booked the 7:30 AM shuttle."),
+        call("list_shuttle_options", call_id="call-2", booking_date=TOMORROW.isoformat()),
+        earlier_from_options,
+        AIMessage("Moved you to the 7:00 AM shuttle."),
+    ])
+    use_model(model)
+
+    first = send(client, user_id, "Book my usual shuttle for tomorrow").json()
+    second = send(
+        client, user_id, "Make it 30 minutes earlier", first["conversation_id"]
+    ).json()
+
+    assert second["conversation_id"] == first["conversation_id"]
+    assert [a["tool"] for a in second["actions"]] == [
+        "list_shuttle_options",
+        "change_booking_shuttle",
+    ]
+    assert second["bookings_changed"] is True
+
+    booking = db.query(Booking).filter_by(booking_date=TOMORROW).one()
+    assert booking.shuttle_id == shuttles["Morning Shuttle A"].id
+    assert booking.pickup_time.isoformat() == "07:00:00"
+
+
+def test_tool_error_is_reported_not_raised(client, user_id):
+    yesterday = (TODAY - timedelta(days=1)).isoformat()
+    use_model(ScriptedChatModel(script=[
+        call("book_usual_shuttle", booking_date=yesterday),
+        lambda messages: AIMessage(
+            f"Sorry: {last_tool_result(messages)['error']}"
+        ),
+    ]))
+
+    data = send(client, user_id, "Book my shuttle for yesterday").json()
+
+    assert data["reply"] == "Sorry: That date has already passed."
+    assert data["bookings_changed"] is False
+    assert data["actions"][0]["succeeded"] is False
+    assert data["actions"][0]["error"] == "That date has already passed."
+
+
+def test_new_conversation_starts_without_history(client, user_id):
+    model = ScriptedChatModel(script=[AIMessage("Hi"), AIMessage("Hello again")])
+    use_model(model)
+
+    send(client, user_id, "Hi")
+    send(client, user_id, "Hi")
+
+    # System prompt + the single new user message, nothing carried over.
+    assert len(model.received[1]) == 2
+
+
+def test_model_failure_returns_service_unavailable(client, user_id):
+    def fail(messages):
+        raise TimeoutError("model timed out")
+
+    use_model(ScriptedChatModel(script=[fail]))
+
+    response = send(client, user_id, "Book my shuttle")
+
+    assert response.status_code == 503
+
+
+def test_fallback_model_takes_over_when_primary_fails(client, user_id):
+    def overloaded(messages):
+        raise RuntimeError("503 UNAVAILABLE: high demand")
+
+    use_model(ScriptedChatModel(script=[overloaded]))
+    app.dependency_overrides[get_fallback_chat_model] = lambda: ScriptedChatModel(
+        script=[AIMessage("Answered by the fallback model.")]
+    )
+
+    data = send(client, user_id, "Hi").json()
+
+    assert data["reply"] == "Answered by the fallback model."
+
+
+def test_failure_after_booking_still_reports_the_booking(client, db, user_id):
+    def overloaded(messages):
+        raise RuntimeError("503 UNAVAILABLE: high demand")
+
+    use_model(ScriptedChatModel(script=[
+        call("book_usual_shuttle", booking_date=TOMORROW.isoformat()),
+        overloaded,
+    ]))
+
+    response = send(client, user_id, "Book my usual shuttle for tomorrow")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bookings_changed"] is True
+    assert data["actions"][0]["tool"] == "book_usual_shuttle"
+    assert data["reply"].startswith("I made changes to your bookings")
+    assert db.query(Booking).filter_by(booking_date=TOMORROW).count() == 1
+
+
+def test_unknown_user_is_not_found(client):
+    use_model(ScriptedChatModel(script=[]))
+
+    assert send(client, 999_999, "Hi").status_code == 404

@@ -57,7 +57,10 @@ class BookingRepository:
     ) -> list[Booking]:
         statement = (
             select(Booking)
-            .where(Booking.user_id == user_id)
+            .where(
+                Booking.user_id == user_id,
+                Booking.status == "confirmed",
+            )
             .options(
                 selectinload(Booking.shuttle).selectinload(Shuttle.route),
             )

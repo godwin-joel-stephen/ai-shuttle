@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.assistant import router as assistant_router
 from app.api.bookings import router as bookings_router
 
 
@@ -9,6 +10,7 @@ app = FastAPI(
 )
 
 
+app.include_router(assistant_router)
 app.include_router(bookings_router)
 
 
