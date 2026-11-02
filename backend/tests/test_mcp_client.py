@@ -29,6 +29,7 @@ def test_discovers_and_calls_remote_tools(clear_path_as_external):
 
     assert {"get_today", "search_policies", "book_usual_shuttle"} <= set(tools)
     assert set(tools["get_today"].invoke({})) == {"date", "weekday"}
+    assert tools["get_today"].metadata == {"mcp_server": "clear-path"}
 
 
 def test_remote_schema_drives_arguments(clear_path_as_external):

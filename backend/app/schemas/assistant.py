@@ -16,6 +16,8 @@ class AssistantAction(BaseModel):
     arguments: dict
     succeeded: bool
     error: str | None = None
+    # External MCP server that provided the tool; None for Clear Path's own.
+    server: str | None = None
 
 
 class AssistantMessageResponse(BaseModel):

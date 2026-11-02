@@ -105,6 +105,20 @@ extension MockedNetworkTests {
             #expect(store.currentConversationId == nil)
         }
 
+        @Test func externalToolsNameTheirMCPServer() throws {
+            let actions = try JSONDecoder().decode([AssistantActionDTO].self, from: Data("""
+            [
+                {"tool": "get_shuttle_status", "arguments": {}, "succeeded": true, "error": null, "server": null},
+                {"tool": "get_current_weather", "arguments": {}, "succeeded": true, "error": null, "server": "weather"}
+            ]
+            """.utf8))
+
+            #expect(actions.map(\.label) == [
+                "Checked live shuttle status",
+                "Checked the weather · via weather MCP server"
+            ])
+        }
+
         @Test func newConversationClearsMessagesAndStoredId() async {
             let store = makeStore()
             MockURLProtocol.requestHandler = { request in Self.ok(request, Self.bookedReply) }

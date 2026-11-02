@@ -80,6 +80,7 @@ def test_agent_books_through_tool(client, db, user_id):
         "arguments": {"booking_date": TOMORROW.isoformat()},
         "succeeded": True,
         "error": None,
+        "server": None,
     }]
     assert db.query(Booking).filter_by(booking_date=TOMORROW).count() == 1
 
@@ -296,7 +297,7 @@ def test_agent_can_call_tools_from_external_mcp_servers(client, user_id):
         """Current weather at a location."""
         return {"conditions": "rain", "rain_chance_next_2h_percent": 80}
 
-    weather = StructuredTool.from_function(get_current_weather)
+    weather = StructuredTool.from_function(get_current_weather, metadata={"mcp_server": "weather"})
     app.dependency_overrides[get_external_tools] = lambda: [weather]
     use_model(ScriptedChatModel(script=[
         call("get_current_weather", latitude=12.97, longitude=77.64),
@@ -306,4 +307,5 @@ def test_agent_can_call_tools_from_external_mcp_servers(client, user_id):
     data = send(client, user_id, "Should I leave now?").json()
 
     assert data["actions"][0]["tool"] == "get_current_weather"
+    assert data["actions"][0]["server"] == "weather"
     assert data["reply"] == "It's rain; take an umbrella."

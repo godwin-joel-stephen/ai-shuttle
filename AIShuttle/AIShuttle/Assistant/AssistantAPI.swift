@@ -22,17 +22,27 @@ public struct AssistantActionDTO: Codable, Equatable, Hashable, Sendable {
     public let tool: String
     public let succeeded: Bool
     public let error: String?
+    /// External MCP server that provided the tool; nil for Clear Path's own.
+    public let server: String?
 
-    /// Plain-language label for showing the agent's work.
+    /// Plain-language label for showing the agent's work, naming the MCP
+    /// server when the step used an outside one.
     public var label: String {
+        guard let server else { return action }
+        return "\(action) · via \(server) MCP server"
+    }
+
+    private var action: String {
         switch tool {
         case "get_my_bookings": return "Checked your bookings"
         case "list_shuttle_options": return "Checked shuttle options"
         case "book_usual_shuttle": return "Booked your usual shuttle"
         case "change_booking_shuttle": return "Changed your shuttle"
         case "cancel_booking": return "Cancelled a booking"
+        case "get_shuttle_status": return "Checked live shuttle status"
         case "check_booking_eligibility": return "Checked the booking rules"
         case "search_policies": return "Searched Clear Path policies"
+        case "get_current_weather": return "Checked the weather"
         default: return tool.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }

@@ -104,7 +104,7 @@ class ExternalMCPTools:
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     listed = await session.list_tools()
-                    ready.set_result([self._wrap(session, tool) for tool in listed.tools])
+                    ready.set_result([self._wrap(name, session, tool) for tool in listed.tools])
                     await self._shutdown.wait()
         except Exception as e:
             if not ready.done():
@@ -112,7 +112,7 @@ class ExternalMCPTools:
             else:
                 logger.warning("MCP server %r disconnected", name, exc_info=True)
 
-    def _wrap(self, session: ClientSession, tool: Any) -> BaseTool:
+    def _wrap(self, server: str, session: ClientSession, tool: Any) -> BaseTool:
         def call(**arguments) -> dict:
             result = asyncio.run_coroutine_threadsafe(
                 session.call_tool(tool.name, arguments),
@@ -132,4 +132,6 @@ class ExternalMCPTools:
             name=tool.name,
             description=tool.description or tool.name,
             args_schema=tool.input_schema,
+            # Lets the app show which MCP server a step came from.
+            metadata={"mcp_server": server},
         )

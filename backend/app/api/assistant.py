@@ -67,13 +67,14 @@ def _thread_config(user_id: int, conversation_id: str) -> dict:
     return {"configurable": {"thread_id": f"{user_id}:{conversation_id}"}}
 
 
-def _actions_this_turn(messages: list) -> list[AssistantAction]:
-    """Tool calls made since the latest user message."""
+def _tool_servers(tools: list[BaseTool]) -> dict[str, str]:
+    """Tool name -> external MCP server, for tools that came from one."""
 
-    last_human = max(
-        i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
-    )
-    return _actions_in(messages[last_human + 1:])
+    return {
+        tool.name: tool.metadata["mcp_server"]
+        for tool in tools
+        if tool.metadata and "mcp_server" in tool.metadata
+    }
 
 
 def _sources_in(turn: list) -> list[str]:
@@ -99,7 +100,7 @@ def _sources_in(turn: list) -> list[str]:
     return sources
 
 
-def _actions_in(turn: list) -> list[AssistantAction]:
+def _actions_in(turn: list, servers: dict[str, str] | None = None) -> list[AssistantAction]:
     results = {
         m.tool_call_id: m for m in turn if isinstance(m, ToolMessage)
     }
@@ -129,6 +130,7 @@ def _actions_in(turn: list) -> list[AssistantAction]:
                     arguments=call["args"],
                     succeeded=error is None,
                     error=error,
+                    server=(servers or {}).get(call["name"]),
                 )
             )
 
@@ -177,7 +179,11 @@ def send_message(
         # Tools may have changed bookings before the model failed. Never
         # report "unavailable" when something was actually done.
         messages = graph.get_state(config).values.get("messages", [])
-        actions = _actions_this_turn(messages) if messages else []
+        last_human = max(
+            (i for i, m in enumerate(messages) if isinstance(m, HumanMessage)),
+            default=None,
+        )
+        actions = _actions_in(messages[last_human + 1:]) if last_human is not None else []
         if not any(a.succeeded and a.tool in MUTATING_TOOLS for a in actions):
             raise HTTPException(
                 status_code=503,
@@ -193,7 +199,7 @@ def send_message(
         i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
     )
     turn = messages[last_human + 1:]
-    actions = _actions_in(turn)
+    actions = _actions_in(turn, _tool_servers(external_tools))
 
     return AssistantMessageResponse(
         conversation_id=conversation_id,
@@ -214,6 +220,7 @@ def get_conversation(
     conversation_id: str,
     user_id: int = Query(default=1, gt=0),
     memory: BaseCheckpointSaver = Depends(get_conversation_memory),
+    external_tools: list[BaseTool] = Depends(get_external_tools),
 ):
     """Replay a conversation, e.g. to show Siri requests in the app chat."""
 
@@ -246,7 +253,7 @@ def get_conversation(
                 ConversationMessage(
                     role="assistant",
                     text=replies[-1].text,
-                    actions=_actions_in(turn),
+                    actions=_actions_in(turn, _tool_servers(external_tools)),
                     sources=_sources_in(turn),
                 )
             )
