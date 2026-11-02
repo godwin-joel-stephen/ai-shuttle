@@ -97,8 +97,9 @@ public final class BookingAPIClient: Sendable {
     }
 
     // MARK: - Transport
+    // Internal (not private) so feature-specific extensions can reuse them.
 
-    private func post<Body: Encodable, Response: Decodable>(
+    func post<Body: Encodable, Response: Decodable>(
         _ path: String,
         body: Body
     ) async throws -> Response {
@@ -120,7 +121,7 @@ public final class BookingAPIClient: Sendable {
         return try await send(request)
     }
 
-    private func get<Response: Decodable>(_ path: String, userId: Int) async throws -> Response {
+    func get<Response: Decodable>(_ path: String, userId: Int) async throws -> Response {
         var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
         components?.queryItems = [
             URLQueryItem(name: "user_id", value: String(userId))

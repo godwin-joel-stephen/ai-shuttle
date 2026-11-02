@@ -199,3 +199,39 @@ def test_unknown_user_is_not_found(client):
     use_model(ScriptedChatModel(script=[]))
 
     assert send(client, 999_999, "Hi").status_code == 404
+
+
+def test_conversation_history_replays_turns(client, user_id):
+    use_model(ScriptedChatModel(script=[
+        call("book_usual_shuttle", booking_date=TOMORROW.isoformat()),
+        AIMessage("Booked the 7:30 AM shuttle."),
+        AIMessage("Anything else?"),
+    ]))
+    conversation_id = send(client, user_id, "Book tomorrow").json()["conversation_id"]
+    send(client, user_id, "Thanks", conversation_id)
+
+    response = client.get(
+        f"/assistant/conversations/{conversation_id}?user_id={user_id}"
+    )
+
+    assert response.status_code == 200
+    messages = response.json()["messages"]
+    assert [(m["role"], m["text"]) for m in messages] == [
+        ("user", "Book tomorrow"),
+        ("assistant", "Booked the 7:30 AM shuttle."),
+        ("user", "Thanks"),
+        ("assistant", "Anything else?"),
+    ]
+    assert messages[1]["actions"][0]["tool"] == "book_usual_shuttle"
+    assert messages[3]["actions"] == []
+
+
+def test_other_users_cannot_read_a_conversation(client, user_id):
+    use_model(ScriptedChatModel(script=[AIMessage("Hi")]))
+    conversation_id = send(client, user_id, "Hi").json()["conversation_id"]
+
+    response = client.get(
+        f"/assistant/conversations/{conversation_id}?user_id={user_id + 1}"
+    )
+
+    assert response.status_code == 404

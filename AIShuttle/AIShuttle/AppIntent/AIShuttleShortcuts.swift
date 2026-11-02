@@ -29,5 +29,17 @@ public struct AIShuttleShortcuts: AppShortcutsProvider {
             shortTitle: "Book My Usual Shuttle",
             systemImageName: "bus"
         )
+
+        AppShortcut(
+            intent: AskClearPathIntent(),
+            phrases: [
+                "Ask \(.applicationName)",
+                "Talk to \(.applicationName)",
+                "Open \(.applicationName) assistant",
+                "I need help from \(.applicationName)"
+            ],
+            shortTitle: "Ask Clear Path",
+            systemImageName: "sparkles"
+        )
     }
 }

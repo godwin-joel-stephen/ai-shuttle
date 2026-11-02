@@ -23,3 +23,14 @@ class AssistantMessageResponse(BaseModel):
     reply: str
     actions: list[AssistantAction]
     bookings_changed: bool
+
+
+class ConversationMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    text: str
+    actions: list[AssistantAction] = []
+
+
+class ConversationResponse(BaseModel):
+    conversation_id: str
+    messages: list[ConversationMessage]

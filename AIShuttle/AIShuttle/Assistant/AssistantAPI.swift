@@ -1,0 +1,123 @@
+//
+//  AssistantAPI.swift
+//  AIShuttle
+//
+
+import Foundation
+
+public struct AssistantMessageRequest: Encodable, Sendable {
+    let userId: Int
+    let message: String
+    let conversationId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case message
+        case conversationId = "conversation_id"
+    }
+}
+
+/// One tool call the agent made while answering.
+public struct AssistantActionDTO: Codable, Equatable, Hashable, Sendable {
+    public let tool: String
+    public let succeeded: Bool
+    public let error: String?
+
+    /// Plain-language label for showing the agent's work.
+    public var label: String {
+        switch tool {
+        case "get_my_bookings": return "Checked your bookings"
+        case "list_shuttle_options": return "Checked shuttle options"
+        case "book_usual_shuttle": return "Booked your usual shuttle"
+        case "change_booking_shuttle": return "Changed your shuttle"
+        case "cancel_booking": return "Cancelled a booking"
+        default: return tool.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
+}
+
+public struct AssistantMessageResponse: Decodable, Equatable, Sendable {
+    public let conversationId: String
+    public let reply: String
+    public let actions: [AssistantActionDTO]
+    public let bookingsChanged: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case conversationId = "conversation_id"
+        case reply
+        case actions
+        case bookingsChanged = "bookings_changed"
+    }
+}
+
+public struct ConversationDTO: Decodable, Equatable, Sendable {
+    public struct Message: Decodable, Equatable, Sendable {
+        public let role: String
+        public let text: String
+        public let actions: [AssistantActionDTO]
+    }
+
+    public let conversationId: String
+    public let messages: [Message]
+
+    enum CodingKeys: String, CodingKey {
+        case conversationId = "conversation_id"
+        case messages
+    }
+}
+
+extension BookingAPIClient {
+    /// The agent may make several model and tool calls per message, so it
+    /// gets a longer budget than plain booking requests.
+    public static func forAssistant() -> BookingAPIClient {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 40
+        configuration.timeoutIntervalForResource = 45
+        return BookingAPIClient(session: URLSession(configuration: configuration))
+    }
+
+    public func sendAssistantMessage(
+        _ message: String,
+        conversationId: String?,
+        userId: Int = 1
+    ) async throws -> AssistantMessageResponse {
+        try await post(
+            "assistant/messages",
+            body: AssistantMessageRequest(userId: userId, message: message, conversationId: conversationId)
+        )
+    }
+
+    public func fetchConversation(id: String, userId: Int = 1) async throws -> ConversationDTO {
+        try await get("assistant/conversations/\(id)", userId: userId)
+    }
+}
+
+/// The conversation shared by the in-app chat and the "Ask Clear Path" Siri
+/// intent. It continues while active and starts fresh after a quiet spell,
+/// so an old topic doesn't leak into a new request.
+struct ConversationStore {
+    private static let idKey = "assistant.conversationId"
+    private static let lastActivityKey = "assistant.lastActivity"
+
+    var defaults: UserDefaults = .standard
+    var expiry: TimeInterval = 30 * 60
+
+    var currentConversationId: String? {
+        guard let id = defaults.string(forKey: Self.idKey),
+              let lastActivity = defaults.object(forKey: Self.lastActivityKey) as? Date,
+              Date.now.timeIntervalSince(lastActivity) < expiry else {
+            return nil
+        }
+        return id
+    }
+
+    func save(_ conversationId: String) {
+        defaults.set(conversationId, forKey: Self.idKey)
+        defaults.set(Date.now, forKey: Self.lastActivityKey)
+    }
+
+    func reset() {
+        defaults.removeObject(forKey: Self.idKey)
+        defaults.removeObject(forKey: Self.lastActivityKey)
+    }
+}

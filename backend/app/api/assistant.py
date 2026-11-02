@@ -3,7 +3,7 @@ import logging
 from datetime import date
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -23,6 +23,8 @@ from app.schemas.assistant import (
     AssistantAction,
     AssistantMessageRequest,
     AssistantMessageResponse,
+    ConversationMessage,
+    ConversationResponse,
 )
 from app.tools.assistant_tools import MUTATING_TOOLS, create_assistant_tools
 
@@ -51,14 +53,22 @@ def get_today() -> date:
     return date.today()
 
 
+def _thread_config(user_id: int, conversation_id: str) -> dict:
+    # Prefix with the user id so one user can never read or continue
+    # another user's conversation.
+    return {"configurable": {"thread_id": f"{user_id}:{conversation_id}"}}
+
+
 def _actions_this_turn(messages: list) -> list[AssistantAction]:
     """Tool calls made since the latest user message."""
 
     last_human = max(
         i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
     )
-    turn = messages[last_human + 1:]
+    return _actions_in(messages[last_human + 1:])
 
+
+def _actions_in(turn: list) -> list[AssistantAction]:
     results = {
         m.tool_call_id: m for m in turn if isinstance(m, ToolMessage)
     }
@@ -118,9 +128,7 @@ def send_message(
         fallback_model=fallback_model,
     )
     config = {
-        # Prefix with the user id so one user can never continue another
-        # user's conversation.
-        "configurable": {"thread_id": f"{user.id}:{conversation_id}"},
+        **_thread_config(user.id, conversation_id),
         "recursion_limit": RECURSION_LIMIT,
     }
 
@@ -158,4 +166,54 @@ def send_message(
         bookings_changed=any(
             a.succeeded and a.tool in MUTATING_TOOLS for a in actions
         ),
+    )
+
+
+@router.get(
+    "/conversations/{conversation_id}",
+    response_model=ConversationResponse,
+)
+def get_conversation(
+    conversation_id: str,
+    user_id: int = Query(default=1, gt=0),
+    memory: BaseCheckpointSaver = Depends(get_conversation_memory),
+):
+    """Replay a conversation, e.g. to show Siri requests in the app chat."""
+
+    checkpoint = memory.get(_thread_config(user_id, conversation_id))
+
+    if checkpoint is None:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+
+    stored = checkpoint["channel_values"].get("messages", [])
+    human_indexes = [
+        i for i, m in enumerate(stored) if isinstance(m, HumanMessage)
+    ]
+
+    messages = []
+    for position, start in enumerate(human_indexes):
+        end = (
+            human_indexes[position + 1]
+            if position + 1 < len(human_indexes)
+            else len(stored)
+        )
+        turn = stored[start + 1:end]
+        replies = [
+            m for m in turn
+            if isinstance(m, AIMessage) and not m.tool_calls and m.text
+        ]
+
+        messages.append(ConversationMessage(role="user", text=stored[start].text))
+        if replies:
+            messages.append(
+                ConversationMessage(
+                    role="assistant",
+                    text=replies[-1].text,
+                    actions=_actions_in(turn),
+                )
+            )
+
+    return ConversationResponse(
+        conversation_id=conversation_id,
+        messages=messages,
     )

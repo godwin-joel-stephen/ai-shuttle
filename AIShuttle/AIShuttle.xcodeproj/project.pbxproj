@@ -179,8 +179,8 @@
 				C1EA4A11000000000000000C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				F55A7EFE30659FDC00D57745 /* AIShuttle */,
 				C1EA4A110000000000000002 /* Shared */,
+				F55A7EFE30659FDC00D57745 /* AIShuttle */,
 			);
 			name = AIShuttle;
 			packageProductDependencies = (
@@ -559,6 +559,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AIShuttle-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Clear Path listens after you tap the mic so you can ask for bookings by voice. Speech is recognised on your iPhone.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Clear Path turns your voice requests into text on your iPhone.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -594,6 +596,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AIShuttle-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Clear Path listens after you tap the mic so you can ask for bookings by voice. Speech is recognised on your iPhone.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Clear Path turns your voice requests into text on your iPhone.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;

@@ -4,9 +4,11 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 public struct HomeView: View {
     @Bindable var viewModel: RidesViewModel
+    @State private var showingAssistant = false
 
     public init(viewModel: RidesViewModel) {
         self.viewModel = viewModel
@@ -29,6 +31,8 @@ public struct HomeView: View {
                             .foregroundStyle(.primary)
                     }
                     .padding(.top, 8)
+
+                    askClearPathButton
 
                     // Upcoming Ride Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -166,6 +170,46 @@ public struct HomeView: View {
             .task {
                 await viewModel.loadBookings()
             }
+            .sheet(isPresented: $showingAssistant) {
+                AssistantView(
+                    viewModel: AssistantViewModel(onBookingsChanged: { [viewModel] in
+                        await viewModel.loadBookings()
+                        WidgetCenter.shared.reloadAllTimelines()
+                    })
+                )
+            }
         }
+    }
+
+    private var askClearPathButton: some View {
+        Button {
+            showingAssistant = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ask Clear Path")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("Book, change or check rides in your own words")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
