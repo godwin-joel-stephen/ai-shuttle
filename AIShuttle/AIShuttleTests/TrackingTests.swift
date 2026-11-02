@@ -64,6 +64,66 @@ extension MockedNetworkTests {
             #expect(state.countdownCaption == "to pickup")
         }
 
+        @Test func tripModeFieldsDecodeAndReadNaturally() throws {
+            var json = try JSONSerialization.jsonObject(with: Self.tripJSON.data(using: .utf8)!) as! [String: Any]
+            json["delay_minutes"] = 20
+            json["walk_minutes"] = 17
+            json["leave_in_minutes"] = -2
+            json["alternative"] = [
+                "shuttle_id": 4, "shuttle_name": "Morning Shuttle D",
+                "departure": "07:45", "arrival": "08:30", "minutes_earlier": 5
+            ]
+            let trip = try BookingAPIClient.decoder.decode(
+                TripStatusDTO.self,
+                from: JSONSerialization.data(withJSONObject: json)
+            )
+
+            #expect(trip.departureAdvice == "17 min walk · leave now")
+            #expect(trip.alternative?.formattedDeparture == "7:45 AM")
+            #expect(trip.alternative?.minutesEarlier == 5)
+        }
+
+        @Test func departureAdviceWithoutLocationIsHidden() throws {
+            let trip = try BookingAPIClient.decoder.decode(TripStatusDTO.self, from: Self.tripJSON.data(using: .utf8)!)
+
+            #expect(trip.walkMinutes == nil)
+            #expect(trip.departureAdvice == nil)
+            #expect(trip.alternative == nil)
+        }
+
+        @Test func reportLocationAcceptsEmptyNoContentResponse() async throws {
+            let client = makeClient()
+            MockURLProtocol.requestHandler = { request in
+                #expect(request.url?.absoluteString == "http://127.0.0.1:8000/users/1/location")
+                let body = try JSONSerialization.jsonObject(with: request.bodyData) as? [String: Double]
+                #expect(body?["latitude"] == 12.98)
+                let response = HTTPURLResponse(url: request.url!, statusCode: 204, httpVersion: nil, headerFields: nil)!
+                return (response, Data())
+            }
+
+            try await client.reportLocation(latitude: 12.98, longitude: 77.64)
+        }
+
+        @Test func moveBookingPostsShuttleAndDecodesTrip() async throws {
+            let client = makeClient()
+            MockURLProtocol.requestHandler = { request in
+                #expect(request.url?.absoluteString == "http://127.0.0.1:8000/bookings/47/move")
+                let body = try JSONSerialization.jsonObject(with: request.bodyData) as? [String: Int]
+                #expect(body?["shuttle_id"] == 4)
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                return (response, Self.tripJSON.data(using: .utf8)!)
+            }
+
+            let trip = try await client.moveBooking(id: 47, toShuttle: 4)
+            #expect(trip.bookingId == 47)
+        }
+
+        private func makeClient() -> BookingAPIClient {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [MockURLProtocol.self]
+            return BookingAPIClient(baseURL: URL(string: "http://127.0.0.1:8000")!, session: URLSession(configuration: configuration))
+        }
+
         @Test func countdownSwitchesToArrivalOnceAboard() {
             let state = ShuttleActivityAttributes.ContentState(
                 phase: "in_transit",

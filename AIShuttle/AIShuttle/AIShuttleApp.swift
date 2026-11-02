@@ -4,6 +4,8 @@ import UserNotifications
 
 @main
 struct AIShuttleApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         AIShuttleShortcuts.updateAppShortcutParameters()
     }

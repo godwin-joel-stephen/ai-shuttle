@@ -7,8 +7,11 @@ from app.repositories.preference_repository import PreferenceRepository
 from app.repositories.shuttle_repository import ShuttleRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.tracking import (
+    AlternativeResponse,
     Coordinate,
     DelayRequest,
+    LocationRequest,
+    MoveBookingRequest,
     StartSimulationRequest,
     TripStatusResponse,
 )
@@ -61,6 +64,19 @@ def to_response(status: TripStatus) -> TripStatusResponse:
         destination_name=route.dropoff_location,
         route=[_coordinate(p) for p in status.geometry.path],
         simulated=status.simulated,
+        walk_minutes=status.walk_minutes,
+        leave_in_minutes=status.leave_in_minutes,
+        alternative=(
+            AlternativeResponse(
+                shuttle_id=status.alternative.shuttle.id,
+                shuttle_name=status.alternative.shuttle.name,
+                departure=f"{status.alternative.shuttle.departure_time:%H:%M}",
+                arrival=f"{status.alternative.shuttle.arrival_time:%H:%M}",
+                minutes_earlier=status.alternative.minutes_earlier,
+            )
+            if status.alternative
+            else None
+        ),
     )
 
 
@@ -95,6 +111,38 @@ def booking_tracking(
         return to_response(create_tracking_service(db).status(user_id, booking_id))
     except BookingError as e:
         _not_found_or_conflict(e)
+
+
+@router.post("/users/{user_id}/location", status_code=204)
+def update_location(
+    user_id: int,
+    request: LocationRequest,
+    db: Session = Depends(get_db),
+):
+    """Latest rider location while trip mode runs, for walking estimates."""
+
+    create_tracking_service(db).update_location(user_id, request.latitude, request.longitude)
+
+
+@router.post("/bookings/{booking_id}/move", response_model=TripStatusResponse)
+def move_booking(
+    booking_id: int,
+    request: MoveBookingRequest,
+    db: Session = Depends(get_db),
+):
+    """Move a booking to a specific shuttle, e.g. the faster alternative
+    offered when a shuttle is late. Returns the updated trip status."""
+
+    try:
+        status = create_tracking_service(db).move_booking(
+            request.user_id,
+            booking_id,
+            request.shuttle_id,
+        )
+    except BookingError as e:
+        _not_found_or_conflict(e)
+
+    return to_response(status)
 
 
 @router.post("/simulator/trips/{booking_id}", response_model=TripStatusResponse)

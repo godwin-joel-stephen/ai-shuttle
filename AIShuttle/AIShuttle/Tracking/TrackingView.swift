@@ -12,7 +12,8 @@ struct TrackingView: View {
     @State private var trip: TripStatusDTO?
     @State private var errorMessage: String?
     @State private var camera: MapCameraPosition = .automatic
-    @State private var showingOnLockScreen = ShuttleActivityController.isShowing
+    @State private var monitor = TripMonitor.shared
+    @State private var switching = false
 
     private let apiClient: BookingAPIClient
     private let refreshInterval: Duration
@@ -96,21 +97,29 @@ struct TrackingView: View {
                 ProgressView(value: trip.progress)
                     .tint(trip.delayMinutes > 0 ? .orange : .green)
 
-                if trip.isLive {
+                if let advice = trip.departureAdvice {
+                    Label(advice, systemImage: "figure.walk")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle((trip.leaveInMinutes ?? 1) <= 0 ? .orange : .primary)
+                }
+
+                if let alternative = trip.alternative {
                     Button {
-                        Task {
-                            await ShuttleActivityController.show(trip)
-                            showingOnLockScreen = ShuttleActivityController.isShowing
-                        }
+                        Task { await switchTo(alternative, from: trip) }
                     } label: {
                         Label(
-                            showingOnLockScreen ? "Showing on Lock Screen" : "Show on Lock Screen",
-                            systemImage: showingOnLockScreen ? "checkmark.circle.fill" : "lock.iphone"
+                            "Switch to the \(alternative.formattedDeparture) (arrives \(alternative.minutesEarlier) min sooner)",
+                            systemImage: "arrow.triangle.swap"
                         )
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(showingOnLockScreen)
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .disabled(switching)
+                }
+
+                if trip.isLive || trip.phase == "scheduled" {
+                    tripModeButton
                 }
             } else if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -122,6 +131,40 @@ struct TrackingView: View {
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    /// Trip mode keeps following the shuttle with the app closed: Lock
+    /// Screen updates and alerts for leaving and delays.
+    private var tripModeButton: some View {
+        Button {
+            if monitor.isActive {
+                monitor.stop()
+            } else {
+                monitor.start()
+            }
+        } label: {
+            Label(
+                monitor.isActive ? "Trip mode on · tap to stop" : "Start trip mode",
+                systemImage: monitor.isActive ? "location.fill" : "location"
+            )
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(monitor.isActive ? .green : .accentColor)
+    }
+
+    private func switchTo(_ alternative: AlternativeDTO, from trip: TripStatusDTO) async {
+        switching = true
+        defer { switching = false }
+
+        do {
+            self.trip = try await monitor.switchToAlternative(
+                bookingId: trip.bookingId,
+                shuttleId: alternative.shuttleId
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func poll() async {

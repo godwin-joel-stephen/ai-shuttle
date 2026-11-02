@@ -46,7 +46,7 @@ def geometry_for(pickup_location: str) -> RouteGeometry:
     return _MORNING if pickup_location == "Home" else _EVENING
 
 
-def _distance(a: Point, b: Point) -> float:
+def distance_km(a: Point, b: Point) -> float:
     """Great-circle distance in kilometres."""
 
     lat1, lon1, lat2, lon2 = map(radians, (*a, *b))
@@ -58,7 +58,7 @@ def point_along(path: list[Point], fraction: float) -> Point:
     """The point `fraction` (0-1) of the way along a polyline, by distance."""
 
     fraction = min(max(fraction, 0.0), 1.0)
-    legs = [_distance(a, b) for a, b in zip(path, path[1:])]
+    legs = [distance_km(a, b) for a, b in zip(path, path[1:])]
     target = sum(legs) * fraction
 
     for (a, b), length in zip(zip(path, path[1:]), legs):

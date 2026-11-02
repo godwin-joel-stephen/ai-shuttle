@@ -4,6 +4,10 @@
 <dict>
 	<key>BookingAPIBaseURL</key>
 	<string>$(BOOKING_API_BASE_URL)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>INAlternativeAppNames</key>
 	<array>
 		<dict>

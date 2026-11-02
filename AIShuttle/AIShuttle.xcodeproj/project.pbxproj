@@ -558,6 +558,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AIShuttle-Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "During a trip, Clear Path uses your location to work out your walk to the pickup stop and tell you when to leave.";
 				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Clear Path listens after you tap the mic so you can ask for bookings by voice. Speech is recognised on your iPhone.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Clear Path turns your voice requests into text on your iPhone.";
@@ -596,6 +597,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AIShuttle-Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "During a trip, Clear Path uses your location to work out your walk to the pickup stop and tell you when to leave.";
 				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Clear Path listens after you tap the mic so you can ask for bookings by voice. Speech is recognised on your iPhone.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Clear Path turns your voice requests into text on your iPhone.";

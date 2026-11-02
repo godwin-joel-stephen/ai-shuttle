@@ -6,7 +6,7 @@ reply in. Booking failures come back as `{"error": ...}` so the agent can
 explain them instead of the request crashing.
 """
 
-from datetime import date
+from datetime import date, datetime, timedelta
 from functools import wraps
 
 from langchain_core.tools import BaseTool, tool
@@ -62,6 +62,10 @@ def shuttle_to_dict(shuttle: Shuttle, bookable: bool) -> dict:
     }
 
 
+def scheduled(time_of_day, delay_minutes: int) -> datetime:
+    return datetime.combine(date.min, time_of_day) + timedelta(minutes=delay_minutes)
+
+
 def _report_booking_errors(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -85,6 +89,7 @@ def create_assistant_tools(
         shuttle_repository=ShuttleRepository(db),
         booking_repository=BookingRepository(db),
     )
+    tracking = TrackingService(db, service)
 
     @tool
     @_report_booking_errors
@@ -127,8 +132,8 @@ def create_assistant_tools(
         """Move an existing booking to another shuttle on the same route and
         date. Get shuttle_id values from list_shuttle_options."""
 
-        booking = service.move_booking(user_id, booking_id, shuttle_id)
-        return {"booking": booking_to_dict(booking)}
+        status = tracking.move_booking(user_id, booking_id, shuttle_id)
+        return {"booking": booking_to_dict(status.booking)}
 
     @tool
     @_report_booking_errors
@@ -138,8 +143,6 @@ def create_assistant_tools(
 
         booking = service.cancel_booking(user_id, booking_id)
         return {"booking": booking_to_dict(booking)}
-
-    tracking = TrackingService(db, service)
 
     @tool
     @_report_booking_errors
@@ -165,9 +168,23 @@ def create_assistant_tools(
             "delay_minutes": status.delay_minutes,
             "minutes_to_pickup": status.minutes_to_pickup,
             "minutes_to_arrival": status.minutes_to_arrival,
-            "pickup_time": f"{status.pickup_eta:%H:%M}",
-            "arrival_time": f"{status.arrival_eta:%H:%M}",
+            # On the trip's own schedule (departure plus delay), which also
+            # reads correctly for a simulated trip replayed at another time.
+            "pickup_time": f"{scheduled(status.booking.shuttle.departure_time, status.delay_minutes):%-I:%M %p}",
+            "arrival_time": f"{scheduled(status.booking.shuttle.arrival_time, status.delay_minutes):%-I:%M %p}",
             "pickup_stop": status.booking.shuttle.route.pickup_location,
+            "walk_minutes": status.walk_minutes,
+            "leave_in_minutes": status.leave_in_minutes,
+            "faster_alternative": (
+                {
+                    "shuttle_id": status.alternative.shuttle.id,
+                    "departure": f"{status.alternative.shuttle.departure_time:%H:%M}",
+                    "arrival": f"{status.alternative.shuttle.arrival_time:%H:%M}",
+                    "minutes_earlier": status.alternative.minutes_earlier,
+                }
+                if status.alternative
+                else None
+            ),
         }
 
     @tool

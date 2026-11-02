@@ -15,6 +15,33 @@ public struct CoordinateDTO: Decodable, Hashable, Sendable {
     }
 }
 
+/// A faster departure offered when the booked shuttle is running late.
+public struct AlternativeDTO: Decodable, Equatable, Sendable {
+    public let shuttleId: Int
+    public let shuttleName: String
+    public let departure: String
+    public let arrival: String
+    public let minutesEarlier: Int
+
+    enum CodingKeys: String, CodingKey {
+        case shuttleId = "shuttle_id"
+        case shuttleName = "shuttle_name"
+        case departure
+        case arrival
+        case minutesEarlier = "minutes_earlier"
+    }
+
+    var formattedDeparture: String { Self.twelveHour(departure) }
+    var formattedArrival: String { Self.twelveHour(arrival) }
+
+    private static func twelveHour(_ time: String) -> String {
+        let parts = time.split(separator: ":").compactMap { Int($0) }
+        guard parts.count == 2 else { return time }
+        let hour = parts[0] % 12 == 0 ? 12 : parts[0] % 12
+        return String(format: "%d:%02d %@", hour, parts[1], parts[0] >= 12 ? "PM" : "AM")
+    }
+}
+
 public struct TripStatusDTO: Decodable, Equatable, Sendable {
     public let bookingId: Int
     public let bookingDate: String
@@ -36,6 +63,11 @@ public struct TripStatusDTO: Decodable, Equatable, Sendable {
     public let destinationName: String
     public let route: [CoordinateDTO]
     public let simulated: Bool
+    /// Present while trip mode shares the rider's location.
+    public let walkMinutes: Int?
+    /// Minutes until the rider should set off; 0 or less means now.
+    public let leaveInMinutes: Int?
+    public let alternative: AlternativeDTO?
 
     enum CodingKeys: String, CodingKey {
         case bookingId = "booking_id"
@@ -56,6 +88,18 @@ public struct TripStatusDTO: Decodable, Equatable, Sendable {
         case destinationName = "destination_name"
         case route
         case simulated
+        case walkMinutes = "walk_minutes"
+        case leaveInMinutes = "leave_in_minutes"
+        case alternative
+    }
+
+    /// "12 min walk · leave in 3 min", when the walk is known.
+    public var departureAdvice: String? {
+        guard let walkMinutes else { return nil }
+        guard let leaveInMinutes else { return "\(walkMinutes) min walk to \(pickupName)" }
+        return leaveInMinutes <= 0
+            ? "\(walkMinutes) min walk · leave now"
+            : "\(walkMinutes) min walk · leave in \(leaveInMinutes) min"
     }
 
     /// The shuttle is moving or about to; worth a Live Activity.
@@ -82,8 +126,39 @@ public struct TripStatusDTO: Decodable, Equatable, Sendable {
     }
 }
 
+struct LocationRequest: Encodable {
+    let latitude: Double
+    let longitude: Double
+}
+
+struct MoveBookingRequest: Encodable {
+    let userId: Int
+    let shuttleId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case shuttleId = "shuttle_id"
+    }
+}
+
 extension BookingAPIClient {
     public func fetchNextTrip(userId: Int = 1) async throws -> TripStatusDTO {
         try await get("tracking/next", userId: userId)
+    }
+
+    /// Shares the rider's location during trip mode for walking estimates.
+    public func reportLocation(latitude: Double, longitude: Double, userId: Int = 1) async throws {
+        let _: NoContent = try await post(
+            "users/\(userId)/location",
+            body: LocationRequest(latitude: latitude, longitude: longitude)
+        )
+    }
+
+    /// Moves a booking to a specific shuttle, e.g. the faster alternative.
+    public func moveBooking(id bookingId: Int, toShuttle shuttleId: Int, userId: Int = 1) async throws -> TripStatusDTO {
+        try await post(
+            "bookings/\(bookingId)/move",
+            body: MoveBookingRequest(userId: userId, shuttleId: shuttleId)
+        )
     }
 }

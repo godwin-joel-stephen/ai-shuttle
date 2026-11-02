@@ -15,7 +15,7 @@ ETAs are returned as real wall-clock times, so a client can count down
 without polling even when the simulation runs faster than real time.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from enum import StrEnum
 from math import ceil
@@ -25,13 +25,28 @@ from sqlalchemy.orm import Session
 
 from app.core import clock
 from app.models.booking import Booking
+from app.models.shuttle import Shuttle
 from app.models.trip_simulation import TripSimulation
+from app.models.user_location import UserLocation
 from app.services.booking_service import BookingService
-from app.services.route_geometry import Point, RouteGeometry, geometry_for, point_along
+from app.services.route_geometry import (
+    Point,
+    RouteGeometry,
+    distance_km,
+    geometry_for,
+    point_along,
+)
 
 
 APPROACH_MINUTES = 15
 BOARDING_MINUTES = 2
+
+# Walking estimate: straight-line distance plus 30% for real streets, at
+# 4.8 km/h. PICKUP_BUFFER matches the pickup rules (be there 5 min early).
+WALK_SPEED_KMH = 4.8
+STREET_DETOUR = 1.3
+PICKUP_BUFFER_MINUTES = 5
+LOCATION_FRESH_FOR = timedelta(minutes=15)
 
 
 class TripPhase(StrEnum):
@@ -40,6 +55,15 @@ class TripPhase(StrEnum):
     BOARDING = "boarding"
     IN_TRANSIT = "in_transit"
     ARRIVED = "arrived"
+
+
+@dataclass(frozen=True)
+class Alternative:
+    """A different departure that gets the rider there sooner than the
+    delayed one."""
+
+    shuttle: Shuttle
+    minutes_earlier: int
 
 
 @dataclass(frozen=True)
@@ -56,6 +80,13 @@ class TripStatus:
     position: Point
     geometry: RouteGeometry
     simulated: bool
+    # Minutes from scheduled departure on the trip's (possibly simulated)
+    # timeline; negative before departure.
+    timeline_minutes: float
+    walk_minutes: int | None = None
+    # Minutes until the rider should set off; <= 0 means leave now.
+    leave_in_minutes: int | None = None
+    alternative: Alternative | None = None
 
 
 def _minutes(value: float) -> int:
@@ -106,9 +137,11 @@ def compute_status(
     if t < -APPROACH_MINUTES:
         phase = TripPhase.SCHEDULED
         position = geometry.depot
+        # A simulated trip is happening now whatever its booking date.
+        happening_soon = (simulation is not None or booking.booking_date == now.date())
         when = (
             f"in {to_pickup} minutes"
-            if booking.booking_date == now.date() and to_pickup <= 120
+            if happening_soon and to_pickup <= 120
             else f"on {booking.booking_date:%A, %B %-d} at {shuttle.departure_time:%-I:%M %p}"
         )
         message = f"Your shuttle from {stop} leaves {when}{late}."
@@ -149,7 +182,23 @@ def compute_status(
         position=position,
         geometry=geometry,
         simulated=simulation is not None,
+        timeline_minutes=t,
     )
+
+
+def walking_minutes(origin: Point, stop: Point) -> int:
+    km = distance_km(origin, stop) * STREET_DETOUR
+    return max(1, ceil(km / WALK_SPEED_KMH * 60))
+
+
+def _departure_offset(booking: Booking, shuttle: Shuttle) -> float:
+    """Minutes between the booking's departure and another shuttle's."""
+
+    day = booking.booking_date
+    return (
+        datetime.combine(day, shuttle.departure_time)
+        - datetime.combine(day, booking.shuttle.departure_time)
+    ).total_seconds() / 60
 
 
 class TrackingService:
@@ -162,7 +211,92 @@ class TrackingService:
 
     def status(self, user_id: int, booking_id: int) -> TripStatus:
         booking = self.booking_service.get_booking(user_id, booking_id)
-        return compute_status(booking, self._simulation(booking.id), clock.now())
+        status = compute_status(booking, self._simulation(booking.id), clock.now())
+        return self._enrich(user_id, status)
+
+    def _enrich(self, user_id: int, status: TripStatus) -> TripStatus:
+        """Add the rider's walk and leave time, and a faster alternative
+        when the shuttle is late."""
+
+        walk = leave_in = None
+        location = self.db.get(UserLocation, user_id)
+        waiting = status.phase in (TripPhase.SCHEDULED, TripPhase.APPROACHING)
+
+        if location and clock.now() - location.updated_at <= LOCATION_FRESH_FOR:
+            walk = walking_minutes(
+                (location.latitude, location.longitude),
+                status.geometry.pickup,
+            )
+            if waiting and status.minutes_to_pickup is not None:
+                leave_in = status.minutes_to_pickup - walk - PICKUP_BUFFER_MINUTES
+
+        return replace(
+            status,
+            walk_minutes=walk,
+            leave_in_minutes=leave_in,
+            alternative=self._alternative(status, walk or 0) if waiting else None,
+        )
+
+    def _alternative(self, status: TripStatus, walk: int) -> Alternative | None:
+        if status.delay_minutes <= 0:
+            return None
+
+        booking = status.booking
+        delayed_arrival = (
+            datetime.combine(booking.booking_date, booking.shuttle.arrival_time)
+            + timedelta(minutes=status.delay_minutes)
+        )
+        options = self.booking_service.list_usual_route_shuttles(
+            booking.user_id,
+            booking.booking_date,
+        )
+
+        best = None
+        for shuttle, bookable in options:
+            if not bookable or shuttle.id == booking.shuttle_id:
+                continue
+            # Must still be catchable: on the trip's timeline it departs
+            # after the rider can walk to the stop with the usual buffer.
+            if _departure_offset(booking, shuttle) <= status.timeline_minutes + walk + PICKUP_BUFFER_MINUTES:
+                continue
+
+            arrival = datetime.combine(booking.booking_date, shuttle.arrival_time)
+            saved = int((delayed_arrival - arrival).total_seconds() // 60)
+            if saved > 0 and (best is None or saved > best.minutes_earlier):
+                best = Alternative(shuttle=shuttle, minutes_earlier=saved)
+
+        return best
+
+    def update_location(self, user_id: int, latitude: float, longitude: float) -> None:
+        location = self.db.get(UserLocation, user_id) or UserLocation(user_id=user_id)
+        location.latitude = latitude
+        location.longitude = longitude
+        location.updated_at = clock.now()
+        self.db.add(location)
+        self.db.commit()
+
+    def move_booking(self, user_id: int, booking_id: int, shuttle_id: int) -> TripStatus:
+        """Move a booking to another shuttle, keeping any running simulation
+        on the same real-time footing for the new departure."""
+
+        booking = self.booking_service.get_booking(user_id, booking_id)
+        old_departure = booking.shuttle.departure_time
+
+        moved = self.booking_service.move_booking(user_id, booking_id, shuttle_id)
+
+        simulation = self._simulation(booking_id)
+        if simulation is not None:
+            shift = (
+                datetime.combine(moved.booking_date, moved.shuttle.departure_time)
+                - datetime.combine(moved.booking_date, old_departure)
+            ).total_seconds() / 60
+            # Same moment in real time is `shift` minutes earlier relative to
+            # the new departure; the new shuttle isn't the delayed one.
+            simulation.start_minutes -= shift
+            simulation.delay_minutes = 0
+            self.db.commit()
+
+        return self.status(user_id, booking_id)
 
     def next_trip_status(self, user_id: int) -> TripStatus | None:
         """The trip the user most likely means by "my shuttle": a trip
@@ -182,7 +316,7 @@ class TrackingService:
         for booking in bookings:
             status = compute_status(booking, None, now)
             if status.phase is not TripPhase.ARRIVED:
-                return status
+                return self._enrich(user_id, status)
 
         return None
 

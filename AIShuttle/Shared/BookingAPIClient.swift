@@ -29,6 +29,9 @@ public enum BookingAPIError: Error, LocalizedError, Equatable {
     }
 }
 
+/// Response type for endpoints that return no body (204 No Content).
+struct NoContent: Decodable {}
+
 public final class BookingAPIClient: Sendable {
     /// Override per environment with the `BookingAPIBaseURL` Info.plist key.
     nonisolated static let defaultBaseURL: URL = {
@@ -52,7 +55,7 @@ public final class BookingAPIClient: Sendable {
 
     /// Fails within seconds instead of URLSession's 60s default. Siri gives
     /// up on intents that run too long, and the app shouldn't spin forever.
-    public static func withTimeouts() -> BookingAPIClient {
+    nonisolated public static func withTimeouts() -> BookingAPIClient {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 15
         configuration.timeoutIntervalForResource = 20
@@ -159,7 +162,8 @@ public final class BookingAPIClient: Sendable {
         }
 
         do {
-            return try Self.decoder.decode(Response.self, from: data)
+            // 204 responses have no body; decode NoContent from an empty object.
+            return try Self.decoder.decode(Response.self, from: data.isEmpty ? Data("{}".utf8) : data)
         } catch {
             throw BookingAPIError.decodingError(error.localizedDescription)
         }

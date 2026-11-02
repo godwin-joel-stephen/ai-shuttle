@@ -62,6 +62,7 @@ TOMORROW = TODAY + timedelta(days=1)
 from app.models.booking import Booking  # noqa: E402
 from app.models.shuttle import Shuttle  # noqa: E402
 from app.models.user import User  # noqa: E402
+from app.models.user_location import UserLocation  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -90,7 +91,9 @@ def db():
         yield session
     finally:
         session.rollback()
+        # Trip simulations go with their bookings (ON DELETE CASCADE).
         session.query(Booking).delete()
+        session.query(UserLocation).delete()
         session.commit()
         session.close()
 
