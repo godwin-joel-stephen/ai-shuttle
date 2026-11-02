@@ -116,3 +116,36 @@ struct AssistantTests {
         #expect(store.currentConversationId == nil)
     }
 }
+
+
+@Suite(.serialized)
+@MainActor
+struct AssistantSourcesTests {
+    @Test func replyCarriesPolicySources() async {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let client = BookingAPIClient(baseURL: URL(string: "http://127.0.0.1:8000")!, session: URLSession(configuration: configuration))
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, """
+            {
+                "conversation_id": "c1",
+                "reply": "Per the Booking Policy, shuttles run Monday to Friday.",
+                "actions": [
+                    {"tool": "check_booking_eligibility", "arguments": {}, "succeeded": true, "error": null},
+                    {"tool": "search_policies", "arguments": {}, "succeeded": true, "error": null}
+                ],
+                "bookings_changed": false,
+                "sources": ["Booking Policy › Service days"]
+            }
+            """.data(using: .utf8)!)
+        }
+
+        let store = ConversationStore(defaults: UserDefaults(suiteName: "AssistantSourcesTests-\(UUID().uuidString)")!)
+        let viewModel = AssistantViewModel(apiClient: client, store: store)
+        await viewModel.send("Why can't I book Saturday?")
+
+        #expect(viewModel.messages[1].sources == ["Booking Policy › Service days"])
+        #expect(viewModel.messages[1].actions.map(\.label) == ["Checked the booking rules", "Searched Clear Path policies"])
+    }
+}

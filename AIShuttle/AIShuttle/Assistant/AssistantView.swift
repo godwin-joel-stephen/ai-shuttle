@@ -215,6 +215,18 @@ private struct MessageRow: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+
+                if !message.sources.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(message.sources, id: \.self) { source in
+                            Label(source, systemImage: "doc.text.magnifyingglass")
+                        }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Sources: \(message.sources.joined(separator: ", "))")
+                }
             }
             .padding(.trailing, 48)
         }

@@ -19,12 +19,14 @@ final class AssistantViewModel {
         let role: Role
         let text: String
         var actions: [AssistantActionDTO] = []
+        var sources: [String] = []
     }
 
     static let suggestions = [
         "Book my usual shuttle for tomorrow",
         "Make it 30 minutes earlier",
         "Book Friday, the latest shuttle",
+        "Why can't I book Saturday?",
         "What do I have booked?"
     ]
 
@@ -57,7 +59,12 @@ final class AssistantViewModel {
 
         guard let conversation = try? await apiClient.fetchConversation(id: id) else { return }
         messages = conversation.messages.map {
-            Message(role: $0.role == "user" ? .user : .assistant, text: $0.text, actions: $0.actions)
+            Message(
+                role: $0.role == "user" ? .user : .assistant,
+                text: $0.text,
+                actions: $0.actions,
+                sources: $0.sources ?? []
+            )
         }
     }
 
@@ -77,7 +84,14 @@ final class AssistantViewModel {
                 conversationId: store.currentConversationId
             )
             store.save(response.conversationId)
-            messages.append(Message(role: .assistant, text: response.reply, actions: response.actions))
+            messages.append(
+                Message(
+                    role: .assistant,
+                    text: response.reply,
+                    actions: response.actions,
+                    sources: response.sources ?? []
+                )
+            )
 
             if response.bookingsChanged {
                 await onBookingsChanged()

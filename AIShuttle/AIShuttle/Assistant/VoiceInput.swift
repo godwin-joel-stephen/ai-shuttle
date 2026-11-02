@@ -6,7 +6,7 @@
 //  leaves the phone; only the final text is sent to the agent.
 //
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 import Observation
 import Speech
@@ -160,6 +160,9 @@ final class VoiceInput {
             return nil
         }
 
+        // The input block runs synchronously inside convert(to:), so the
+        // buffer never actually crosses threads.
+        nonisolated(unsafe) let input = buffer
         nonisolated(unsafe) var consumed = false
         var error: NSError?
         converter.convert(to: output, error: &error) { _, status in
@@ -169,7 +172,7 @@ final class VoiceInput {
             }
             consumed = true
             status.pointee = .haveData
-            return buffer
+            return input
         }
 
         return error == nil ? output : nil

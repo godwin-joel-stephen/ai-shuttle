@@ -31,6 +31,8 @@ public struct AssistantActionDTO: Codable, Equatable, Hashable, Sendable {
         case "book_usual_shuttle": return "Booked your usual shuttle"
         case "change_booking_shuttle": return "Changed your shuttle"
         case "cancel_booking": return "Cancelled a booking"
+        case "check_booking_eligibility": return "Checked the booking rules"
+        case "search_policies": return "Searched Clear Path policies"
         default: return tool.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
@@ -41,12 +43,16 @@ public struct AssistantMessageResponse: Decodable, Equatable, Sendable {
     public let reply: String
     public let actions: [AssistantActionDTO]
     public let bookingsChanged: Bool
+    /// Policy sections the answer is grounded in, e.g.
+    /// "Booking Policy › Service days".
+    public let sources: [String]?
 
     enum CodingKeys: String, CodingKey {
         case conversationId = "conversation_id"
         case reply
         case actions
         case bookingsChanged = "bookings_changed"
+        case sources
     }
 }
 
@@ -55,6 +61,7 @@ public struct ConversationDTO: Decodable, Equatable, Sendable {
         public let role: String
         public let text: String
         public let actions: [AssistantActionDTO]
+        public let sources: [String]?
     }
 
     public let conversationId: String
@@ -69,7 +76,7 @@ public struct ConversationDTO: Decodable, Equatable, Sendable {
 extension BookingAPIClient {
     /// The agent may make several model and tool calls per message, so it
     /// gets a longer budget than plain booking requests.
-    public static func forAssistant() -> BookingAPIClient {
+    nonisolated public static func forAssistant() -> BookingAPIClient {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 40
         configuration.timeoutIntervalForResource = 45
@@ -95,7 +102,10 @@ extension BookingAPIClient {
 /// The conversation shared by the in-app chat and the "Ask Clear Path" Siri
 /// intent. It continues while active and starts fresh after a quiet spell,
 /// so an old topic doesn't leak into a new request.
-struct ConversationStore {
+///
+/// Nonisolated: Siri runs AskClearPathIntent off the main actor, and
+/// UserDefaults is thread-safe.
+nonisolated struct ConversationStore {
     private static let idKey = "assistant.conversationId"
     private static let lastActivityKey = "assistant.lastActivity"
 
