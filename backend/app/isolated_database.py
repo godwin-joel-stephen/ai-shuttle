@@ -1,7 +1,10 @@
 """Point the app at a separate database (tests, evaluations).
 
 Kept free of app imports on purpose: it must run before anything imports
-app.core.config, which reads DATABASE_URL once at import time.
+app.core.config, which reads DATABASE_URL once at import time. That is
+also why it lives directly under `app` and not in `app.db`: importing
+anything from `app.db` runs app/db/__init__.py, which connects with the
+original settings, so the switch would come too late.
 """
 
 import os
@@ -11,7 +14,7 @@ from dotenv import dotenv_values
 from sqlalchemy import create_engine, make_url, text
 
 
-_BACKEND_DIR = Path(__file__).resolve().parents[2]
+_BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
 def use_isolated_database(suffix: str) -> str:
@@ -42,3 +45,14 @@ def use_isolated_database(suffix: str) -> str:
 
     os.environ["DATABASE_URL"] = isolated.render_as_string(hide_password=False)
     return isolated.database
+
+
+def assert_isolated(engine_url, suffix: str) -> None:
+    """Refuse to continue on anything but the isolated database: tests and
+    evaluations drop and reseed every table."""
+
+    if not engine_url.database.endswith(f"_{suffix}"):
+        raise RuntimeError(
+            f"Refusing to run against database {engine_url.database!r}; "
+            f"expected one ending in '_{suffix}'."
+        )

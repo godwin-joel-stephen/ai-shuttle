@@ -27,7 +27,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from app.db.isolated_database import use_isolated_database
+from app.isolated_database import assert_isolated, use_isolated_database
 
 # Before any app import reads DATABASE_URL.
 EVAL_DATABASE = use_isolated_database("eval")
@@ -42,6 +42,9 @@ from app.core import clock  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.database import SessionLocal, engine  # noqa: E402
+
+# Evaluations drop and reseed every table; never against the demo database.
+assert_isolated(engine.url, "eval")
 from app.db.seed import seed_database  # noqa: E402
 from app.graph.assistant_graph import (  # noqa: E402
     RECURSION_LIMIT,

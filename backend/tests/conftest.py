@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -9,10 +10,13 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.db.isolated_database import use_isolated_database  # noqa: E402
+from app.isolated_database import assert_isolated, use_isolated_database  # noqa: E402
 
 # Never touch demo data: tests run against `<database>_test`.
 use_isolated_database("test")
+
+# Tests never send traces, even when backend/.env has Langfuse keys.
+os.environ["LANGFUSE_PUBLIC_KEY"] = ""
 
 from datetime import datetime, timedelta  # noqa: E402
 
@@ -21,6 +25,9 @@ from sqlalchemy import select  # noqa: E402
 from app.core import clock  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.database import SessionLocal, engine  # noqa: E402
+
+# Tests drop and reseed every table; never let that reach the demo database.
+assert_isolated(engine.url, "test")
 from app.db.seed import seed_database  # noqa: E402
 from app.rag.ingest import ingest_knowledge  # noqa: E402
 from tests.fake_embedder import FakeEmbedder  # noqa: E402
