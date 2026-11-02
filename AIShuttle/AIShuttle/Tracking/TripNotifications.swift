@@ -69,25 +69,41 @@ nonisolated enum TripNotifications {
 
 /// Receives notification taps, including Rebook/Keep, even when the app
 /// was in the background.
+///
+/// Uses the completion-handler callbacks, called on the main actor: with
+/// the async variants iOS completed the response off the main thread,
+/// which SwiftUI's application object rejects ("Call must be made on main
+/// thread").
 final class NotificationResponder: NSObject, UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .list]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping @Sendable (UNNotificationPresentationOptions) -> Void
+    ) {
+        Task { @MainActor in
+            completionHandler([.banner, .sound, .list])
+        }
     }
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping @Sendable () -> Void
+    ) {
         let userInfo = response.notification.request.content.userInfo
-        guard response.actionIdentifier == TripNotifications.rebookAction,
-              let bookingId = userInfo["bookingId"] as? Int,
-              let shuttleId = userInfo["shuttleId"] as? Int else {
-            return
-        }
+        let isRebook = response.actionIdentifier == TripNotifications.rebookAction
+        let bookingId = userInfo["bookingId"] as? Int
+        let shuttleId = userInfo["shuttleId"] as? Int
 
+        Task { @MainActor in
+            defer { completionHandler() }
+
+            guard isRebook, let bookingId, let shuttleId else { return }
+            await Self.rebook(bookingId: bookingId, shuttleId: shuttleId)
+        }
+    }
+
+    private static func rebook(bookingId: Int, shuttleId: Int) async {
         do {
             let trip = try await TripMonitor.shared.switchToAlternative(bookingId: bookingId, shuttleId: shuttleId)
             await TripNotifications.post(
