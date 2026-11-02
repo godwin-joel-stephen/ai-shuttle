@@ -173,6 +173,10 @@ def create_assistant_tools(
             "pickup_time": f"{scheduled(status.booking.shuttle.departure_time, status.delay_minutes):%-I:%M %p}",
             "arrival_time": f"{scheduled(status.booking.shuttle.arrival_time, status.delay_minutes):%-I:%M %p}",
             "pickup_stop": status.booking.shuttle.route.pickup_location,
+            "pickup_coordinates": {
+                "latitude": status.geometry.pickup[0],
+                "longitude": status.geometry.pickup[1],
+            },
             "walk_minutes": status.walk_minutes,
             "leave_in_minutes": status.leave_in_minutes,
             "faster_alternative": (

@@ -4,11 +4,13 @@ from datetime import date, timedelta
 import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.tools import StructuredTool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.api.assistant import (
     get_chat_model,
     get_conversation_memory,
+    get_external_tools,
     get_fallback_chat_model,
     get_policy_embedder,
 )
@@ -287,3 +289,21 @@ def test_why_cant_i_book_combines_rule_and_policy(client, user_id):
     assert data["sources"] == ["Booking Policy › Service days"]
     assert data["reply"].startswith("Per the Booking Policy › Service days")
     assert data["bookings_changed"] is False
+
+
+def test_agent_can_call_tools_from_external_mcp_servers(client, user_id):
+    def get_current_weather(latitude: float, longitude: float) -> dict:
+        """Current weather at a location."""
+        return {"conditions": "rain", "rain_chance_next_2h_percent": 80}
+
+    weather = StructuredTool.from_function(get_current_weather)
+    app.dependency_overrides[get_external_tools] = lambda: [weather]
+    use_model(ScriptedChatModel(script=[
+        call("get_current_weather", latitude=12.97, longitude=77.64),
+        lambda messages: AIMessage(f"It's {last_tool_result(messages)['conditions']}; take an umbrella."),
+    ]))
+
+    data = send(client, user_id, "Should I leave now?").json()
+
+    assert data["actions"][0]["tool"] == "get_current_weather"
+    assert data["reply"] == "It's rain; take an umbrella."

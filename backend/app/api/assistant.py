@@ -2,7 +2,8 @@ import json
 import logging
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from langchain_core.tools import BaseTool
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -52,6 +53,12 @@ def get_conversation_memory() -> BaseCheckpointSaver:
 
 def get_policy_embedder() -> Embedder:
     return get_embedder()
+
+
+def get_external_tools(request: Request) -> list[BaseTool]:
+    """Tools discovered from external MCP servers at startup."""
+
+    return getattr(request.app.state, "external_tools", [])
 
 
 def _thread_config(user_id: int, conversation_id: str) -> dict:
@@ -136,6 +143,7 @@ def send_message(
     fallback_model: BaseChatModel | None = Depends(get_fallback_chat_model),
     memory: BaseCheckpointSaver = Depends(get_conversation_memory),
     embedder: Embedder = Depends(get_policy_embedder),
+    external_tools: list[BaseTool] = Depends(get_external_tools),
 ):
     user = UserRepository(db).get_by_id(request.user_id)
 
@@ -146,7 +154,7 @@ def send_message(
 
     graph = create_assistant_graph(
         model=model,
-        tools=create_assistant_tools(db, user.id, embedder),
+        tools=[*create_assistant_tools(db, user.id, embedder), *external_tools],
         checkpointer=memory,
         system_prompt=build_system_prompt(clock.today(), user.name),
         fallback_model=fallback_model,

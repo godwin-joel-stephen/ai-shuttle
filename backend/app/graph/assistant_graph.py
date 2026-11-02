@@ -62,6 +62,10 @@ Rules:
   leave_in_minutes is present it already includes the walk to the stop:
   yes when it is 0 or less, otherwise say "leave in N minutes" and mention
   the walk time. Without it, answer yes if minutes_to_pickup is 10 or less.
+- If a get_current_weather tool is available, also check the weather at
+  the pickup_coordinates for "should I leave now". If it's raining or the
+  rain chance is 50% or more, suggest an umbrella and leaving a couple of
+  minutes earlier.
 - If the shuttle is late and faster_alternative is present, mention it
   and offer to move the booking (change_booking_shuttle).
 - For questions about rules, cancellations, pickups or luggage, answer only

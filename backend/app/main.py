@@ -11,12 +11,25 @@ from app.api.tracking import router as tracking_router
 async def lifespan(app: FastAPI):
     # Load the embedding model and open the memory pool before the first
     # request, instead of making the first user wait ~20s for them.
+    from app.agent.mcp_tools import ExternalMCPTools, stdio_server
     from app.agent.memory import get_checkpointer
+    from app.core.config import settings
     from app.rag.embeddings import get_embedder
 
     get_embedder()
     get_checkpointer()
+
+    external = ExternalMCPTools(
+        {
+            name: stdio_server(server["command"], server.get("args", []), server.get("env"))
+            for name, server in settings.mcp_servers.items()
+        }
+    ).start()
+    app.state.external_tools = external.tools
+
     yield
+
+    external.stop()
 
 
 app = FastAPI(

@@ -22,6 +22,10 @@ def _use_test_database() -> None:
         os.environ.get("DATABASE_URL")
         or dotenv_values(BACKEND_DIR / ".env")["DATABASE_URL"]
     )
+    # Idempotent: test modules also import this file as `tests.conftest`,
+    # which runs it a second time.
+    if dev_url.database.endswith("_test"):
+        return
     test_url = dev_url.set(database=f"{dev_url.database}_test")
 
     admin = create_engine(

@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     agent_model: str = "gemini-3.5-flash-lite"
     # Used for a step when the primary model errors or misses its deadline.
     agent_fallback_model: str = "gemini-3.5-flash"
+    # External MCP servers whose tools the agent discovers at startup, as
+    # {name: {"command": ..., "args": [...]}}; "python" means this
+    # backend's interpreter. Set MCP_SERVERS='{}' to disable.
+    mcp_servers: dict[str, dict] = {
+        "weather": {"command": "python", "args": ["-m", "mcp_servers.weather"]},
+    }
 
     model_config = SettingsConfigDict(
         env_file=(_BACKEND_DIR / ".env", ".env"),
