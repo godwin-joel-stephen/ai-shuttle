@@ -177,6 +177,29 @@ def test_fallback_model_takes_over_when_primary_fails(client, user_id):
     assert data["reply"] == "Answered by the fallback model."
 
 
+def test_slow_primary_model_hands_over_to_fallback(client, user_id, monkeypatch):
+    import time
+
+    import app.graph.assistant_graph as assistant_graph
+
+    monkeypatch.setattr(assistant_graph, "MODEL_DEADLINE_SECONDS", 0.2)
+
+    def overloaded(messages):
+        time.sleep(1)
+        return AIMessage("Too late.")
+
+    use_model(ScriptedChatModel(script=[overloaded]))
+    app.dependency_overrides[get_fallback_chat_model] = lambda: ScriptedChatModel(
+        script=[AIMessage("Answered by the fallback model.")]
+    )
+
+    started = time.monotonic()
+    data = send(client, user_id, "Hi").json()
+
+    assert data["reply"] == "Answered by the fallback model."
+    assert time.monotonic() - started < 1
+
+
 def test_failure_after_booking_still_reports_the_booking(client, db, user_id):
     def overloaded(messages):
         raise RuntimeError("503 UNAVAILABLE: high demand")

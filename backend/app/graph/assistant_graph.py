@@ -10,6 +10,7 @@ per-conversation memory through the checkpointer (thread_id =
 conversation id). Business rules stay in the tools' services.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 from langchain_core.language_models import BaseChatModel
@@ -23,6 +24,15 @@ from langgraph.prebuilt import ToolNode, tools_condition
 # Upper bound on agent/tool steps per message, so a confused model can't
 # loop forever.
 RECURSION_LIMIT = 12
+
+# Per model call. The Gemini client's own timeout isn't enforced (calls ran
+# 30-45s with it set to 10s), so the agent enforces one and moves on to the
+# fallback model instead of waiting for an overloaded model to give up.
+MODEL_DEADLINE_SECONDS = 8
+
+# A timed-out call keeps running in its thread until the HTTP request
+# returns; it is abandoned, not cancelled.
+_model_calls = ThreadPoolExecutor(max_workers=8, thread_name_prefix="model-call")
 
 
 def build_system_prompt(today: date, user_name: str) -> str:
@@ -68,18 +78,23 @@ def create_assistant_graph(
     checkpointer: BaseCheckpointSaver,
     system_prompt: str,
     fallback_model: BaseChatModel | None = None,
+    deadline_seconds: float | None = None,
 ):
-    model_with_tools = model.bind_tools(tools)
-
-    if fallback_model is not None:
-        model_with_tools = model_with_tools.with_fallbacks(
-            [fallback_model.bind_tools(tools)]
-        )
+    primary = model.bind_tools(tools)
+    fallback = fallback_model.bind_tools(tools) if fallback_model is not None else None
 
     def agent(state: MessagesState):
-        response = model_with_tools.invoke(
-            [SystemMessage(system_prompt), *state["messages"]]
-        )
+        messages = [SystemMessage(system_prompt), *state["messages"]]
+        call = _model_calls.submit(primary.invoke, messages)
+
+        try:
+            # Also raises TimeoutError when the deadline passes.
+            response = call.result(timeout=deadline_seconds or MODEL_DEADLINE_SECONDS)
+        except Exception:
+            if fallback is None:
+                raise
+            response = fallback.invoke(messages)
+
         return {"messages": [response]}
 
     graph = StateGraph(MessagesState)
