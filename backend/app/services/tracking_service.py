@@ -220,13 +220,18 @@ class TrackingService:
 
         walk = leave_in = None
         location = self.db.get(UserLocation, user_id)
+        simulation = self._simulation(status.booking.id)
         waiting = status.phase in (TripPhase.SCHEDULED, TripPhase.APPROACHING)
 
-        if location and clock.now() - location.updated_at <= LOCATION_FRESH_FOR:
+        if simulation is not None and simulation.walk_minutes is not None:
+            walk = simulation.walk_minutes
+        elif location and clock.now() - location.updated_at <= LOCATION_FRESH_FOR:
             walk = walking_minutes(
                 (location.latitude, location.longitude),
                 status.geometry.pickup,
             )
+
+        if walk is not None:
             if waiting and status.minutes_to_pickup is not None:
                 leave_in = status.minutes_to_pickup - walk - PICKUP_BUFFER_MINUTES
 
@@ -326,6 +331,7 @@ class TrackingService:
         booking_id: int,
         start_minutes: float = -12,
         speed: float = 1.0,
+        walk_minutes: int | None = None,
     ) -> TripStatus:
         booking = self.booking_service.get_booking(user_id, booking_id)
         simulation = self._simulation(booking.id) or TripSimulation(booking_id=booking.id)
@@ -333,6 +339,7 @@ class TrackingService:
         simulation.start_minutes = start_minutes
         simulation.speed = speed
         simulation.delay_minutes = 0
+        simulation.walk_minutes = walk_minutes
         self.db.add(simulation)
         self.db.commit()
 

@@ -5,6 +5,7 @@ that trip now so tracking, the Live Activity and Siri show a moving shuttle.
 
     python -m scripts.demo_trip                  # shuttle 12 min away, real time
     python -m scripts.demo_trip --speed 4        # 4x faster
+    python -m scripts.demo_trip --walk 4         # pretend the stop is a 4-min walk
     python -m scripts.demo_trip --delay 15       # make the running trip late
     python -m scripts.demo_trip --stop           # back to the real clock
 """
@@ -32,6 +33,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--start", type=float, default=-12, help="minutes from departure")
+    parser.add_argument(
+        "--walk",
+        type=int,
+        help="walk to the stop in minutes, instead of the phone's GPS position",
+    )
     parser.add_argument("--delay", type=int, help="set a delay on the running trip")
     parser.add_argument("--stop", action="store_true")
     args = parser.parse_args()
@@ -48,7 +54,9 @@ def main():
         if args.delay is not None:
             status = tracking.set_delay(USER_ID, booking.id, args.delay)
         else:
-            status = tracking.start_simulation(USER_ID, booking.id, args.start, args.speed)
+            status = tracking.start_simulation(
+                USER_ID, booking.id, args.start, args.speed, walk_minutes=args.walk
+            )
 
         print(f"Booking {booking.id} ({booking.booking_date:%A}): {status.message}")
 

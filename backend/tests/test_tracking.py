@@ -261,3 +261,14 @@ def test_location_and_move_endpoints(client, booking, user_id, shuttles):
     ).json()
     assert moved["shuttle_name"] == "Morning Shuttle D"
     assert moved["alternative"] is None
+
+
+def test_simulated_walk_overrides_gps(tracking, booking, user_id):
+    tracking.update_location(user_id, *ONE_KM_FROM_HOME)
+    tracking.start_simulation(user_id, booking.id, start_minutes=-20, walk_minutes=4)
+
+    status = tracking.status(user_id, booking.id)
+
+    # 20 minutes to pickup - 4 walking - 5 buffer.
+    assert status.walk_minutes == 4
+    assert status.leave_in_minutes == 11

@@ -159,6 +159,7 @@ def start_simulation(
             booking_id,
             start_minutes=request.start_minutes,
             speed=request.speed,
+            walk_minutes=request.walk_minutes,
         )
     except BookingError as e:
         _not_found_or_conflict(e)

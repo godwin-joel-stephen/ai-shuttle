@@ -50,6 +50,8 @@ class StartSimulationRequest(BaseModel):
     # -12 starts with the shuttle on its way to the pickup stop.
     start_minutes: float = Field(default=-12, ge=-120, le=120)
     speed: float = Field(default=1.0, gt=0, le=60)
+    # Use this walk to the stop instead of the rider's GPS position.
+    walk_minutes: int | None = Field(default=None, ge=0, le=60)
 
 
 class DelayRequest(BaseModel):

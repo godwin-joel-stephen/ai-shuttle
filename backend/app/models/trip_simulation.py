@@ -13,6 +13,8 @@ class TripSimulation(Base):
     booking's timeline onto the present: `started_at` (real time) maps to
     `start_minutes` relative to departure, and simulated time runs `speed`
     times faster than real time. `delay_minutes` pushes the shuttle late.
+    `walk_minutes`, when set, stands in for the rider's GPS walk to the stop
+    (the demo route is in Bengaluru; the demo may not be).
     """
 
     __tablename__ = "trip_simulations"
@@ -42,4 +44,9 @@ class TripSimulation(Base):
         Integer,
         nullable=False,
         default=0,
+    )
+
+    walk_minutes: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
     )
