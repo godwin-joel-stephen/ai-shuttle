@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: postgres:17
+    # Postgres 17 plus the pgvector extension, for policy embeddings (RAG).
+    image: pgvector/pgvector:pg17-trixie
     container_name: ai-shuttle-postgres
     restart: unless-stopped
     environment:

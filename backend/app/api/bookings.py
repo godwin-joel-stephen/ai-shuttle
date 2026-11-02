@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.agent.factory import create_llm
 from app.agent.llm import LLM, LLMUnavailableError
 from app.agent.schemas import AgentIntent
+from app.core import clock
 from app.db.database import get_db
 from app.graph.booking_graph import create_booking_graph, describe_booking
 from app.models.booking import Booking
@@ -30,7 +31,7 @@ router = APIRouter(
 
 
 def get_llm() -> LLM:
-    return create_llm(reference_date=date.today())
+    return create_llm(reference_date=clock.today())
 
 
 def _create_service(db: Session) -> BookingService:

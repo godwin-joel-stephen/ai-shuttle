@@ -1,12 +1,27 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.api.assistant import router as assistant_router
 from app.api.bookings import router as bookings_router
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the embedding model and open the memory pool before the first
+    # request, instead of making the first user wait ~20s for them.
+    from app.agent.memory import get_checkpointer
+    from app.rag.embeddings import get_embedder
+
+    get_embedder()
+    get_checkpointer()
+    yield
+
+
 app = FastAPI(
     title="AI Shuttle API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 

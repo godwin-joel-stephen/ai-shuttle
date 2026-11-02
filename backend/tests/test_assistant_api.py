@@ -10,15 +10,16 @@ from app.api.assistant import (
     get_chat_model,
     get_conversation_memory,
     get_fallback_chat_model,
-    get_today,
+    get_policy_embedder,
 )
 from app.db.database import get_db
 from app.main import app
 from app.models.booking import Booking
+from tests.fake_embedder import FakeEmbedder
 from tests.scripted_chat_model import ScriptedChatModel, call
+from tests.conftest import TODAY, TOMORROW
 
 
-TODAY = date.today()
 TOMORROW = TODAY + timedelta(days=1)
 
 
@@ -36,7 +37,7 @@ def memory():
 def client(db, memory):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_conversation_memory] = lambda: memory
-    app.dependency_overrides[get_today] = lambda: TODAY
+    app.dependency_overrides[get_policy_embedder] = FakeEmbedder
     app.dependency_overrides[get_fallback_chat_model] = lambda: None
 
     try:
@@ -235,3 +236,31 @@ def test_other_users_cannot_read_a_conversation(client, user_id):
     )
 
     assert response.status_code == 404
+
+
+def test_why_cant_i_book_combines_rule_and_policy(client, user_id):
+    saturday = (TODAY + timedelta(days=5)).isoformat()
+
+    def explain(messages):
+        policy = last_tool_result(messages)["passages"][0]
+        return AIMessage(f"Per the {policy['source']}: {policy['text'][:40]}")
+
+    use_model(ScriptedChatModel(script=[
+        call("check_booking_eligibility", booking_date=saturday),
+        lambda messages: call(
+            "search_policies",
+            call_id="call-2",
+            query=last_tool_result(messages)["message"] + " weekend service days",
+        ),
+        explain,
+    ]))
+
+    data = send(client, user_id, "Why can't I book Saturday?").json()
+
+    assert [a["tool"] for a in data["actions"]] == [
+        "check_booking_eligibility",
+        "search_policies",
+    ]
+    assert data["sources"] == ["Booking Policy › Service days"]
+    assert data["reply"].startswith("Per the Booking Policy › Service days")
+    assert data["bookings_changed"] is False

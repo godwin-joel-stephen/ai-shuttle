@@ -23,12 +23,16 @@ class AssistantMessageResponse(BaseModel):
     reply: str
     actions: list[AssistantAction]
     bookings_changed: bool
+    # Policy sections retrieved for this reply, e.g.
+    # "Booking Policy › Service days".
+    sources: list[str] = []
 
 
 class ConversationMessage(BaseModel):
     role: str  # "user" or "assistant"
     text: str
     actions: list[AssistantAction] = []
+    sources: list[str] = []
 
 
 class ConversationResponse(BaseModel):

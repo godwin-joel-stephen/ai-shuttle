@@ -7,9 +7,9 @@ from app.agent.fake_llm import FakeLLM
 from app.api.bookings import get_llm
 from app.db.database import get_db
 from app.main import app
+from tests.conftest import TODAY, TOMORROW
 
 
-TOMORROW = date.today() + timedelta(days=1)
 
 
 class FailingLLM:
@@ -21,7 +21,7 @@ class FailingLLM:
 def client(db):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_llm] = lambda: FakeLLM(
-        reference_date=date.today()
+        reference_date=TODAY
     )
 
     try:
@@ -76,7 +76,7 @@ def test_request_needs_message_or_date(client, user_id):
 
 
 def test_past_date_returns_readable_conflict(client, user_id):
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = TODAY - timedelta(days=1)
 
     response = book(client, user_id, booking_date=yesterday.isoformat())
 

@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import date
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.agent.factory import create_chat_model
 from app.agent.memory import get_checkpointer
+from app.core import clock
 from app.core.config import settings
 from app.db.database import get_db
 from app.graph.assistant_graph import (
@@ -18,6 +18,7 @@ from app.graph.assistant_graph import (
     build_system_prompt,
     create_assistant_graph,
 )
+from app.rag.embeddings import Embedder, get_embedder
 from app.repositories.user_repository import UserRepository
 from app.schemas.assistant import (
     AssistantAction,
@@ -49,8 +50,8 @@ def get_conversation_memory() -> BaseCheckpointSaver:
     return get_checkpointer()
 
 
-def get_today() -> date:
-    return date.today()
+def get_policy_embedder() -> Embedder:
+    return get_embedder()
 
 
 def _thread_config(user_id: int, conversation_id: str) -> dict:
@@ -66,6 +67,29 @@ def _actions_this_turn(messages: list) -> list[AssistantAction]:
         i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
     )
     return _actions_in(messages[last_human + 1:])
+
+
+def _sources_in(turn: list) -> list[str]:
+    """Best-matching policy section of each policy search, in order.
+
+    Only a confident top result is cited: lower-ranked or weaker passages
+    are often near-misses, and citing them would misattribute the answer.
+    """
+
+    sources = []
+    for message in turn:
+        if not isinstance(message, ToolMessage) or message.name != "search_policies":
+            continue
+        try:
+            passages = json.loads(message.text).get("passages", [])
+        except ValueError:
+            continue
+        if not passages or not passages[0]["citable"]:
+            continue
+        if passages[0]["source"] not in sources:
+            sources.append(passages[0]["source"])
+
+    return sources
 
 
 def _actions_in(turn: list) -> list[AssistantAction]:
@@ -111,7 +135,7 @@ def send_message(
     model: BaseChatModel = Depends(get_chat_model),
     fallback_model: BaseChatModel | None = Depends(get_fallback_chat_model),
     memory: BaseCheckpointSaver = Depends(get_conversation_memory),
-    today: date = Depends(get_today),
+    embedder: Embedder = Depends(get_policy_embedder),
 ):
     user = UserRepository(db).get_by_id(request.user_id)
 
@@ -122,9 +146,9 @@ def send_message(
 
     graph = create_assistant_graph(
         model=model,
-        tools=create_assistant_tools(db, user.id, today),
+        tools=create_assistant_tools(db, user.id, embedder),
         checkpointer=memory,
-        system_prompt=build_system_prompt(today, user.name),
+        system_prompt=build_system_prompt(clock.today(), user.name),
         fallback_model=fallback_model,
     )
     config = {
@@ -157,7 +181,11 @@ def send_message(
             "Check your rides to see the latest."
         )
 
-    actions = _actions_this_turn(messages)
+    last_human = max(
+        i for i, m in enumerate(messages) if isinstance(m, HumanMessage)
+    )
+    turn = messages[last_human + 1:]
+    actions = _actions_in(turn)
 
     return AssistantMessageResponse(
         conversation_id=conversation_id,
@@ -166,6 +194,7 @@ def send_message(
         bookings_changed=any(
             a.succeeded and a.tool in MUTATING_TOOLS for a in actions
         ),
+        sources=_sources_in(turn),
     )
 
 
@@ -210,6 +239,7 @@ def get_conversation(
                     role="assistant",
                     text=replies[-1].text,
                     actions=_actions_in(turn),
+                    sources=_sources_in(turn),
                 )
             )
 

@@ -1,14 +1,15 @@
 from datetime import date, timedelta
 
 from app.tools.assistant_tools import create_assistant_tools
+from tests.fake_embedder import FakeEmbedder
+from tests.conftest import TODAY, TOMORROW
 
 
-TODAY = date.today()
 TOMORROW = TODAY + timedelta(days=1)
 
 
 def tools_by_name(db, user_id):
-    return {t.name: t for t in create_assistant_tools(db, user_id, TODAY)}
+    return {t.name: t for t in create_assistant_tools(db, user_id, FakeEmbedder())}
 
 
 def test_list_shuttle_options_marks_full_shuttles(db, user_id):
@@ -21,7 +22,7 @@ def test_list_shuttle_options_marks_full_shuttles(db, user_id):
     assert [s["departure"] for s in result["shuttles"]] == [
         "07:00", "07:15", "07:30", "07:45", "08:00",
     ]
-    assert all(s["seats_available"] for s in result["shuttles"])
+    assert all(s["bookable"] for s in result["shuttles"])
 
 
 def test_book_change_and_cancel(db, user_id, shuttles):

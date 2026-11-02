@@ -6,9 +6,9 @@ from app.agent.fake_llm import FakeLLM
 from app.agent.llm import LLMUnavailableError
 from app.agent.schemas import AgentIntent
 from app.graph.booking_graph import create_booking_graph
+from tests.conftest import TODAY, TOMORROW
 
 
-TOMORROW = date.today() + timedelta(days=1)
 
 
 class FailingLLM:
@@ -17,7 +17,7 @@ class FailingLLM:
 
 
 def test_natural_language_request_books_via_llm(db, user_id):
-    graph = create_booking_graph(db, FakeLLM(reference_date=date.today()))
+    graph = create_booking_graph(db, FakeLLM(reference_date=TODAY))
 
     result = graph.invoke(
         {

@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 
 from sqlalchemy.orm import Session
 
+from app.core import clock
 from app.models.booking import Booking
 from app.models.shuttle import Shuttle
 from app.repositories.booking_repository import BookingRepository
@@ -11,10 +12,21 @@ from app.repositories.preference_repository import PreferenceRepository
 from app.repositories.shuttle_repository import ShuttleRepository
 from app.repositories.user_repository import UserRepository
 from app.services.errors import (
-    InvalidBookingDateError,
+    BookingCutoffPassedError,
+    BookingError,
+    DatePassedError,
+    NoServiceDayError,
     NotFoundError,
+    OutsideBookingWindowError,
     ShuttleUnavailableError,
 )
+
+
+# Booking rules. knowledge/booking_policy.md explains them to users, so
+# keep the two in sync.
+SERVICE_WEEKDAYS = range(0, 5)  # Monday to Friday
+BOOKING_WINDOW_DAYS = 14
+SAME_DAY_CUTOFF = timedelta(minutes=30)
 
 
 class RescheduleDirection(StrEnum):
@@ -26,6 +38,13 @@ class RescheduleDirection(StrEnum):
 class BookingOutcome:
     booking: Booking
     already_booked: bool
+
+
+@dataclass(frozen=True)
+class Eligibility:
+    eligible: bool
+    already_booked: bool = False
+    error: BookingError | None = None
 
 
 @dataclass(frozen=True)
@@ -85,18 +104,87 @@ class BookingService:
 
         return booking
 
+    def _validate_departure(
+        self,
+        shuttle: Shuttle,
+        booking_date: date,
+        now: datetime,
+    ) -> None:
+        """Raise the first booking rule this departure breaks."""
+
+        today = now.date()
+
+        if booking_date < today:
+            raise DatePassedError("That date has already passed.")
+
+        if booking_date.weekday() not in SERVICE_WEEKDAYS:
+            raise NoServiceDayError(
+                f"Shuttles don't run on {booking_date:%A}s."
+            )
+
+        last_bookable = today + timedelta(days=BOOKING_WINDOW_DAYS)
+        if booking_date > last_bookable:
+            opens = booking_date - timedelta(days=BOOKING_WINDOW_DAYS)
+            raise OutsideBookingWindowError(
+                f"Bookings open {BOOKING_WINDOW_DAYS} days ahead, so "
+                f"{booking_date:%A, %B %-d} opens on {opens:%B %-d}."
+            )
+
+        departure = datetime.combine(booking_date, shuttle.departure_time)
+        if now > departure - SAME_DAY_CUTOFF:
+            raise BookingCutoffPassedError(
+                f"Booking for the {shuttle.departure_time:%-I:%M %p} "
+                f"shuttle closed 30 minutes before departure."
+            )
+
+        if not self.shuttle_repository.has_available_seat(
+            shuttle.id,
+            booking_date,
+        ):
+            raise ShuttleUnavailableError(
+                f"The {shuttle.departure_time:%-I:%M %p} shuttle "
+                f"is full on {booking_date:%A}."
+            )
+
+    def _is_bookable(self, shuttle: Shuttle, booking_date: date) -> bool:
+        try:
+            self._validate_departure(shuttle, booking_date, clock.now())
+        except BookingError:
+            return False
+        return True
+
+    def check_eligibility(
+        self,
+        user_id: int,
+        booking_date: date,
+        now: datetime | None = None,
+    ) -> Eligibility:
+        """Whether the usual shuttle could be booked, without booking it."""
+
+        now = now or clock.now()
+        shuttle = self._resolve_usual_shuttle(user_id)
+
+        if self.booking_repository.get_confirmed_on_route(
+            user_id=user_id,
+            route_id=shuttle.route_id,
+            booking_date=booking_date,
+        ):
+            return Eligibility(eligible=False, already_booked=True)
+
+        try:
+            self._validate_departure(shuttle, booking_date, now)
+        except BookingError as e:
+            return Eligibility(eligible=False, error=e)
+
+        return Eligibility(eligible=True)
+
     def book_usual_shuttle(
         self,
         user_id: int,
         booking_date: date,
-        today: date | None = None,
+        now: datetime | None = None,
     ) -> BookingOutcome:
-        today = today or date.today()
-
-        if booking_date < today:
-            raise InvalidBookingDateError(
-                "That date has already passed."
-            )
+        now = now or clock.now()
 
         user = self._resolve_user(user_id)
         shuttle = self._resolve_usual_shuttle(user_id)
@@ -111,14 +199,7 @@ class BookingService:
         if existing is not None:
             return BookingOutcome(booking=existing, already_booked=True)
 
-        if not self.shuttle_repository.has_available_seat(
-            shuttle.id,
-            booking_date,
-        ):
-            raise ShuttleUnavailableError(
-                f"Your usual {shuttle.departure_time:%-I:%M %p} shuttle "
-                f"is full on {booking_date:%A}."
-            )
+        self._validate_departure(shuttle, booking_date, now)
 
         booking = Booking(
             user_id=user.id,
@@ -155,10 +236,7 @@ class BookingService:
             return next(
                 (
                     shuttle for shuttle in candidates
-                    if self.shuttle_repository.has_available_seat(
-                        shuttle.id,
-                        booking.booking_date,
-                    )
+                    if self._is_bookable(shuttle, booking.booking_date)
                 ),
                 None,
             )
@@ -202,18 +280,13 @@ class BookingService:
         user_id: int,
         booking_date: date,
     ) -> list[tuple[Shuttle, bool]]:
-        """Shuttles on the user's usual route, each with seat availability."""
+        """Shuttles on the user's usual route, each with whether it can
+        still be booked (seats, service day, cut-off)."""
 
         usual = self._resolve_usual_shuttle(user_id)
 
         return [
-            (
-                shuttle,
-                self.shuttle_repository.has_available_seat(
-                    shuttle.id,
-                    booking_date,
-                ),
-            )
+            (shuttle, self._is_bookable(shuttle, booking_date))
             for shuttle in self.shuttle_repository.list_by_route(
                 usual.route_id
             )
@@ -239,14 +312,7 @@ class BookingService:
         if target.id == booking.shuttle_id:
             return booking
 
-        if not self.shuttle_repository.has_available_seat(
-            target.id,
-            booking.booking_date,
-        ):
-            raise ShuttleUnavailableError(
-                f"The {target.departure_time:%-I:%M %p} shuttle is full "
-                f"on {booking.booking_date:%A}."
-            )
+        self._validate_departure(target, booking.booking_date, clock.now())
 
         booking.shuttle_id = target.id
         booking.pickup_time = target.departure_time
@@ -273,7 +339,7 @@ class BookingService:
         self._resolve_user(user_id)
 
         if from_date is None:
-            from_date = date.today()
+            from_date = clock.today()
 
         return self.booking_repository.get_upcoming_by_user_id(
             user_id=user_id,

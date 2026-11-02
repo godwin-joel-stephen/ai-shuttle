@@ -12,12 +12,15 @@ from functools import wraps
 from langchain_core.tools import BaseTool, tool
 from sqlalchemy.orm import Session
 
+from app.core import clock
 from app.models.booking import Booking
 from app.models.shuttle import Shuttle
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.preference_repository import PreferenceRepository
 from app.repositories.shuttle_repository import ShuttleRepository
 from app.repositories.user_repository import UserRepository
+from app.rag.embeddings import Embedder
+from app.rag.retriever import search_knowledge
 from app.services.booking_service import BookingService
 from app.services.errors import BookingError
 
@@ -48,13 +51,13 @@ def booking_to_dict(booking: Booking) -> dict:
     }
 
 
-def shuttle_to_dict(shuttle: Shuttle, seats_available: bool) -> dict:
+def shuttle_to_dict(shuttle: Shuttle, bookable: bool) -> dict:
     return {
         "shuttle_id": shuttle.id,
         "shuttle_name": shuttle.name,
         "departure": f"{shuttle.departure_time:%H:%M}",
         "arrival": f"{shuttle.arrival_time:%H:%M}",
-        "seats_available": seats_available,
+        "bookable": bookable,
     }
 
 
@@ -72,9 +75,8 @@ def _report_booking_errors(func):
 def create_assistant_tools(
     db: Session,
     user_id: int,
-    today: date | None = None,
+    embedder: Embedder,
 ) -> list[BaseTool]:
-    today = today or date.today()
     service = BookingService(
         db=db,
         user_repository=UserRepository(db),
@@ -88,20 +90,21 @@ def create_assistant_tools(
     def get_my_bookings() -> dict:
         """List the user's upcoming confirmed shuttle bookings."""
 
-        bookings = service.get_upcoming_bookings(user_id, from_date=today)
+        bookings = service.get_upcoming_bookings(user_id)
         return {"bookings": [booking_to_dict(b) for b in bookings]}
 
     @tool
     @_report_booking_errors
     def list_shuttle_options(booking_date: date) -> dict:
         """List every shuttle on the user's usual route for a date
-        (YYYY-MM-DD), with departure/arrival times and seat availability.
-        Use this to find an earlier, later or specific-time shuttle."""
+        (YYYY-MM-DD), with departure/arrival times and whether each can
+        still be booked. Use this to find an earlier, later or
+        specific-time shuttle."""
 
         options = service.list_usual_route_shuttles(user_id, booking_date)
         return {
             "date": booking_date.isoformat(),
-            "shuttles": [shuttle_to_dict(s, free) for s, free in options],
+            "shuttles": [shuttle_to_dict(s, ok) for s, ok in options],
         }
 
     @tool
@@ -111,7 +114,7 @@ def create_assistant_tools(
         the existing booking with already_booked=true instead of booking
         twice."""
 
-        outcome = service.book_usual_shuttle(user_id, booking_date, today=today)
+        outcome = service.book_usual_shuttle(user_id, booking_date)
         return {
             "already_booked": outcome.already_booked,
             "booking": booking_to_dict(outcome.booking),
@@ -135,10 +138,50 @@ def create_assistant_tools(
         booking = service.cancel_booking(user_id, booking_id)
         return {"booking": booking_to_dict(booking)}
 
+    @tool
+    @_report_booking_errors
+    def check_booking_eligibility(booking_date: date) -> dict:
+        """Check whether the user's usual shuttle can be booked on a date
+        (YYYY-MM-DD) without booking it. Returns the exact rule that
+        blocks it (reason_code and message). Use this to answer "why can't
+        I book" questions."""
+
+        result = service.check_eligibility(user_id, booking_date)
+        return {
+            "date": booking_date.isoformat(),
+            "weekday": f"{booking_date:%A}",
+            "eligible": result.eligible,
+            "already_booked": result.already_booked,
+            "reason_code": result.error.code if result.error else None,
+            "message": str(result.error) if result.error else None,
+        }
+
+    @tool
+    def search_policies(query: str) -> dict:
+        """Search Clear Path's policy documents (booking rules, cancellation,
+        pickup rules, FAQ). Use specific wording, e.g. the rule message
+        from check_booking_eligibility. Returns the best-matching sections;
+        an empty list means the policies don't cover the question."""
+
+        passages = search_knowledge(db, embedder, query)
+        return {
+            "passages": [
+                {
+                    "source": f"{p.title} › {p.heading}",
+                    "text": p.content,
+                    "similarity": p.similarity,
+                    "citable": p.citable,
+                }
+                for p in passages
+            ]
+        }
+
     return [
         get_my_bookings,
         list_shuttle_options,
         book_usual_shuttle,
         change_booking_shuttle,
         cancel_booking,
+        check_booking_eligibility,
+        search_policies,
     ]

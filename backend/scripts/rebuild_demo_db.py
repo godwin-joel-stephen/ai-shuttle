@@ -8,7 +8,10 @@ from sqlalchemy import text
 
 from app.db.database import engine
 from app.db.init_db import init_db
+from app.db.database import SessionLocal
 from app.db.seed import seed_database
+from app.rag.embeddings import get_embedder
+from app.rag.ingest import ingest_knowledge
 
 
 def rebuild_demo_database():
@@ -18,6 +21,10 @@ def rebuild_demo_database():
 
     init_db()
     seed_database()
+
+    with SessionLocal() as session:
+        count = ingest_knowledge(session, get_embedder())
+    print(f"Ingested {count} policy sections.")
 
 
 if __name__ == "__main__":
