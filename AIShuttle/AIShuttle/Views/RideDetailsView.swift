@@ -19,7 +19,7 @@ public struct RideDetailsView: View {
                 VStack(spacing: 12) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(booking.childName)
+                            Text(booking.tripTitle)
                                 .font(.title)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.primary)
@@ -138,45 +138,6 @@ public struct RideDetailsView: View {
                                 }
                             }
                         }
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color(.secondarySystemGroupedBackground))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
-                )
-
-                // Passenger Card
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Passenger")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.15))
-                            .frame(width: 44, height: 44)
-                            .overlay(
-                                Text(String(booking.childName.prefix(1)))
-                                    .font(.headline)
-                                    .foregroundStyle(.tint)
-                            )
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(booking.childName)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                            Text("Scheduled Rider")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
                     }
                 }
                 .padding(20)

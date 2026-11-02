@@ -1,59 +1,60 @@
-from datetime import date
+from datetime import date, timedelta
 
-from sqlalchemy import func, select
+import pytest
 
 from app.agent.fake_llm import FakeLLM
-from app.db.database import SessionLocal
+from app.agent.llm import LLMUnavailableError
+from app.agent.schemas import AgentIntent
 from app.graph.booking_graph import create_booking_graph
-from app.models.booking import Booking
 
 
-def test_booking_graph_creates_booking():
-    db = SessionLocal()
+TOMORROW = date.today() + timedelta(days=1)
 
-    try:
-        before_count = db.scalar(
-            select(func.count(Booking.id))
-        )
 
-        llm = FakeLLM(
-            reference_date=date(2026, 9, 30),
-        )
+class FailingLLM:
+    def invoke(self, user_input: str):
+        raise TimeoutError("model timed out")
 
-        graph = create_booking_graph(
-            db,
-            llm,
-        )
 
-        result = graph.invoke(
+def test_natural_language_request_books_via_llm(db, user_id):
+    graph = create_booking_graph(db, FakeLLM(reference_date=date.today()))
+
+    result = graph.invoke(
+        {
+            "user_id": user_id,
+            "user_input": "Book my usual shuttle for tomorrow.",
+        }
+    )
+
+    assert result["intent"] == AgentIntent.BOOK_USUAL_SHUTTLE
+    assert result["booking_date"] == TOMORROW
+    assert result["already_booked"] is False
+    assert result["response"].startswith(
+        "Done. You're booked on the 7:30 AM shuttle from Home to Office"
+    )
+
+
+def test_structured_request_skips_llm(db, user_id):
+    graph = create_booking_graph(db, FailingLLM())
+
+    result = graph.invoke(
+        {
+            "user_id": user_id,
+            "intent": AgentIntent.BOOK_USUAL_SHUTTLE,
+            "booking_date": TOMORROW,
+        }
+    )
+
+    assert result["booking"].booking_date == TOMORROW
+
+
+def test_llm_failure_is_reported(db, user_id):
+    graph = create_booking_graph(db, FailingLLM())
+
+    with pytest.raises(LLMUnavailableError):
+        graph.invoke(
             {
-                "user_id": 1,
+                "user_id": user_id,
                 "user_input": "Book my usual shuttle for tomorrow.",
             }
         )
-
-        assert result["intent"] == "book_usual_shuttle"
-        assert result["booking_date"] == date(2026, 10, 1)
-
-        booking_id = result["booking_id"]
-
-        after_count = db.scalar(
-            select(func.count(Booking.id))
-        )
-
-        assert after_count == before_count + 1
-
-        booking = db.get(Booking, booking_id)
-
-        assert booking is not None
-        assert booking.user_id == 1
-        assert booking.child_id == 1
-        assert booking.shuttle_id == 1
-        assert booking.booking_date == date(2026, 10, 1)
-        assert booking.pickup_time.isoformat() == "07:30:00"
-        assert booking.status == "confirmed"
-
-    finally:
-        db.query(Booking).delete()
-        db.commit()
-        db.close()

@@ -22,11 +22,6 @@ class User(Base):
         nullable=False,
     )
 
-    children = relationship(
-        "Child",
-        back_populates="user",
-    )
-
     preferences = relationship(
         "Preference",
         back_populates="user",

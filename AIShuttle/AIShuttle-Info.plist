@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BookingAPIBaseURL</key>
+	<string>$(BOOKING_API_BASE_URL)</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>ClearPath</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Clear Path Shuttle</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Clear Footpath</string>
+		</dict>
+	</array>
+</dict>
+</plist>

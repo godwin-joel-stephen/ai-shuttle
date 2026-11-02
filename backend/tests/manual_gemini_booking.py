@@ -10,7 +10,7 @@ def main() -> None:
 
     try:
         llm = create_llm(
-            reference_date=date(2026, 10, 1),
+            reference_date=date.today(),
         )
 
         graph = create_booking_graph(
@@ -27,7 +27,7 @@ def main() -> None:
 
         print("Intent:", result["intent"])
         print("Booking date:", result["booking_date"])
-        print("Booking ID:", result["booking_id"])
+        print("Booking ID:", result["booking_id"], "already booked:", result["already_booked"])
         print("Response:", result["response"])
 
     finally:

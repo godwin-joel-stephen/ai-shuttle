@@ -10,9 +10,14 @@ class GeminiLLM:
     """Gemini-backed implementation of the application LLM interface."""
 
     MODEL = "gemini-3.1-flash-lite"
+    TIMEOUT_MS = 10_000  # Gemini rejects deadlines below 10s
 
     def __init__(self, api_key: str, reference_date: date):
-        self.client = genai.Client(api_key=api_key)
+        # Fail fast: a hung model call would outlast Siri's patience.
+        self.client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(timeout=self.TIMEOUT_MS),
+        )
         self.reference_date = reference_date
 
     def invoke(self, user_input: str) -> AgentRequest:

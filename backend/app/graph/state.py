@@ -1,5 +1,5 @@
 from datetime import date
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class BookingState(TypedDict, total=False):
@@ -8,5 +8,7 @@ class BookingState(TypedDict, total=False):
     intent: str | None
     booking_date: date
     booking_id: int | None
+    booking: Any
+    already_booked: bool
     response: str | None
     error: str | None

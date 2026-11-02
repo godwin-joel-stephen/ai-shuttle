@@ -1,5 +1,6 @@
 import SwiftUI
 import AppIntents
+import UserNotifications
 
 @main
 struct AIShuttleApp: App {
@@ -10,6 +11,11 @@ struct AIShuttleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    // Widget and Control Center bookings confirm by notification.
+                    _ = try? await UNUserNotificationCenter.current()
+                        .requestAuthorization(options: [.alert, .sound])
+                }
         }
     }
 }

@@ -18,11 +18,6 @@ class Booking(Base):
         nullable=False,
     )
 
-    child_id: Mapped[int] = mapped_column(
-        ForeignKey("children.id"),
-        nullable=False,
-    )
-
     shuttle_id: Mapped[int] = mapped_column(
         ForeignKey("shuttles.id"),
         nullable=False,
@@ -46,11 +41,6 @@ class Booking(Base):
 
     user = relationship(
         "User",
-        back_populates="bookings",
-    )
-
-    child = relationship(
-        "Child",
         back_populates="bookings",
     )
 

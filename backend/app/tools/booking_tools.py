@@ -36,7 +36,11 @@ def create_booking_tool(db: Session):
         user_id: int,
         booking_date: date,
     ):
-        """Book the user's usual shuttle for a specific date."""
+        """Book the user's usual shuttle for a specific date.
+
+        Returns the existing booking instead of a duplicate when the
+        user is already booked on that route for the date.
+        """
 
         return book_shuttle(
             db=db,

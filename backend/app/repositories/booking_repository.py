@@ -18,8 +18,34 @@ class BookingRepository:
         return booking
 
     def get_by_id(self, booking_id: int) -> Booking | None:
-        statement = select(Booking).where(
-            Booking.id == booking_id
+        statement = (
+            select(Booking)
+            .where(Booking.id == booking_id)
+            .options(
+                selectinload(Booking.shuttle).selectinload(Shuttle.route),
+            )
+        )
+
+        return self.db.scalar(statement)
+
+    def get_confirmed_on_route(
+        self,
+        user_id: int,
+        route_id: int,
+        booking_date: date,
+    ) -> Booking | None:
+        statement = (
+            select(Booking)
+            .join(Booking.shuttle)
+            .where(
+                Booking.user_id == user_id,
+                Booking.booking_date == booking_date,
+                Booking.status == "confirmed",
+                Shuttle.route_id == route_id,
+            )
+            .options(
+                selectinload(Booking.shuttle).selectinload(Shuttle.route),
+            )
         )
 
         return self.db.scalar(statement)
@@ -33,7 +59,6 @@ class BookingRepository:
             select(Booking)
             .where(Booking.user_id == user_id)
             .options(
-                selectinload(Booking.child),
                 selectinload(Booking.shuttle).selectinload(Shuttle.route),
             )
         )

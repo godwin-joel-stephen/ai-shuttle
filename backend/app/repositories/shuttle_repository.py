@@ -18,6 +18,15 @@ class ShuttleRepository:
 
         return self.db.scalar(statement)
 
+    def list_by_route(self, route_id: int) -> list[Shuttle]:
+        statement = (
+            select(Shuttle)
+            .where(Shuttle.route_id == route_id)
+            .order_by(Shuttle.departure_time.asc())
+        )
+
+        return list(self.db.scalars(statement).all())
+
     def has_available_seat(
         self,
         shuttle_id: int,

@@ -122,11 +122,10 @@ struct BookingAPIClientTests {
                 "booking_date": "2026-10-02",
                 "pickup_time": "07:30:00",
                 "status": "confirmed",
-                "child_name": "Emma",
-                "shuttle_name": "Morning Shuttle A",
-                "route_name": "Home → School Morning Route",
+                "shuttle_name": "Morning Shuttle C",
+                "route_name": "Home → Office Morning Route",
                 "pickup_location": "Home",
-                "destination": "AI Shuttle Academy"
+                "destination": "Office"
             }
         ]
         """
@@ -152,11 +151,11 @@ struct BookingAPIClientTests {
         #expect(first.bookingDate == "2026-10-02")
         #expect(first.pickupTime == "07:30:00")
         #expect(first.formattedPickupTime == "7:30 AM")
-        #expect(first.childName == "Emma")
-        #expect(first.shuttleName == "Morning Shuttle A")
-        #expect(first.routeName == "Home → School Morning Route")
+        #expect(first.tripTitle == "Home → Office")
+        #expect(first.shuttleName == "Morning Shuttle C")
+        #expect(first.routeName == "Home → Office Morning Route")
         #expect(first.pickupLocation == "Home")
-        #expect(first.destination == "AI Shuttle Academy")
+        #expect(first.destination == "Office")
     }
 
     @Test func fetchUpcomingBookingsEmptyListDecodesCorrectly() async throws {
@@ -217,29 +216,119 @@ struct BookingAPIClientTests {
         }
     }
 
-    @Test func intentExecutesWithMockedClient() async throws {
-
+    @Test func intentSendsStructuredDateAndSucceeds() async throws {
         let client = makeTestClient()
-        let expectedJSON = """
-        {
-            "booking_id": 42,
-            "message": "Shuttle booked successfully. Booking ID: 42."
-        }
-        """
+        let expectedDay = BookingAPIClient.isoDay(BookingDay.friday.date())
 
-        MockURLProtocol.requestHandler = { _ in
+        MockURLProtocol.requestHandler = { request in
+            let body = try JSONSerialization.jsonObject(with: request.bodyData) as? [String: Any]
+            #expect(body?["booking_date"] as? String == expectedDay)
+            #expect(body?["message"] == nil)
             let response = HTTPURLResponse(
                 url: URL(string: "http://127.0.0.1:8000/bookings")!,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: ["Content-Type": "application/json"]
             )!
-            return (response, expectedJSON.data(using: .utf8)!)
+            return (response, Self.bookingResponseJSON.data(using: .utf8)!)
         }
 
-        let intent = BookMyUsualShuttleIntent(apiClient: client)
+        let intent = BookMyUsualShuttleIntent(day: .friday, apiClient: client)
         let _ = try await intent.perform()
     }
+
+    @Test func serverDetailBecomesSpokenError() async {
+        let client = makeTestClient()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 409,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, #"{"detail": "That date has already passed."}"#.data(using: .utf8)!)
+        }
+
+        do {
+            _ = try await client.bookUsualShuttle(userId: 1, on: .now)
+            Issue.record("Expected an error")
+        } catch {
+            #expect(error as? BookingAPIError == .serverMessage(statusCode: 409, message: "That date has already passed."))
+            #expect(error.localizedDescription == "That date has already passed.")
+        }
+    }
+
+    @Test func rescheduleDecodesUpdatedBooking() async throws {
+        let client = makeTestClient()
+
+        MockURLProtocol.requestHandler = { request in
+            #expect(request.url?.absoluteString == "http://127.0.0.1:8000/bookings/42/reschedule")
+            let body = try JSONSerialization.jsonObject(with: request.bodyData) as? [String: Any]
+            #expect(body?["direction"] as? String == "earlier")
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Self.bookingResponseJSON.data(using: .utf8)!)
+        }
+
+        let result = try await client.rescheduleBooking(id: 42, direction: .earlier)
+        #expect(result.booking?.earlierAvailable == true)
+        #expect(result.booking?.formattedArrivalTime == "8:15 AM")
+    }
+
+    @Test func dialogReadsNaturally() throws {
+        let response = try JSONDecoder().decode(
+            BookingResponse.self,
+            from: Self.bookingResponseJSON.data(using: .utf8)!
+        )
+
+        #expect(
+            response.spokenConfirmation
+                == "Done. You're on the 7:30 AM shuttle \(response.booking!.spokenDay), arriving at Office by 8:15 AM."
+        )
+    }
+
+    @Test func bookingDayResolvesRelativeToToday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Kolkata")!
+        // Monday, 2 November 2026, 9 PM.
+        let reference = calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 21))!
+
+        func day(_ value: BookingDay) -> Int {
+            calendar.component(.day, from: value.date(from: reference, calendar: calendar))
+        }
+
+        #expect(day(.today) == 2)
+        #expect(day(.tomorrow) == 3)
+        #expect(day(.friday) == 6)
+        #expect(day(.monday) == 9)
+    }
+
+    static let bookingResponseJSON = """
+    {
+        "booking_id": 42,
+        "message": "Done. You're booked on the 7:30 AM shuttle.",
+        "already_booked": false,
+        "booking": {
+            "id": 42,
+            "booking_date": "2026-11-03",
+            "pickup_time": "07:30:00",
+            "arrival_time": "08:15:00",
+            "status": "confirmed",
+            "shuttle_name": "Morning Shuttle C",
+            "route_name": "Home → Office Morning Route",
+            "pickup_location": "Home",
+            "destination": "Office",
+            "earlier_available": true,
+            "later_available": true
+        }
+    }
+    """
 
     @Test func intentThrowsWhenBookingFails() async {
         let client = makeTestClient()
@@ -269,11 +358,10 @@ struct BookingAPIClientTests {
                 "booking_date": "2026-10-02",
                 "pickup_time": "07:30:00",
                 "status": "confirmed",
-                "child_name": "Emma",
-                "shuttle_name": "Morning Shuttle A",
-                "route_name": "Home → School Morning Route",
+                "shuttle_name": "Morning Shuttle C",
+                "route_name": "Home → Office Morning Route",
                 "pickup_location": "Home",
-                "destination": "AI Shuttle Academy"
+                "destination": "Office"
             }
         ]
         """
@@ -295,8 +383,36 @@ struct BookingAPIClientTests {
 
         #expect(viewModel.bookings.count == 1)
         #expect(viewModel.upcomingBooking?.id == 1)
-        #expect(viewModel.upcomingBooking?.childName == "Emma")
+        #expect(viewModel.upcomingBooking?.tripTitle == "Home → Office")
         #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test func viewModelSurvivesCancelledCallersAndJoinsLoads() async {
+        let client = makeTestClient()
+        nonisolated(unsafe) var requestCount = 0
+        MockURLProtocol.requestHandler = { request in
+            requestCount += 1
+            Thread.sleep(forTimeInterval: 0.2)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, "[]".data(using: .utf8)!)
+        }
+
+        let viewModel = RidesViewModel(apiClient: client)
+
+        // Simulate a tab switch: the first `.task` is cancelled mid-load
+        // while the other tab starts its own load.
+        let cancelled = Task { await viewModel.loadBookings() }
+        try? await Task.sleep(for: .milliseconds(50))
+        cancelled.cancel()
+        await viewModel.loadBookings()
+
+        #expect(viewModel.state == .loaded([]))
+        #expect(requestCount == 1)
     }
 
     @Test func viewModelHandlesEmptyBookings() async {
@@ -336,6 +452,24 @@ struct BookingAPIClientTests {
 
         #expect(viewModel.bookings.isEmpty)
         #expect(viewModel.errorMessage != nil)
+    }
+}
+
+extension URLRequest {
+    /// URLProtocol receives uploads as a body stream, not `httpBody`.
+    var bodyData: Data {
+        if let httpBody { return httpBody }
+        guard let stream = httpBodyStream else { return Data() }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count > 0 else { break }
+            data.append(buffer, count: count)
+        }
+        return data
     }
 }
 

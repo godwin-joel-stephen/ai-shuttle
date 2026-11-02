@@ -23,7 +23,7 @@ public struct HomeView: View {
                             .fontWeight(.medium)
                             .foregroundStyle(.secondary)
 
-                        Text("AI Shuttle")
+                        Text("Clear Path")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)

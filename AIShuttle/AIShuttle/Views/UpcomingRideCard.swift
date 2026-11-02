@@ -37,10 +37,10 @@ public struct UpcomingRideCard: View {
                 .clipShape(Capsule())
             }
 
-            // Main child & shuttle info
+            // Trip & shuttle info
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(booking.childName)
+                    Text(booking.tripTitle)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
@@ -95,6 +95,6 @@ public struct UpcomingRideCard: View {
         )
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(booking.childName), \(booking.shuttleName), pickup at \(booking.formattedPickupTime) on \(booking.formattedDate), status \(booking.status)")
+        .accessibilityLabel("\(booking.tripTitle), \(booking.shuttleName), pickup at \(booking.formattedPickupTime) on \(booking.formattedDate), status \(booking.status)")
     }
 }

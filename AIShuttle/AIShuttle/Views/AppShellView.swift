@@ -28,6 +28,7 @@ public enum AppTab: Hashable, CaseIterable {
 @MainActor
 public struct AppShellView: View {
     @State private var selectedTab: AppTab = .home
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: RidesViewModel
 
     public init(viewModel: RidesViewModel? = nil) {
@@ -48,6 +49,12 @@ public struct AppShellView: View {
                     Label(AppTab.rides.title, systemImage: AppTab.rides.iconName)
                 }
                 .tag(AppTab.rides)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Pick up bookings made from Siri, widgets or Control Center.
+            if phase == .active {
+                Task { await viewModel.loadBookings() }
+            }
         }
     }
 }
