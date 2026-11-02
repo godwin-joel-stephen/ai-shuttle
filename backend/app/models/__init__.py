@@ -4,6 +4,7 @@ from app.models.route import Route
 from app.models.shuttle import Shuttle
 from app.models.booking import Booking
 from app.models.knowledge_chunk import KnowledgeChunk
+from app.models.trip_simulation import TripSimulation
 
 __all__ = [
     "User",
@@ -12,4 +13,5 @@ __all__ = [
     "Shuttle",
     "Booking",
     "KnowledgeChunk",
+    "TripSimulation",
 ]

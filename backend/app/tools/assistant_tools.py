@@ -23,6 +23,7 @@ from app.rag.embeddings import Embedder
 from app.rag.retriever import search_knowledge
 from app.services.booking_service import BookingService
 from app.services.errors import BookingError
+from app.services.tracking_service import TrackingService
 
 
 # Tools that change bookings; the API reports when any of them succeeded.
@@ -138,6 +139,37 @@ def create_assistant_tools(
         booking = service.cancel_booking(user_id, booking_id)
         return {"booking": booking_to_dict(booking)}
 
+    tracking = TrackingService(db, service)
+
+    @tool
+    @_report_booking_errors
+    def get_shuttle_status(booking_id: int | None = None) -> dict:
+        """Live status of a booked trip: phase (scheduled, approaching,
+        boarding, in_transit, arrived), minutes until pickup and arrival,
+        delay, and pickup/arrival times. Omit booking_id for the user's
+        next trip. Use for "where's my shuttle" and "should I leave now"."""
+
+        status = (
+            tracking.status(user_id, booking_id)
+            if booking_id is not None
+            else tracking.next_trip_status(user_id)
+        )
+        if status is None:
+            return {"error": "You don't have an upcoming shuttle booked."}
+
+        return {
+            "booking_id": status.booking.id,
+            "date": status.booking.booking_date.isoformat(),
+            "phase": status.phase.value,
+            "summary": status.message,
+            "delay_minutes": status.delay_minutes,
+            "minutes_to_pickup": status.minutes_to_pickup,
+            "minutes_to_arrival": status.minutes_to_arrival,
+            "pickup_time": f"{status.pickup_eta:%H:%M}",
+            "arrival_time": f"{status.arrival_eta:%H:%M}",
+            "pickup_stop": status.booking.shuttle.route.pickup_location,
+        }
+
     @tool
     @_report_booking_errors
     def check_booking_eligibility(booking_date: date) -> dict:
@@ -182,6 +214,7 @@ def create_assistant_tools(
         book_usual_shuttle,
         change_booking_shuttle,
         cancel_booking,
+        get_shuttle_status,
         check_booking_eligibility,
         search_policies,
     ]
