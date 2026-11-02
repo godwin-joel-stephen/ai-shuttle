@@ -159,11 +159,18 @@ public final class BookingAPIClient: Sendable {
         }
 
         do {
-            return try JSONDecoder().decode(Response.self, from: data)
+            return try Self.decoder.decode(Response.self, from: data)
         } catch {
             throw BookingAPIError.decodingError(error.localizedDescription)
         }
     }
+
+    /// Decodes ISO 8601 timestamps with UTC offset (e.g. tracking ETAs).
+    nonisolated static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }()
 
     /// `yyyy-MM-dd` in the device's calendar, so "tomorrow" means the
     /// user's tomorrow regardless of the server's time zone.

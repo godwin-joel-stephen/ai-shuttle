@@ -31,6 +31,26 @@ public struct AIShuttleShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
+            intent: WhereIsMyShuttleIntent(),
+            // Spoken "Where's my shuttle with Clear Path" was often answered
+            // by Siri itself (it searched messages), while "Track my
+            // shuttle..." and app-name-first phrasings reached the app
+            // reliably. Lead with those; keep "where's" for typed requests.
+            phrases: [
+                "Track my shuttle with \(.applicationName)",
+                "Track my shuttle in \(.applicationName)",
+                "\(.applicationName) track my shuttle",
+                "\(.applicationName) where's my shuttle",
+                "\(.applicationName) where is my shuttle",
+                "Where's my shuttle with \(.applicationName)",
+                "Where is my shuttle with \(.applicationName)",
+                "How far is my shuttle with \(.applicationName)"
+            ],
+            shortTitle: "Where's My Shuttle",
+            systemImageName: "location.fill"
+        )
+
+        AppShortcut(
             intent: AskClearPathIntent(),
             phrases: [
                 "Ask \(.applicationName)",

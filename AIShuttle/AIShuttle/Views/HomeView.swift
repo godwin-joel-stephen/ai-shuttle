@@ -9,6 +9,7 @@ import WidgetKit
 public struct HomeView: View {
     @Bindable var viewModel: RidesViewModel
     @State private var showingAssistant = false
+    @State private var showingTracking = false
 
     public init(viewModel: RidesViewModel) {
         self.viewModel = viewModel
@@ -33,6 +34,8 @@ public struct HomeView: View {
                     .padding(.top, 8)
 
                     askClearPathButton
+
+                    trackShuttleButton
 
                     // Upcoming Ride Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -170,6 +173,9 @@ public struct HomeView: View {
             .task {
                 await viewModel.loadBookings()
             }
+            .sheet(isPresented: $showingTracking) {
+                TrackingView()
+            }
             .sheet(isPresented: $showingAssistant) {
                 AssistantView(
                     viewModel: AssistantViewModel(onBookingsChanged: { [viewModel] in
@@ -179,6 +185,38 @@ public struct HomeView: View {
                 )
             }
         }
+    }
+
+    private var trackShuttleButton: some View {
+        Button {
+            showingTracking = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "location.fill")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Where's my shuttle?")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("Live map and Lock Screen tracking")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var askClearPathButton: some View {

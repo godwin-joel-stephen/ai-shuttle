@@ -11,5 +11,6 @@ struct ClearPathWidgetsBundle: WidgetBundle {
     var body: some Widget {
         NextRideWidget()
         BookShuttleControl()
+        ShuttleLiveActivity()
     }
 }
