@@ -64,6 +64,7 @@ from app.repositories.user_repository import UserRepository  # noqa: E402
 from app.services.booking_service import BookingService  # noqa: E402
 from app.services.tracking_service import TrackingService  # noqa: E402
 from app.tools.assistant_tools import create_assistant_tools  # noqa: E402
+from app.observability import tracing  # noqa: E402
 from evals.judge import judge  # noqa: E402
 
 
@@ -167,7 +168,7 @@ def final_bookings(db, user_id: int) -> list[dict]:
     )
 
 
-def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model) -> CaseResult:
+def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model, run_id: str) -> CaseResult:
     expect = case["expect"]
 
     with SessionLocal() as db:
@@ -186,11 +187,24 @@ def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model
         started = time.monotonic()
         error = None
         messages = []
-        try:
-            for turn in case["turns"]:
-                messages = graph.invoke({"messages": [HumanMessage(turn)]}, config=config)["messages"]
-        except Exception as e:
-            error = f"{type(e).__name__}: {e}"[:300]
+        # One trace per case in Langfuse (when configured), tagged so eval
+        # runs can be filtered and compared there.
+        with tracing.traced(
+            f"eval:{case['id']}",
+            user_id=user.id,
+            session_id=f"eval-{run_id}",
+            input=case["turns"],
+            tags=["eval", case["category"], model_name],
+        ) as trace:
+            try:
+                for turn in case["turns"]:
+                    messages = graph.invoke(
+                        {"messages": [HumanMessage(turn)]},
+                        config={**config, "callbacks": trace.callbacks},
+                    )["messages"]
+            except Exception as e:
+                error = f"{type(e).__name__}: {e}"[:300]
+            trace.finish(messages[-1].text if messages else error)
         latency = time.monotonic() - started
 
         bookings = final_bookings(db, user.id)
@@ -235,10 +249,20 @@ def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model
             reason = f"Not judged: {type(e).__name__}: {e}"[:300]
             checks["judged"] = False
 
+    passed = all(checks.values())
+    tracing.score(trace.trace_id, "task_success", float(passed), ", ".join(k for k, ok in checks.items() if not ok) or None)
+    tracing.score(trace.trace_id, "judge_score", score, reason)
+    if any(k in checks for k in ("tools_called", "tools_not_called")):
+        tracing.score(
+            trace.trace_id,
+            "tool_choice",
+            float(checks.get("tools_called", True) and checks.get("tools_not_called", True)),
+        )
+
     return CaseResult(
         id=case["id"],
         category=case["category"],
-        passed=all(checks.values()),
+        passed=passed,
         checks=checks,
         judge_score=score,
         judge_reason=reason,
@@ -352,19 +376,21 @@ def main() -> int:
 
     print(f"Evaluating {len(cases)} cases on {args.model}"
           + (f" (fallbacks {', '.join(fallbacks)})" if fallbacks else "") + f", database {EVAL_DATABASE}")
+    run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     results = []
     for case in cases:
-        result = run_case(case, args.model, fallbacks, judge_model)
+        result = run_case(case, args.model, fallbacks, judge_model, run_id)
         print(f"  {'✓' if result.passed else '✗'} {case['id']}", flush=True)
         results.append(result)
 
     summary = summarize(results, args.model)
     print_report(results, summary)
 
+    tracing.flush()
+
     RESULTS_DIR.mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     report = {"summary": summary, "results": [asdict(r) for r in results]}
-    (RESULTS_DIR / f"{stamp}-{args.model}.json").write_text(json.dumps(report, indent=2, default=str))
+    (RESULTS_DIR / f"{run_id}-{args.model}.json").write_text(json.dumps(report, indent=2, default=str))
 
     if args.save_baseline:
         BASELINE.write_text(json.dumps(

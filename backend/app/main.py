@@ -31,6 +31,10 @@ async def lifespan(app: FastAPI):
 
     external.stop()
 
+    from app.observability.tracing import flush
+
+    flush()
+
 
 app = FastAPI(
     title="AI Shuttle API",

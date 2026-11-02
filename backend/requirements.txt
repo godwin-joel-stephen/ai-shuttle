@@ -18,6 +18,9 @@ google-genai==1.66.0
 # MCP server (python -m app.mcp_server)
 mcp==2.3.0
 
+# Tracing to self-hosted Langfuse (optional; off without keys)
+langfuse==5.1.0
+
 # RAG: local embeddings and vector search
 fastembed==0.9.1
 pgvector==0.5.1

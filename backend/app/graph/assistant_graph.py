@@ -16,6 +16,7 @@ from datetime import date
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, MessagesState, StateGraph
@@ -89,12 +90,13 @@ def create_assistant_graph(
 ):
     attempts = [m.bind_tools(tools) for m in (model, *fallback_models)]
 
-    def agent(state: MessagesState):
+    def agent(state: MessagesState, config: RunnableConfig):
         messages = [SystemMessage(system_prompt), *state["messages"]]
 
         # Each model gets the same deadline, so the worst case is bounded.
+        # The config carries tracing callbacks into the worker thread.
         for position, attempt in enumerate(attempts):
-            call = _model_calls.submit(attempt.invoke, messages)
+            call = _model_calls.submit(attempt.invoke, messages, config)
             try:
                 # Also raises TimeoutError when the deadline passes.
                 response = call.result(timeout=deadline_seconds or MODEL_DEADLINE_SECONDS)

@@ -13,6 +13,7 @@ from app.agent.factory import create_chat_model
 from app.agent.memory import get_checkpointer
 from app.core import clock
 from app.core.config import settings
+from app.observability.tracing import traced
 from app.db.database import get_db
 from app.graph.assistant_graph import (
     RECURSION_LIMIT,
@@ -167,12 +168,20 @@ def send_message(
     }
 
     try:
-        result = graph.invoke(
-            {"messages": [HumanMessage(request.message)]},
-            config=config,
-        )
-        reply = result["messages"][-1].text
-        messages = result["messages"]
+        with traced(
+            "assistant-turn",
+            user_id=user.id,
+            session_id=conversation_id,
+            input=request.message,
+            tags=["assistant"],
+        ) as trace:
+            result = graph.invoke(
+                {"messages": [HumanMessage(request.message)]},
+                config={**config, "callbacks": trace.callbacks},
+            )
+            reply = result["messages"][-1].text
+            messages = result["messages"]
+            trace.finish(reply)
     except Exception as e:
         logger.exception("Assistant turn failed")
 

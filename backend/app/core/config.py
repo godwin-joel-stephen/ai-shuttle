@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # day, so a fresh Flash-Lite attempt comes first, then 3.1 Flash-Lite
     # (a separate quota).
     agent_fallback_models: list[str] = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
+    # Self-hosted Langfuse tracing; off unless both keys are set.
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_host: str = "http://localhost:3000"
     # External MCP servers whose tools the agent discovers at startup, as
     # {name: {"command": ..., "args": [...]}}; "python" means this
     # backend's interpreter. Set MCP_SERVERS='{}' to disable.
