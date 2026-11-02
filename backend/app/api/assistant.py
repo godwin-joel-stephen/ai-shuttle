@@ -43,8 +43,8 @@ def get_chat_model() -> BaseChatModel:
     return create_chat_model()
 
 
-def get_fallback_chat_model() -> BaseChatModel | None:
-    return create_chat_model(settings.agent_fallback_model)
+def get_fallback_chat_models() -> list[BaseChatModel]:
+    return [create_chat_model(name) for name in settings.agent_fallback_models]
 
 
 def get_conversation_memory() -> BaseCheckpointSaver:
@@ -142,7 +142,7 @@ def send_message(
     request: AssistantMessageRequest,
     db: Session = Depends(get_db),
     model: BaseChatModel = Depends(get_chat_model),
-    fallback_model: BaseChatModel | None = Depends(get_fallback_chat_model),
+    fallback_models: list[BaseChatModel] = Depends(get_fallback_chat_models),
     memory: BaseCheckpointSaver = Depends(get_conversation_memory),
     embedder: Embedder = Depends(get_policy_embedder),
     external_tools: list[BaseTool] = Depends(get_external_tools),
@@ -159,7 +159,7 @@ def send_message(
         tools=[*create_assistant_tools(db, user.id, embedder), *external_tools],
         checkpointer=memory,
         system_prompt=build_system_prompt(clock.today(), user.name),
-        fallback_model=fallback_model,
+        fallback_models=fallback_models,
     )
     config = {
         **_thread_config(user.id, conversation_id),

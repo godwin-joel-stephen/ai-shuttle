@@ -24,7 +24,7 @@ def create_chat_model(model: str | None = None) -> BaseChatModel:
     return ChatGoogleGenerativeAI(
         model=model or settings.agent_model,
         google_api_key=settings.gemini_api_key,
-        temperature=0,
+        # No temperature: Gemini 3.x uses fixed sampling and ignores it.
         timeout=20,
         # The fallback model is the retry; retrying an overloaded model
         # only adds latency.

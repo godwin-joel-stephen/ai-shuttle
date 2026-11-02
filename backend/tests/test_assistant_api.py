@@ -11,7 +11,7 @@ from app.api.assistant import (
     get_chat_model,
     get_conversation_memory,
     get_external_tools,
-    get_fallback_chat_model,
+    get_fallback_chat_models,
     get_policy_embedder,
 )
 from app.db.database import get_db
@@ -40,7 +40,7 @@ def client(db, memory):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_conversation_memory] = lambda: memory
     app.dependency_overrides[get_policy_embedder] = FakeEmbedder
-    app.dependency_overrides[get_fallback_chat_model] = lambda: None
+    app.dependency_overrides[get_fallback_chat_models] = lambda: []
 
     try:
         yield TestClient(app)
@@ -171,9 +171,9 @@ def test_fallback_model_takes_over_when_primary_fails(client, user_id):
         raise RuntimeError("503 UNAVAILABLE: high demand")
 
     use_model(ScriptedChatModel(script=[overloaded]))
-    app.dependency_overrides[get_fallback_chat_model] = lambda: ScriptedChatModel(
+    app.dependency_overrides[get_fallback_chat_models] = lambda: [ScriptedChatModel(
         script=[AIMessage("Answered by the fallback model.")]
-    )
+    )]
 
     data = send(client, user_id, "Hi").json()
 
@@ -192,9 +192,9 @@ def test_slow_primary_model_hands_over_to_fallback(client, user_id, monkeypatch)
         return AIMessage("Too late.")
 
     use_model(ScriptedChatModel(script=[overloaded]))
-    app.dependency_overrides[get_fallback_chat_model] = lambda: ScriptedChatModel(
+    app.dependency_overrides[get_fallback_chat_models] = lambda: [ScriptedChatModel(
         script=[AIMessage("Answered by the fallback model.")]
-    )
+    )]
 
     started = time.monotonic()
     data = send(client, user_id, "Hi").json()
@@ -309,3 +309,21 @@ def test_agent_can_call_tools_from_external_mcp_servers(client, user_id):
     assert data["actions"][0]["tool"] == "get_current_weather"
     assert data["actions"][0]["server"] == "weather"
     assert data["reply"] == "It's rain; take an umbrella."
+
+
+def test_parallel_tool_calls_share_the_session_safely(client, db, user_id):
+    # LangGraph runs tool calls from one model turn in parallel threads;
+    # they share one database session ("prepared state" crash in evals).
+    use_model(ScriptedChatModel(script=[
+        AIMessage(content="", tool_calls=[
+            {"name": "book_usual_shuttle", "args": {"booking_date": TOMORROW.isoformat()}, "id": "a"},
+            {"name": "list_shuttle_options", "args": {"booking_date": TOMORROW.isoformat()}, "id": "b"},
+            {"name": "get_my_bookings", "args": {}, "id": "c"},
+        ]),
+        AIMessage("Done."),
+    ]))
+
+    data = send(client, user_id, "Book the 8 o'clock shuttle tomorrow").json()
+
+    assert [a["succeeded"] for a in data["actions"]] == [True, True, True]
+    assert db.query(Booking).filter_by(booking_date=TOMORROW).count() == 1

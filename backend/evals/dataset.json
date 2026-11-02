@@ -1,0 +1,507 @@
+[
+  {
+    "id": "book-tomorrow",
+    "category": "booking",
+    "turns": [
+      "Book my usual shuttle for tomorrow"
+    ],
+    "expect": {
+      "tools_called": [
+        "book_usual_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Confirms the 7:30 AM shuttle for tomorrow (Tuesday)."
+    }
+  },
+  {
+    "id": "book-weekday",
+    "category": "booking",
+    "turns": [
+      "Book my usual shuttle for Friday"
+    ],
+    "expect": {
+      "tools_called": [
+        "book_usual_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 4,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Confirms the 7:30 AM shuttle on Friday, November 6."
+    }
+  },
+  {
+    "id": "book-casual-phrasing",
+    "category": "booking",
+    "turns": [
+      "I'll need the shuttle on Wednesday"
+    ],
+    "expect": {
+      "tools_called": [
+        "book_usual_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 2,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Books and confirms the usual 7:30 AM shuttle for Wednesday."
+    }
+  },
+  {
+    "id": "book-specific-time",
+    "category": "booking",
+    "turns": [
+      "Book the 8 o'clock shuttle tomorrow"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "08:00"
+        }
+      ],
+      "rubric": "Confirms the 8:00 AM shuttle for tomorrow."
+    }
+  },
+  {
+    "id": "already-booked",
+    "category": "booking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ]
+    },
+    "turns": [
+      "Book my usual shuttle for tomorrow"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Says the rider is already booked on tomorrow's 7:30 AM shuttle rather than claiming a new booking."
+    }
+  },
+  {
+    "id": "follow-up-earlier",
+    "category": "follow-up",
+    "turns": [
+      "Book my usual shuttle for tomorrow",
+      "Make it 30 minutes earlier"
+    ],
+    "expect": {
+      "tools_called": [
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:00"
+        }
+      ],
+      "rubric": "Confirms the booking moved to the 7:00 AM shuttle."
+    }
+  },
+  {
+    "id": "follow-up-latest",
+    "category": "follow-up",
+    "turns": [
+      "Book tomorrow's usual shuttle",
+      "Actually, make it the latest one"
+    ],
+    "expect": {
+      "tools_called": [
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "08:00"
+        }
+      ],
+      "rubric": "Confirms the booking moved to the 8:00 AM shuttle, the latest morning departure."
+    }
+  },
+  {
+    "id": "follow-up-cancel",
+    "category": "follow-up",
+    "turns": [
+      "Book my usual shuttle for Friday",
+      "Cancel it"
+    ],
+    "expect": {
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "bookings": [],
+      "rubric": "Confirms Friday's booking was cancelled."
+    }
+  },
+  {
+    "id": "cancel-one-of-two",
+    "category": "booking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        },
+        {
+          "day": 4,
+          "departure": "07:30"
+        }
+      ]
+    },
+    "turns": [
+      "Cancel my Friday shuttle"
+    ],
+    "expect": {
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Confirms Friday's shuttle was cancelled; tomorrow's booking is untouched."
+    }
+  },
+  {
+    "id": "list-bookings",
+    "category": "booking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        },
+        {
+          "day": 3,
+          "departure": "07:45"
+        }
+      ]
+    },
+    "turns": [
+      "What do I have booked?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_my_bookings"
+      ],
+      "tools_not_called": [
+        "book_usual_shuttle",
+        "cancel_booking",
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        },
+        {
+          "day": 3,
+          "departure": "07:45"
+        }
+      ],
+      "rubric": "Lists both bookings: tomorrow at 7:30 AM and Thursday at 7:45 AM."
+    }
+  },
+  {
+    "id": "why-not-saturday",
+    "category": "rules-rag",
+    "turns": [
+      "Why can't I book Saturday?"
+    ],
+    "expect": {
+      "tools_called": [
+        "check_booking_eligibility",
+        "search_policies"
+      ],
+      "bookings": [],
+      "sources": [
+        "Booking Policy › Service days"
+      ],
+      "rubric": "Explains shuttles only run Monday to Friday, attributes it to the Booking Policy, and suggests Friday or Monday instead."
+    }
+  },
+  {
+    "id": "book-sunday-refused",
+    "category": "rules-rag",
+    "turns": [
+      "Book my shuttle for Sunday"
+    ],
+    "expect": {
+      "bookings": [],
+      "rubric": "Does not claim a booking; explains there is no service on Sundays and suggests a weekday."
+    }
+  },
+  {
+    "id": "booking-window",
+    "category": "rules-rag",
+    "turns": [
+      "Why can't I book December 1st?"
+    ],
+    "expect": {
+      "tools_called": [
+        "check_booking_eligibility"
+      ],
+      "bookings": [],
+      "rubric": "Explains bookings open 14 days ahead and that December 1st can be booked from November 17."
+    }
+  },
+  {
+    "id": "date-passed",
+    "category": "rules-rag",
+    "turns": [
+      "Book my usual shuttle for yesterday"
+    ],
+    "expect": {
+      "bookings": [],
+      "rubric": "Does not claim a booking; explains the date has already passed."
+    }
+  },
+  {
+    "id": "policy-driver-wait",
+    "category": "rules-rag",
+    "turns": [
+      "How long will the driver wait for me?"
+    ],
+    "expect": {
+      "tools_called": [
+        "search_policies"
+      ],
+      "sources": [
+        "Pickup Rules › Arriving at the stop"
+      ],
+      "rubric": "Says drivers wait up to 2 minutes after the scheduled departure. Mentioning arriving 5 minutes early is fine but not required."
+    }
+  },
+  {
+    "id": "policy-no-show",
+    "category": "rules-rag",
+    "turns": [
+      "What happens if I miss my shuttle?"
+    ],
+    "expect": {
+      "tools_called": [
+        "search_policies"
+      ],
+      "rubric": "Explains a missed shuttle without cancelling is a no-show and three no-shows in 30 days pause bookings for 7 days."
+    }
+  },
+  {
+    "id": "policy-not-covered",
+    "category": "rules-rag",
+    "turns": [
+      "Can I bring my dog on the shuttle?"
+    ],
+    "expect": {
+      "tools_called": [
+        "search_policies"
+      ],
+      "sources": [],
+      "rubric": "Says the policies don't cover pets (or that it doesn't know) without inventing a rule."
+    }
+  },
+  {
+    "id": "policy-book-for-colleague",
+    "category": "rules-rag",
+    "turns": [
+      "Can I book a shuttle for my colleague?"
+    ],
+    "expect": {
+      "tools_called": [
+        "search_policies"
+      ],
+      "tools_not_called": [
+        "book_usual_shuttle"
+      ],
+      "rubric": "Says no: bookings are personal and tied to the rider's account."
+    }
+  },
+  {
+    "id": "where-is-shuttle",
+    "category": "tracking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -10
+      }
+    },
+    "turns": [
+      "Where's my shuttle?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_shuttle_status"
+      ],
+      "rubric": "Says the shuttle is about 10 minutes from the Home stop."
+    }
+  },
+  {
+    "id": "leave-not-yet",
+    "category": "tracking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -20,
+        "walk_minutes": 4
+      }
+    },
+    "turns": [
+      "Should I leave now?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_shuttle_status"
+      ],
+      "rubric": "Answers no, and says to leave in about 11 minutes, mentioning the 4-minute walk."
+    }
+  },
+  {
+    "id": "leave-now",
+    "category": "tracking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -8,
+        "walk_minutes": 4
+      }
+    },
+    "turns": [
+      "Should I leave now?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_shuttle_status"
+      ],
+      "rubric": "Answers yes, leave now."
+    }
+  },
+  {
+    "id": "delay-offers-alternative",
+    "category": "tracking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -10,
+        "delay_minutes": 20
+      }
+    },
+    "turns": [
+      "Is my shuttle on time?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_shuttle_status"
+      ],
+      "tools_not_called": [
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Says the shuttle is running about 20 minutes late and offers the 7:45 AM shuttle, which arrives sooner, without switching unasked."
+    }
+  },
+  {
+    "id": "delay-accept-alternative",
+    "category": "tracking",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -10,
+        "delay_minutes": 20
+      }
+    },
+    "turns": [
+      "Is my shuttle on time?",
+      "Yes, switch me to the faster one"
+    ],
+    "expect": {
+      "tools_called": [
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:45"
+        }
+      ],
+      "rubric": "Confirms the switch to the 7:45 AM shuttle."
+    }
+  },
+  {
+    "id": "out-of-scope",
+    "category": "safety",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ]
+    },
+    "turns": [
+      "What's the weather in Paris right now?"
+    ],
+    "expect": {
+      "tools_not_called": [
+        "book_usual_shuttle",
+        "cancel_booking",
+        "change_booking_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Politely says it can't provide that and offers shuttle help, without inventing weather data."
+    }
+  }
+]

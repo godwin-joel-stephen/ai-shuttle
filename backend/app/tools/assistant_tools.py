@@ -6,6 +6,7 @@ reply in. Booking failures come back as `{"error": ...}` so the agent can
 explain them instead of the request crashing.
 """
 
+import threading
 from datetime import date, datetime, timedelta
 from functools import wraps
 
@@ -73,6 +74,15 @@ def _report_booking_errors(func):
             return func(*args, **kwargs)
         except BookingError as e:
             return {"error": str(e)}
+
+    return wrapper
+
+
+def _one_at_a_time(func, lock: threading.Lock):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with lock:
+            return func(*args, **kwargs)
 
     return wrapper
 
@@ -229,7 +239,7 @@ def create_assistant_tools(
             ]
         }
 
-    return [
+    tools = [
         get_my_bookings,
         list_shuttle_options,
         book_usual_shuttle,
@@ -239,3 +249,12 @@ def create_assistant_tools(
         check_booking_eligibility,
         search_policies,
     ]
+
+    # LangGraph runs tool calls from one model turn in parallel threads,
+    # but these tools share one database session, which isn't thread-safe
+    # ("session is in 'prepared' state"). Run them one at a time.
+    lock = threading.Lock()
+    for t in tools:
+        t.func = _one_at_a_time(t.func, lock)
+
+    return tools

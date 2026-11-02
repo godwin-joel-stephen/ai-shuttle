@@ -10,6 +10,7 @@ per-conversation memory through the checkpointer (thread_id =
 conversation id). Business rules stay in the tools' services.
 """
 
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
@@ -44,6 +45,8 @@ Rules:
   bookings, shuttles, times or availability.
 - Resolve relative dates ("tomorrow", "Friday", "next Monday") against
   today's date and pass dates as YYYY-MM-DD.
+- If book_usual_shuttle returns already_booked=true, tell the user they were
+  already booked on that shuttle; never describe it as a new booking.
 - Never guess a booking_id or shuttle_id; take them from tool results. To
   book a new day, call book_usual_shuttle first, then adjust that booking.
 - "It", "that ride" and similar refer to the booking discussed most
@@ -81,23 +84,24 @@ def create_assistant_graph(
     tools: list[BaseTool],
     checkpointer: BaseCheckpointSaver,
     system_prompt: str,
-    fallback_model: BaseChatModel | None = None,
+    fallback_models: Sequence[BaseChatModel] = (),
     deadline_seconds: float | None = None,
 ):
-    primary = model.bind_tools(tools)
-    fallback = fallback_model.bind_tools(tools) if fallback_model is not None else None
+    attempts = [m.bind_tools(tools) for m in (model, *fallback_models)]
 
     def agent(state: MessagesState):
         messages = [SystemMessage(system_prompt), *state["messages"]]
-        call = _model_calls.submit(primary.invoke, messages)
 
-        try:
-            # Also raises TimeoutError when the deadline passes.
-            response = call.result(timeout=deadline_seconds or MODEL_DEADLINE_SECONDS)
-        except Exception:
-            if fallback is None:
-                raise
-            response = fallback.invoke(messages)
+        # Each model gets the same deadline, so the worst case is bounded.
+        for position, attempt in enumerate(attempts):
+            call = _model_calls.submit(attempt.invoke, messages)
+            try:
+                # Also raises TimeoutError when the deadline passes.
+                response = call.result(timeout=deadline_seconds or MODEL_DEADLINE_SECONDS)
+                break
+            except Exception:
+                if position == len(attempts) - 1:
+                    raise
 
         return {"messages": [response]}
 

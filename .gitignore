@@ -76,3 +76,6 @@ venv/
 
 # Local embedding model cache (downloaded on first use)
 backend/.cache/
+
+# Evaluation run outputs (the baseline is committed)
+backend/evals/results/

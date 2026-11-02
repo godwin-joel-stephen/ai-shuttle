@@ -1,50 +1,18 @@
-import os
 import sys
 from pathlib import Path
 
 import pytest
-from dotenv import dotenv_values
-from sqlalchemy import create_engine, make_url, text
+from sqlalchemy import text
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+from app.db.isolated_database import use_isolated_database  # noqa: E402
 
-def _use_test_database() -> None:
-    """Point the app at `<db>_test` so tests never touch demo data.
-
-    Must run before anything imports app.core.config, which reads
-    DATABASE_URL once at import time.
-    """
-    dev_url = make_url(
-        os.environ.get("DATABASE_URL")
-        or dotenv_values(BACKEND_DIR / ".env")["DATABASE_URL"]
-    )
-    # Idempotent: test modules also import this file as `tests.conftest`,
-    # which runs it a second time.
-    if dev_url.database.endswith("_test"):
-        return
-    test_url = dev_url.set(database=f"{dev_url.database}_test")
-
-    admin = create_engine(
-        dev_url.set(database="postgres"),
-        isolation_level="AUTOCOMMIT",
-    )
-    with admin.connect() as connection:
-        exists = connection.scalar(
-            text("SELECT 1 FROM pg_database WHERE datname = :name"),
-            {"name": test_url.database},
-        )
-        if not exists:
-            connection.execute(text(f'CREATE DATABASE "{test_url.database}"'))
-    admin.dispose()
-
-    os.environ["DATABASE_URL"] = test_url.render_as_string(hide_password=False)
-
-
-_use_test_database()
+# Never touch demo data: tests run against `<database>_test`.
+use_isolated_database("test")
 
 from datetime import datetime, timedelta  # noqa: E402
 

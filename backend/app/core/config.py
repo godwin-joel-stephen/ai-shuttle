@@ -13,8 +13,11 @@ class Settings(BaseSettings):
     # gemini-3.5-flash-lite (Tier 2) answered in ~1s. Latency is a hard
     # requirement for Siri, so Tier 2 is the primary.
     agent_model: str = "gemini-3.5-flash-lite"
-    # Used for a step when the primary model errors or misses its deadline.
-    agent_fallback_model: str = "gemini-3.5-flash"
+    # Tried in order when the primary errors or misses its deadline. Free
+    # tier quotas shaped this: gemini-3.5-flash allows only 20 requests a
+    # day, so a fresh Flash-Lite attempt comes first, then 3.1 Flash-Lite
+    # (a separate quota).
+    agent_fallback_models: list[str] = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
     # External MCP servers whose tools the agent discovers at startup, as
     # {name: {"command": ..., "args": [...]}}; "python" means this
     # backend's interpreter. Set MCP_SERVERS='{}' to disable.
