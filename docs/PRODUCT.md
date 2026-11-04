@@ -1,0 +1,75 @@
+# Product: Clear Path
+
+## Goal
+
+Show, in a live demo, the ability to build a *practical* AI-powered mobile
+app — not "a chatbot inside an app with voice". The AI works through the
+surfaces iOS users already use (Siri, notifications, widgets, Control
+Center, Action button, Lock Screen, Dynamic Island, share sheet), with a
+production-grade backend: tool-calling agents, RAG, MCP, evaluation,
+tracing, on-device AI.
+
+Closing line of the demo: *"The AI isn't a chat box inside the app. It works
+through the parts of iOS people already use, and the app is only where you
+go when you want to."*
+
+## Scope decisions
+
+- **Single user** (the presenter, "Godwin Joel", user id 1), commuting
+  Home → Office. The original "Emma / child" scenarios were dropped to keep
+  the demo simple; adapt any Emma flow to the rider's own commute.
+- In-app chat is **secondary**: used where conversation genuinely fits
+  (troubleshooting with citations, unusual requests, activity log).
+- Every technology must be justified by a product capability (from the
+  original planning docs, which live outside the repo: IDEA,
+  IMPLEMENTATION-PLAN, LLM architecture).
+- Nothing paid without the user's agreement (free-tier Gemini, self-hosted
+  everything). No paid Apple developer account, so **no APNs push**; trip
+  mode (background location) replaces push.
+
+## Flows
+
+Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
+
+| # | Flow | Surface | Status |
+|---|---|---|---|
+| F1 | "Book my usual shuttle (for Friday) with Clear Path"; Siri card with Earlier/Later buttons | Siri | ✅ |
+| F2 | One-tap booking: home/Lock Screen widget, Control Center control, Action button | Widgets | ✅ |
+| F3 | Import a schedule from a photo/PDF via the share sheet (Vision OCR + on-device Foundation Models → structured schedule → agent books/cancels days). Adapted for single user: work schedule / office days / offsite | Share sheet | ⏳ next |
+| F4 | Proactive delay alert: "Shuttle 20 min late… the 7:45 gets you there 5 min sooner. [Rebook] [Keep]" — Rebook works from the notification | Notification | ✅ (alternative chosen by deterministic logic, not yet a planner agent) |
+| F5 | "Time to leave" alert and "Should I leave now?" using walking time (+ weather via MCP) | Notification / chat | ✅ |
+| F6 | Live tracking: Siri "Track my shuttle with Clear Path", Live Activity (Lock Screen + Dynamic Island), live map | Siri / Live Activity | ✅ |
+| F7 | Goal-based booking ("get me to the office by 8:30") with planner + specialised agents | Chat / Ask Clear Path | 🟡 agent can do it with existing tools; no planner/multi-agent |
+| F8 | "Why can't I book Saturday?" — real rule + RAG over policies, cited sources | Chat / Siri | ✅ |
+| F9 | Ask Clear Path chat + on-device voice + Siri "Ask Clear Path", shared memory, activity log | Chat / Siri | ✅ |
+| F10 | Habit-based suggestions (IntentDonationManager → Siri Suggestions/Spotlight; learned "usual") | Lock Screen / Spotlight | ⏳ |
+| F11 | MCP server: book from Claude Desktop with the same rules | Laptop | ✅ (verified in Claude Desktop) |
+| E | Agent uses an external MCP server (weather) | Chat | ✅ |
+| F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
+| F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | 🟡 structured Siri path already skips the LLM; demo script and injection checks missing |
+| — | Optional: on-device Foundation Models routing (simple requests on-device) | — | ⏳ |
+
+## Demo order (planned)
+
+1. Siri: "Book my usual shuttle with Clear Path", tap **Earlier** on the Siri card (F1)
+2. Widget / Control Center one-tap booking (F2)
+3. Share sheet: schedule import (F3, when built)
+4. Proactive delay alert → Rebook from the notification (F4)
+5. "Time to leave" alert (F5)
+6. Siri "Track my shuttle" → Live Activity (F6)
+7. Open the app: everything already reflected; chat used on purpose for "Why can't I book?" with citations (F8), optionally goal booking (F7)
+8. Laptop: Claude Desktop books through MCP; agent's weather step labelled "via weather MCP server" (F11 + E)
+9. Laptop: Langfuse trace of a turn, evaluation results (F12); "LLM off" reliability (F13)
+10. Architecture slide
+
+See [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) for exact commands.
+
+## Design principles
+
+- Deterministic facts stay deterministic: PostgreSQL + services are the
+  source of truth; the LLM never invents bookings, times or availability.
+- Tools act; the LLM chooses. Business rules live in services and apply to
+  every client (Siri, widgets, chat, MCP).
+- Structured requests (Siri phrases, widget buttons) skip the LLM entirely.
+- Cheapest model that measurably meets requirements; decide with evals.
+- Be honest in failure: never report "unavailable" when a booking changed.

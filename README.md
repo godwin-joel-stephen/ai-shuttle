@@ -1,4 +1,11 @@
 # ai-shuttle
+
+Clear Path: an iOS commuter-shuttle app whose AI works through Siri, widgets,
+Live Activities and notifications, backed by a LangGraph agent with RAG, MCP,
+evaluation and tracing. Start with [CLAUDE.md](CLAUDE.md) and the
+[docs/](docs/) folder (product, architecture, backend, AI, mobile, MCP,
+progress, demo runbook).
+
 A scalable AI-powered shuttle platform demonstrating Agentic AI, Siri integration, MCP, intelligent booking workflows, and AI evaluation.
 
 ## MCP server
