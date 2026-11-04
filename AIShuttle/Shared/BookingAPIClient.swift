@@ -39,7 +39,7 @@ public final class BookingAPIClient: Sendable {
            let url = URL(string: value) {
             return url
         }
-        return URL(string: "http://192.168.1.4:8000")!
+        return URL(string: "http://172.20.1.13:8000")!
     }()
 
     public let baseURL: URL
