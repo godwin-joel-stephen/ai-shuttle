@@ -3,6 +3,7 @@ tool results, so a reply that sounds right but states facts the tools
 never returned still fails."""
 
 import json
+from datetime import date
 
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
@@ -36,6 +37,7 @@ class Verdict(BaseModel):
 
 def judge(
     model: BaseChatModel,
+    today: date,
     turns: list[str],
     reply: str,
     tool_results: list[tuple[str, str]],
@@ -46,6 +48,9 @@ def judge(
     ) or "(no tools were called)"
 
     prompt = f"""{_INSTRUCTIONS}
+
+Today is {today:%A, %B %-d, %Y} ({today.isoformat()}); relative dates in the
+reply ("tomorrow", "Friday") are relative to this.
 
 User messages, in order:
 {json.dumps(turns, ensure_ascii=False)}

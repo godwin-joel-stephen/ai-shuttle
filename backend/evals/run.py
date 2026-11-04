@@ -77,6 +77,11 @@ FIXED_NOW = datetime(2026, 11, 2, 6, 0)  # a Monday, before the first shuttle
 # gemini-3.5-flash allows only 20 requests/day on the free tier, so the
 # judge defaults to Flash-Lite; --judge-model overrides it.
 JUDGE_MODEL = "gemini-3.5-flash-lite"
+# Free-tier Gemini allows only a few requests per minute: pause between
+# cases, and wait once before retrying a rate-limited judge call.
+PAUSE_BETWEEN_CASES_SECONDS = 6
+RATE_LIMIT_WAIT_SECONDS = 30
+
 # A drop in task success larger than this (one case in 24) fails --check.
 ALLOWED_SUCCESS_DROP = 0.05
 
@@ -106,6 +111,16 @@ class CaseResult:
     cost_usd: float
     model_calls: dict[str, int] = field(default_factory=dict)
     error: str | None = None
+
+
+def _with_rate_limit_retry(call):
+    try:
+        return call()
+    except Exception as e:
+        if "429" not in str(e) and "RESOURCE_EXHAUSTED" not in str(e):
+            raise
+        time.sleep(RATE_LIMIT_WAIT_SECONDS)
+        return call()
 
 
 def prepare_database() -> None:
@@ -240,7 +255,9 @@ def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model
     score, reason = 1, "Not judged: the run failed."
     if error is None:
         try:
-            verdict = judge(judge_model, case["turns"], reply, tool_results, expect["rubric"])
+            verdict = _with_rate_limit_retry(
+                lambda: judge(judge_model, FIXED_NOW.date(), case["turns"], reply, tool_results, expect["rubric"])
+            )
             score, reason = verdict.score, verdict.reason
             checks["answer"] = verdict.passed
         except Exception as e:
@@ -360,6 +377,8 @@ def main() -> int:
     parser.add_argument("--no-fallback", action="store_true")
     parser.add_argument("--judge-model", default=JUDGE_MODEL)
     parser.add_argument("--cases", help="comma-separated case ids")
+    parser.add_argument("--pause", type=float, default=PAUSE_BETWEEN_CASES_SECONDS,
+                        help="seconds between cases, to stay under free-tier rate limits")
     parser.add_argument("--save-baseline", action="store_true")
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
@@ -378,7 +397,9 @@ def main() -> int:
           + (f" (fallbacks {', '.join(fallbacks)})" if fallbacks else "") + f", database {EVAL_DATABASE}")
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     results = []
-    for case in cases:
+    for position, case in enumerate(cases):
+        if position:
+            time.sleep(args.pause)
         result = run_case(case, args.model, fallbacks, judge_model, run_id)
         print(f"  {'✓' if result.passed else '✗'} {case['id']}", flush=True)
         results.append(result)

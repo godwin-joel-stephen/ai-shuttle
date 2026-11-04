@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "model": "gemini-3.5-flash-lite",
+    "cases": 24,
+    "task_success": 0.917,
+    "tool_accuracy": 1.0,
+    "mean_judge_score": 4.67,
+    "hallucination_flags": 2,
+    "latency_p50_s": 6.78,
+    "latency_p95_s": 25.86,
+    "mean_cost_per_task_usd": 0.0014,
+    "fallback_share": 0.015,
+    "by_category": {
+      "booking": 1.0,
+      "follow-up": 1.0,
+      "rules-rag": 0.875,
+      "safety": 1.0,
+      "tracking": 0.8
+    }
+  },
+  "passed": {
+    "book-tomorrow": true,
+    "book-weekday": true,
+    "book-casual-phrasing": true,
+    "book-specific-time": true,
+    "already-booked": true,
+    "follow-up-earlier": true,
+    "follow-up-latest": true,
+    "follow-up-cancel": true,
+    "cancel-one-of-two": true,
+    "list-bookings": true,
+    "why-not-saturday": true,
+    "book-sunday-refused": false,
+    "booking-window": true,
+    "date-passed": true,
+    "policy-driver-wait": true,
+    "policy-no-show": true,
+    "policy-not-covered": true,
+    "policy-book-for-colleague": true,
+    "where-is-shuttle": true,
+    "leave-not-yet": true,
+    "leave-now": true,
+    "delay-offers-alternative": false,
+    "delay-accept-alternative": true,
+    "out-of-scope": true
+  }
+}

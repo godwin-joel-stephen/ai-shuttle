@@ -172,7 +172,9 @@ def create_assistant_tools(
 
         return {
             "booking_id": status.booking.id,
-            "date": status.booking.booking_date.isoformat(),
+            # A simulated trip is being replayed now, whatever its booking
+            # date; reporting that date made the agent say "tomorrow".
+            "date": (clock.today() if status.simulated else status.booking.booking_date).isoformat(),
             "phase": status.phase.value,
             "summary": status.message,
             "delay_minutes": status.delay_minutes,

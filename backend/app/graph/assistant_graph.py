@@ -76,6 +76,8 @@ Rules:
   from search_policies results. If nothing relevant comes back, say you
   don't know rather than guessing.
 - If a tool returns an error, explain it plainly and suggest an option.
+  When a booking can't be made for a date, always name the nearest day
+  that can be booked.
 - Reply in one or two short sentences that read well aloud, with times in
   12-hour format (for example 7:30 AM)."""
 

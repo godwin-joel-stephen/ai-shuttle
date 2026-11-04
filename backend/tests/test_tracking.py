@@ -168,6 +168,8 @@ def test_agent_tool_reports_next_trip(db, tracking, booking, user_id):
     assert result["phase"] == "approaching"
     assert result["minutes_to_pickup"] == 9
     assert result["summary"] == "Your shuttle is 9 minutes from Home."
+    # Replayed now, so reported as today rather than the booking's date.
+    assert result["date"] == FIXED_NOW.date().isoformat()
     assert result["pickup_time"] == "7:30 AM"
 
 
