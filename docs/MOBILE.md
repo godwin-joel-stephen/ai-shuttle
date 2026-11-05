@@ -10,13 +10,14 @@ Swift Testing for unit tests. Signing: automatic, team `5RXXN24YC5`
 
 | Target | Bundle id | Contents |
 |---|---|---|
-| AIShuttle (app) | `com.yourcompany.AIShuttle` | `AIShuttle/` + `Shared/` |
+| AIShuttle (app) | `com.yourcompany.AIShuttle` | `AIShuttle/` + `Shared/` + `ScheduleImport/` |
 | ClearPathWidgets (widget extension) | `com.yourcompany.AIShuttle.ClearPathWidgets` | `ClearPathWidgets/` + `Shared/` |
+| ClearPathShare (share extension) | `com.yourcompany.AIShuttle.ClearPathShare` | `ClearPathShare/` + `ScheduleImport/` + `Shared/` minus `BookTomorrowIntent`, `BookingConfirmation`, `ShuttleActivityAttributes` (membership exception set) |
 | AIShuttleTests | `com.yourcompany.AIShuttleTests` | `AIShuttleTests/` |
 
 Folders are file-system-synchronized groups (new files are picked up
 automatically). Info.plist = generated + `AIShuttle-Info.plist` /
-`ClearPathWidgets-Info.plist`:
+`ClearPathWidgets-Info.plist` / `ClearPathShare-Info.plist`:
 
 - `BookingAPIBaseURL = $(BOOKING_API_BASE_URL)` — project build setting,
   currently `http://172.20.1.13:8000` (the Mac's Wi-Fi IP; update when it
@@ -43,6 +44,11 @@ Shared/                BookingAPIClient (+ withTimeouts/forAssistant, ISO8601 de
                        BookingDTOs, BookingConfirmation (spoken text, BookingIntentError, notifier),
                        BookTomorrowIntent (widget/control), ShuttleActivityAttributes
 ClearPathWidgets/      NextRideWidget, BookShuttleControl, ShuttleLiveActivity, bundle
+ScheduleImport/        (app + share extension) ScheduleModels (WorkdayKind, ScheduleCalendar), ScheduleTextReader
+                       (Vision/PDFKit), DocumentSafety, RuleBasedScheduleParser, ScheduleExtractor (Foundation
+                       Models), ScheduleAPI, ScheduleImportModel, ScheduleImportView
+ClearPathShare/        ShareViewController (hosts ScheduleImportView, loads PDF > image > text attachments)
+ScheduleImportEvals/   macOS eval + sample generator (not an Xcode target): run.sh, main.swift, cases.json
 ```
 
 ## Siri / App Intents
@@ -93,6 +99,31 @@ actions. Rebook → `TripMonitor.switchToAlternative` → `POST /bookings/{id}/m
 Stops on arrival. `NotificationResponder` uses completion-handler delegate
 methods completed on the main actor (async variants crashed SwiftUI).
 
+## Schedule import (F3)
+
+Entry points: **share sheet** (Photos, Files, Mail, Notes… → Clear Path;
+activation rule: one PDF, image or plain text) and Home → **Import work
+schedule** (photo picker or file importer). Both show `ScheduleImportView`:
+
+1. `ScheduleTextReader`: images downscaled to 2400 px (extension memory
+   limit) → Vision `RecognizeTextRequest` (accurate) → cells regrouped into
+   rows by vertical position ("Mon 9 Nov | Office"); PDFs use the text layer,
+   or render ≤3 pages and OCR them; text as is. Capped at 3000 characters.
+2. `ScheduleExtractor`: `DocumentSafety` removes instruction-like lines →
+   Foundation Models (`@Generable GeneratedSchedule`, greedy) or, when
+   Apple Intelligence is unavailable or fails, `RuleBasedScheduleParser` →
+   validation (today…+28 days, weekday cross-check, duplicates, past days
+   counted and skipped). See AI.md.
+3. `POST /schedule/plan` → review list: per-day kind chip, planned action,
+   toggles for book/cancel rows, ignored lines warning, "text read from your
+   document" disclosure, method label (Apple Intelligence or text rules +
+   reason).
+4. **Apply** → `POST /schedule/apply` with only the approved days → result
+   rows ✓/✗; reloads widget timelines; the app also reloads rides.
+
+The share extension does everything inside the sheet (no App Group, no
+opening the app); it reads `BookingAPIBaseURL` from its own Info.plist.
+
 ## Chat and voice
 
 `AssistantView` (sheet from Home "Ask Clear Path"): suggestions, replies
@@ -102,7 +133,7 @@ sources, new-conversation button. `VoiceInput` uses iOS 26 `SpeechAnalyzer`
 "shuttle"); tap mic to talk, tap again to stop and send. Shares the
 conversation with Siri "Ask Clear Path" (30-minute expiry).
 
-## Tests (33 Swift Testing tests)
+## Tests (52 Swift Testing tests)
 
 All suites that use `MockURLProtocol.requestHandler` (a process-wide static)
 are nested under `@Suite(.serialized) struct MockedNetworkTests` — suites
@@ -117,8 +148,12 @@ run in parallel otherwise and steal each other's mock responses.
   -only-testing:AIShuttleTests -parallel-testing-enabled NO` from a script
   that kills any `clang -v -E -dM` process seen twice 4s apart; takes
   ~90s.
+- Schedule extraction eval (macOS, same sources):
+  `AIShuttle/ScheduleImportEvals/run.sh [--rules-only] [--cases a,b]`;
+  `run.sh extract FILE` reads any PNG/JPEG/PDF/text; `run.sh sample --out DIR
+  [--injection]` draws next week's demo schedule.
 - Quick check without the build system: `xcrun swiftc -typecheck` of
-  `AIShuttle/**/*.swift + Shared/*.swift` (and `ClearPathWidgets/*.swift +
+  `AIShuttle/**/*.swift + Shared/*.swift + ScheduleImport/*.swift` (and `ClearPathWidgets/*.swift +
   Shared/*.swift` with `-application-extension`) with `-sdk
   iphonesimulator -target arm64-apple-ios26.4-simulator -swift-version 5
   -default-isolation MainActor` and the upcoming features

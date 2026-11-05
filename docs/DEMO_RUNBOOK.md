@@ -22,7 +22,14 @@ always refused). Mac and iPhone on the same Wi-Fi.
    (Settings → Developer).
 8. Langfuse open at http://localhost:3000.
 9. Avoid running evals on demo day (they use the free Gemini quota).
-10. Fallbacks ready: personal Shortcut, Type to Siri, recorded video.
+10. Schedule samples for next week:
+    `AIShuttle/ScheduleImportEvals/run.sh sample --out ~/Desktop` and
+    `… sample --out ~/Desktop --injection`; AirDrop the PNGs to the phone
+    (save to Photos) or show them on the Mac screen and take a photo. Book
+    the Tuesday beforehand (Siri or chat) so the import has a booking to
+    cancel. Check Apple Intelligence is on (Settings → Apple Intelligence &
+    Siri).
+11. Fallbacks ready: personal Shortcut, Type to Siri, recorded video.
 
 ## Script
 
@@ -31,19 +38,26 @@ always refused). Mac and iPhone on the same Wi-Fi.
    request is already structured."*
 2. **One tap**: Control Center button or widget **Book tomorrow** (reset or
    use another day first if already booked).
-3. **Live trip**: `python -m scripts.demo_trip` → app → Where's my shuttle?
+3. **Schedule import**: Photos → the schedule photo → Share → **Clear Path**
+   → "I'll book 2 days and cancel 1 day" (Mon/Wed booked, Tue WFH cancels
+   the booking, Thu offsite / Fri leave need nothing) → **Apply**. *"The
+   photo was read and understood on the iPhone by Apple's on-device model;
+   only the days went to the server, and the same booking rules applied."*
+   Optional F13: share the injection version → orange "Ignored 1 line that
+   looked like instructions to an AI" → nothing extra proposed.
+4. **Live trip**: `python -m scripts.demo_trip` → app → Where's my shuttle?
    → **Start trip mode** → lock the phone. Live Activity counts down;
    "Time to leave" arrives in ~1 minute.
-4. **Delay**: `python -m scripts.demo_trip --delay 20` → notification
+5. **Delay**: `python -m scripts.demo_trip --delay 20` → notification
    offers the 7:45 → long-press → **Rebook** → "Rebooked".
-5. **Siri tracking**: "Hey Siri, track my shuttle with Clear Path".
-6. **Chat on purpose**: Ask Clear Path → "Why can't I book Saturday?" →
+6. **Siri tracking**: "Hey Siri, track my shuttle with Clear Path".
+7. **Chat on purpose**: Ask Clear Path → "Why can't I book Saturday?" →
    cited Booking Policy; "Should I leave now?" → weather step "via weather
    MCP server".
-7. **MCP**: Claude Desktop → "Book my usual shuttle for Wednesday" → refresh
+8. **MCP**: Claude Desktop → "Book my usual shuttle for Wednesday" → refresh
    app; "Book Saturday too" → refused.
-8. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
+9. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
    (`backend/evals/baseline.json`, or a fresh `--cases` run if quota allows).
-9. **Close** with the architecture slide.
+10. **Close** with the architecture slide.
 
 After: `python -m scripts.demo_trip --stop`.

@@ -25,6 +25,9 @@ Read these before working on an area:
 AIShuttle/                 Xcode project (iOS 26.4, Swift, SwiftUI)
   AIShuttle/               app target: AppIntent/, Assistant/, Tracking/, Views/, ViewModels/
   ClearPathWidgets/        widget extension: widget, control, Live Activity UI
+  ClearPathShare/          share extension: schedule import in the share sheet
+  ScheduleImport/          schedule import pipeline (app + share extension): OCR, on-device model, review UI
+  ScheduleImportEvals/     macOS eval + demo sample generator for schedule extraction (run.sh)
   Shared/                  compiled into both targets: API client, DTOs, one-tap intent
   AIShuttleTests/          Swift Testing unit tests
 backend/                   Python 3.14, FastAPI, LangGraph, SQLAlchemy, Postgres+pgvector
@@ -45,7 +48,7 @@ docker-compose.yml         app Postgres (pgvector/pgvector:pg17-trixie)
 docker compose up -d
 cd backend && source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000      # backend for the iPhone
-python -m pytest -q                                 # 73 tests, ~7s, no network
+python -m pytest -q                                 # 86 tests, ~7s, no network
 python -m scripts.demo_trip                         # live simulated trip for demos
 ```
 

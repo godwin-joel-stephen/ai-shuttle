@@ -50,6 +50,28 @@ class BookingRepository:
 
         return self.db.scalar(statement)
 
+    def get_confirmed_on_date(
+        self,
+        user_id: int,
+        booking_date: date,
+    ) -> list[Booking]:
+        """Every confirmed booking on one day, on any route."""
+
+        statement = (
+            select(Booking)
+            .where(
+                Booking.user_id == user_id,
+                Booking.booking_date == booking_date,
+                Booking.status == "confirmed",
+            )
+            .options(
+                selectinload(Booking.shuttle).selectinload(Shuttle.route),
+            )
+            .order_by(Booking.pickup_time.asc())
+        )
+
+        return list(self.db.scalars(statement).all())
+
     def get_upcoming_by_user_id(
         self,
         user_id: int,

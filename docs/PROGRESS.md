@@ -1,7 +1,7 @@
 # Progress
 
-Last updated 2026-11-04. `main` is at the latest pushed commit; all work so
-far is merged.
+Last updated 2026-11-05. F3 is on branch `feature/f3-schedule-import`
+(not merged; awaiting the user's iPhone test). Everything else is merged.
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -18,25 +18,22 @@ far is merged.
 | F11/E MCP | 569efb9, 7fd6d81, 6125dec | verified in Claude Desktop 2026-11-04 |
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3 | backend address 172.20.1.13 |
+| F3 schedule import | branch `feature/f3-schedule-import` | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval. **Not yet verified on device.** |
 
 ## Next (agreed order)
 
-1. **F3 — schedule import (on-device AI)**, adapted to the single user:
-   share a photo/PDF of a work schedule (office days, WFH days, offsite)
-   to Clear Path via the share sheet → Vision text recognition on-device →
-   Apple Foundation Models (`@Generable` guided generation) turns it into a
-   structured schedule on the phone → the agent proposes booking/cancelling
-   the affected days → user taps **Apply**. Needs: a share extension (or
-   App Intent accepting a file) — check what iOS 26 offers before adding a
-   target; prompt-injection handling for document text (F13); evals for the
-   planning step. Requires a device with Apple Intelligence (iPhone 17 OK).
+1. **F3 — finish**: user tests on the iPhone (share sheet from Photos and
+   Files, in-app import, injection sample, Apple Intelligence on and off);
+   run `AIShuttle/ScheduleImportEvals/run.sh` with Apple Intelligence on
+   (on the Mac) to get the on-device model's numbers and save them in AI.md;
+   then merge.
 2. **F7 — goal-based planning**: "Get me to the office by 8:30" with a
    planner + specialised agents (schedule / transport / booking) where it
    genuinely helps; reuse for F4's alternative choice. Add eval cases first.
 3. **F10 — habit suggestions**: donate booking intents
    (`IntentDonationManager`), learn "usual" from history.
 4. **F13 — reliability demo**: script for "Gemini key off → Siri booking
-   still works"; prompt-injection checks for imported documents.
+   still works" (document injection screening is done in F3).
 5. **Demo runbook polish and rehearsal**; update the original planning docs
    if wanted (they live outside the repo).
 6. Optional: on-device Foundation Models routing.
@@ -56,6 +53,13 @@ far is merged.
 - A simulated trip replays a *future* booking now; the Lock Screen widget
   still shows its scheduled date (user accepted this).
 - `tests/manual_gemini_*.py` hit the live API (not in the pytest run).
+- Apple Intelligence is **off on the Mac**, so the schedule extraction eval
+  has only measured the keyword-rules baseline so far (11/15). Turning it on
+  (System Settings → Apple Intelligence & Siri; free, downloads the model)
+  lets `run.sh` measure the on-device model too.
+- The share extension adds a third bundle id
+  (`com.yourcompany.AIShuttle.ClearPathShare`); free accounts may register
+  only 10 App IDs per 7 days.
 
 ## Decision log
 
@@ -70,3 +74,6 @@ far is merged.
 | 2026-11-03 | Nothing that costs money without discussing first (standing rule) |
 | 2026-11-03 | No CI; Langfuse self-hosted in Docker |
 | 2026-11-04 | Eval baseline saved (22/24) |
+| 2026-11-05 | F3 uses a share extension: iOS 26 can't put an App Intent in the share sheet without the user building a Shortcut |
+| 2026-11-05 | F3 planning is deterministic on the server, not the cloud agent: days→bookings is a rule; only typed `{date, kind}` days leave the phone, so document text can't reach Gemini or any tool |
+| 2026-11-05 | F3 falls back to keyword rules when Apple Intelligence is unavailable; the same rules are the eval baseline |

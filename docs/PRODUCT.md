@@ -35,7 +35,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 |---|---|---|---|
 | F1 | "Book my usual shuttle (for Friday) with Clear Path"; Siri card with Earlier/Later buttons | Siri | ✅ |
 | F2 | One-tap booking: home/Lock Screen widget, Control Center control, Action button | Widgets | ✅ |
-| F3 | Import a schedule from a photo/PDF via the share sheet (Vision OCR + on-device Foundation Models → structured schedule → agent books/cancels days). Adapted for single user: work schedule / office days / offsite | Share sheet | ⏳ next |
+| F3 | Import a work schedule (office / home / offsite / leave days) from a photo, screenshot, PDF or text via the share sheet or Home → Import work schedule: Vision OCR + on-device Foundation Models → typed days → server plans book/cancel with the booking rules → review → **Apply** | Share sheet | 🟡 built and unit-tested; awaiting iPhone test |
 | F4 | Proactive delay alert: "Shuttle 20 min late… the 7:45 gets you there 5 min sooner. [Rebook] [Keep]" — Rebook works from the notification | Notification | ✅ (alternative chosen by deterministic logic, not yet a planner agent) |
 | F5 | "Time to leave" alert and "Should I leave now?" using walking time (+ weather via MCP) | Notification / chat | ✅ |
 | F6 | Live tracking: Siri "Track my shuttle with Clear Path", Live Activity (Lock Screen + Dynamic Island), live map | Siri / Live Activity | ✅ |
@@ -46,14 +46,14 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | F11 | MCP server: book from Claude Desktop with the same rules | Laptop | ✅ (verified in Claude Desktop) |
 | E | Agent uses an external MCP server (weather) | Chat | ✅ |
 | F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
-| F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | 🟡 structured Siri path already skips the LLM; demo script and injection checks missing |
+| F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | 🟡 structured Siri path skips the LLM; imported documents are screened (F3); demo script missing |
 | — | Optional: on-device Foundation Models routing (simple requests on-device) | — | ⏳ |
 
 ## Demo order (planned)
 
 1. Siri: "Book my usual shuttle with Clear Path", tap **Earlier** on the Siri card (F1)
 2. Widget / Control Center one-tap booking (F2)
-3. Share sheet: schedule import (F3, when built)
+3. Share sheet: schedule import from a photo of the week's schedule → review → Apply (F3); optionally the version with injected fine print
 4. Proactive delay alert → Rebook from the notification (F4)
 5. "Time to leave" alert (F5)
 6. Siri "Track my shuttle" → Live Activity (F6)

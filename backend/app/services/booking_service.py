@@ -218,6 +218,9 @@ class BookingService:
             already_booked=False,
         )
 
+    def get_usual_shuttle(self, user_id: int) -> Shuttle:
+        return self._resolve_usual_shuttle(user_id)
+
     def get_booking(self, user_id: int, booking_id: int) -> Booking:
         return self._resolve_booking(user_id, booking_id)
 

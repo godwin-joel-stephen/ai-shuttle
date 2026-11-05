@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C1EA4A11000000000000000B /* ClearPathWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C1EA4A110000000000000000 /* ClearPathWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C1EA4A12000000000000000B /* ClearPathShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C1EA4A120000000000000000 /* ClearPathShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,13 @@
 			remoteGlobalIDString = F55A7EFB30659FDC00D57745;
 			remoteInfo = AIShuttle;
 		};
+		C1EA4A12000000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F55A7EF430659FDC00D57745 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C1EA4A120000000000000003;
+			remoteInfo = ClearPathShare;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -42,6 +50,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				C1EA4A11000000000000000B /* ClearPathWidgets.appex in Embed Foundation Extensions */,
+				C1EA4A12000000000000000B /* ClearPathShare.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,7 +62,20 @@
 		F55A7EFC30659FDC00D57745 /* AIShuttle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIShuttle.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F55A7F0930659FDE00D57745 /* AIShuttleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIShuttleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F55A7F1330659FDF00D57745 /* AIShuttleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIShuttleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1EA4A120000000000000000 /* ClearPathShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ClearPathShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C1EA4A12000000000000000E /* Exceptions for "Shared" folder in "ClearPathShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				BookTomorrowIntent.swift,
+				BookingConfirmation.swift,
+				ShuttleActivityAttributes.swift,
+			);
+			target = C1EA4A120000000000000003 /* ClearPathShare */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C1EA4A110000000000000001 /* ClearPathWidgets */ = {
@@ -63,6 +85,9 @@
 		};
 		C1EA4A110000000000000002 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C1EA4A12000000000000000E /* Exceptions for "Shared" folder in "ClearPathShare" target */,
+			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -79,6 +104,16 @@
 		F55A7F1630659FDF00D57745 /* AIShuttleUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = AIShuttleUITests;
+			sourceTree = "<group>";
+		};
+		C1EA4A120000000000000001 /* ClearPathShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ClearPathShare;
+			sourceTree = "<group>";
+		};
+		C1EA4A120000000000000002 /* ScheduleImport */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ScheduleImport;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -112,6 +147,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C1EA4A120000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -123,6 +165,8 @@
 				F55A7F1630659FDF00D57745 /* AIShuttleUITests */,
 				C1EA4A110000000000000002 /* Shared */,
 				C1EA4A110000000000000001 /* ClearPathWidgets */,
+				C1EA4A120000000000000002 /* ScheduleImport */,
+				C1EA4A120000000000000001 /* ClearPathShare */,
 				F55A7EFD30659FDC00D57745 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,6 +178,7 @@
 				F55A7F0930659FDE00D57745 /* AIShuttleTests.xctest */,
 				F55A7F1330659FDF00D57745 /* AIShuttleUITests.xctest */,
 				C1EA4A110000000000000000 /* ClearPathWidgets.appex */,
+				C1EA4A120000000000000000 /* ClearPathShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,6 +186,30 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		C1EA4A120000000000000003 /* ClearPathShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C1EA4A120000000000000007 /* Build configuration list for PBXNativeTarget "ClearPathShare" */;
+			buildPhases = (
+				C1EA4A120000000000000004 /* Sources */,
+				C1EA4A120000000000000005 /* Frameworks */,
+				C1EA4A120000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C1EA4A120000000000000001 /* ClearPathShare */,
+				C1EA4A120000000000000002 /* ScheduleImport */,
+				C1EA4A110000000000000002 /* Shared */,
+			);
+			name = ClearPathShare;
+			packageProductDependencies = (
+			);
+			productName = ClearPathShare;
+			productReference = C1EA4A120000000000000000 /* ClearPathShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		C1EA4A110000000000000003 /* ClearPathWidgets */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C1EA4A110000000000000007 /* Build configuration list for PBXNativeTarget "ClearPathWidgets" */;
@@ -177,10 +246,12 @@
 			);
 			dependencies = (
 				C1EA4A11000000000000000C /* PBXTargetDependency */,
+				C1EA4A12000000000000000C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C1EA4A110000000000000002 /* Shared */,
 				F55A7EFE30659FDC00D57745 /* AIShuttle */,
+				C1EA4A120000000000000002 /* ScheduleImport */,
 			);
 			name = AIShuttle;
 			packageProductDependencies = (
@@ -248,6 +319,9 @@
 					C1EA4A110000000000000003 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
+					C1EA4A120000000000000003 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					F55A7EFB30659FDC00D57745 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
@@ -279,6 +353,7 @@
 				F55A7F0830659FDE00D57745 /* AIShuttleTests */,
 				F55A7F1230659FDF00D57745 /* AIShuttleUITests */,
 				C1EA4A110000000000000003 /* ClearPathWidgets */,
+				C1EA4A120000000000000003 /* ClearPathShare */,
 			);
 		};
 /* End PBXProject section */
@@ -306,6 +381,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F55A7F1130659FDF00D57745 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1EA4A120000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -343,6 +425,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C1EA4A120000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -361,9 +450,75 @@
 			target = F55A7EFB30659FDC00D57745 /* AIShuttle */;
 			targetProxy = F55A7F1430659FDF00D57745 /* PBXContainerItemProxy */;
 		};
+		C1EA4A12000000000000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C1EA4A120000000000000003 /* ClearPathShare */;
+			targetProxy = C1EA4A12000000000000000D /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		C1EA4A120000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RXXN24YC5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ClearPathShare-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.AIShuttle.ClearPathShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C1EA4A120000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RXXN24YC5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ClearPathShare-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Clear Path";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.AIShuttle.ClearPathShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+
 		C1EA4A110000000000000008 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -753,6 +908,15 @@
 			buildConfigurations = (
 				F55A7F2430659FDF00D57745 /* Debug */,
 				F55A7F2530659FDF00D57745 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C1EA4A120000000000000007 /* Build configuration list for PBXNativeTarget "ClearPathShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C1EA4A120000000000000008 /* Debug */,
+				C1EA4A120000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -33,6 +33,8 @@ time; tests/evals monkeypatch it.
 | `GET /assistant/conversations/{id}?user_id=1` | replay a conversation (Siri turns show in the app) |
 | `GET /tracking/next?user_id=1` | live status of the next (or simulated) trip |
 | `GET /bookings/{id}/tracking` | live status of a booking |
+| `POST /schedule/plan` | `{user_id, days: [{date, kind: office|remote|offsite|leave}]}` (1–31 unique dates) → per day `action` book/keep/cancel/none/blocked + `message`, `reason_code`, `bookings`; `summary`, `changes`. Changes nothing |
+| `POST /schedule/apply` | same body (only the days the user approved) → re-plans, books/cancels, per-day `succeeded`; `summary`, `bookings_changed` |
 | `POST /users/{id}/location` | `{latitude, longitude}` from trip mode (204) |
 | `POST /simulator/trips/{id}` | `{start_minutes, speed, walk_minutes?}` replay a trip now |
 | `POST /simulator/trips/{id}/delay` | `{minutes}` |
@@ -67,6 +69,17 @@ with Morning Shuttle A–E departing 7:00, 7:15, **7:30 (usual, C)**, 7:45,
 - `check_eligibility` explains a failure without booking; moves validate the
   target shuttle with the same rules.
 
+## Schedule import (`app/services/schedule_service.py`, `app/api/schedule.py`)
+
+The phone sends typed days only (no document text). Office day → book the
+usual shuttle (or *keep* if booked, *blocked* with the rule's message and
+`reason_code` if a booking rule fails); remote/offsite/leave → cancel every
+confirmed booking that day on any route (except shuttles that already
+left), else *none*. Past dates are *blocked* (`date_passed`). Apply
+re-plans first, so a day booked meanwhile isn't booked twice, and reports
+each day's success separately (a failed day never hides the others). No
+LLM: `ScheduleService` sits on `BookingService`, so every rule is shared.
+
 ## Tracking (`app/services/tracking_service.py`)
 
 Timeline in minutes from scheduled departure t: scheduled (t < −15),
@@ -89,7 +102,7 @@ Manyata Tech Park) in `route_geometry.py`.
 | `python -m scripts.ingest_knowledge` | re-embed `knowledge/*.md` after editing a policy |
 | `python -m app.db.init_db` | create missing tables (+ vector extension) |
 
-## Tests (`backend/tests`, 73 tests, ~7s, no network)
+## Tests (`backend/tests`, 86 tests, ~7s, no network)
 
 - `conftest.py` switches to `<db>_test` via `app.isolated_database` before
   any `app.db` import, asserts it, rebuilds schema each session, seeds,
