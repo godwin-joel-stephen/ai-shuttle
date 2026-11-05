@@ -29,6 +29,11 @@ from app.models.shuttle import Shuttle
 from app.models.trip_simulation import TripSimulation
 from app.models.user_location import UserLocation
 from app.services.booking_service import BookingService
+from app.services.trip_planner import (
+    PICKUP_BUFFER_MINUTES,
+    day_options,
+    faster_alternative,
+)
 from app.services.route_geometry import (
     Point,
     RouteGeometry,
@@ -42,10 +47,9 @@ APPROACH_MINUTES = 15
 BOARDING_MINUTES = 2
 
 # Walking estimate: straight-line distance plus 30% for real streets, at
-# 4.8 km/h. PICKUP_BUFFER matches the pickup rules (be there 5 min early).
+# 4.8 km/h. PICKUP_BUFFER_MINUTES (trip_planner) matches the pickup rules.
 WALK_SPEED_KMH = 4.8
 STREET_DETOUR = 1.3
-PICKUP_BUFFER_MINUTES = 5
 LOCATION_FRESH_FOR = timedelta(minutes=15)
 
 
@@ -191,16 +195,6 @@ def walking_minutes(origin: Point, stop: Point) -> int:
     return max(1, ceil(km / WALK_SPEED_KMH * 60))
 
 
-def _departure_offset(booking: Booking, shuttle: Shuttle) -> float:
-    """Minutes between the booking's departure and another shuttle's."""
-
-    day = booking.booking_date
-    return (
-        datetime.combine(day, shuttle.departure_time)
-        - datetime.combine(day, booking.shuttle.departure_time)
-    ).total_seconds() / 60
-
-
 class TrackingService:
     def __init__(self, db: Session, booking_service: BookingService):
         self.db = db
@@ -243,34 +237,22 @@ class TrackingService:
         )
 
     def _alternative(self, status: TripStatus, walk: int) -> Alternative | None:
+        """A shuttle that gets a delayed rider there sooner, chosen by the
+        trip planner's rules (bookable, still catchable on foot)."""
+
         if status.delay_minutes <= 0:
             return None
 
         booking = status.booking
-        delayed_arrival = (
-            datetime.combine(booking.booking_date, booking.shuttle.arrival_time)
-            + timedelta(minutes=status.delay_minutes)
+        shuttles = self.booking_service.shuttle_repository.list_by_route(booking.shuttle.route_id)
+        options = day_options(
+            self.booking_service, shuttles, booking.booking_date, booking, status, walk, clock.now(),
         )
-        options = self.booking_service.list_usual_route_shuttles(
-            booking.user_id,
-            booking.booking_date,
-        )
-
-        best = None
-        for shuttle, bookable in options:
-            if not bookable or shuttle.id == booking.shuttle_id:
-                continue
-            # Must still be catchable: on the trip's timeline it departs
-            # after the rider can walk to the stop with the usual buffer.
-            if _departure_offset(booking, shuttle) <= status.timeline_minutes + walk + PICKUP_BUFFER_MINUTES:
-                continue
-
-            arrival = datetime.combine(booking.booking_date, shuttle.arrival_time)
-            saved = int((delayed_arrival - arrival).total_seconds() // 60)
-            if saved > 0 and (best is None or saved > best.minutes_earlier):
-                best = Alternative(shuttle=shuttle, minutes_earlier=saved)
-
-        return best
+        found = faster_alternative(options)
+        if found is None:
+            return None
+        option, saved = found
+        return Alternative(shuttle=option.shuttle, minutes_earlier=saved)
 
     def update_location(self, user_id: int, latitude: float, longitude: float) -> None:
         location = self.db.get(UserLocation, user_id) or UserLocation(user_id=user_id)

@@ -184,10 +184,21 @@ class BookingService:
         booking_date: date,
         now: datetime | None = None,
     ) -> BookingOutcome:
-        now = now or clock.now()
-
-        user = self._resolve_user(user_id)
         shuttle = self._resolve_usual_shuttle(user_id)
+        return self.book_shuttle(user_id, booking_date, shuttle, now)
+
+    def book_shuttle(
+        self,
+        user_id: int,
+        booking_date: date,
+        shuttle: Shuttle,
+        now: datetime | None = None,
+    ) -> BookingOutcome:
+        """Book a specific shuttle. One confirmed booking per route per
+        day: an existing one on the route is returned unchanged."""
+
+        now = now or clock.now()
+        user = self._resolve_user(user_id)
 
         # Siri and network retries must not create a second seat.
         existing = self.booking_repository.get_confirmed_on_route(
@@ -217,6 +228,20 @@ class BookingService:
             booking=self._resolve_booking(user.id, booking.id),
             already_booked=False,
         )
+
+    def departure_problem(
+        self,
+        shuttle: Shuttle,
+        booking_date: date,
+        now: datetime | None = None,
+    ) -> BookingError | None:
+        """The booking rule this departure breaks, if any."""
+
+        try:
+            self._validate_departure(shuttle, booking_date, now or clock.now())
+        except BookingError as error:
+            return error
+        return None
 
     def get_usual_shuttle(self, user_id: int) -> Shuttle:
         return self._resolve_usual_shuttle(user_id)

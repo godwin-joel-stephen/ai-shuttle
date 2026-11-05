@@ -80,6 +80,25 @@ re-plans first, so a day booked meanwhile isn't booked twice, and reports
 each day's success separately (a failed day never hides the others). No
 LLM: `ScheduleService` sits on `BookingService`, so every rule is shared.
 
+## Trip planner (`app/services/trip_planner.py`, F7)
+
+`TripPlanner.plan/apply(user_id, dates, TripGoal(arrive_by?, leave_after?))`
+→ per day `DayPlan` with action **keep** (current booking already meets
+the goal), **book**, **move** (existing booking too late), **not_possible**
+(nothing meets it: `best_effort` = soonest usable arrival, `late_by_minutes`)
+or **blocked** (day-level rule; `nearby_days` = closest workable days
+before/after, ≤7 days). Options come from `day_options`: every shuttle on
+the route with expected arrival (current trip includes its live delay),
+booking-rule problem (`BookingService.departure_problem`: full, cut-off…)
+and catchability (lead time > walk + 5-min pickup buffer, measured on the
+current trip's timeline when there is one, so simulations work). Choice:
+current if on time → usual if on time → latest departure meeting an
+arrive-by goal (earliest after a leave-after goal). Apply books
+(`BookingService.book_shuttle`, new: any shuttle, same idempotence) or
+moves (`TrackingService.move_booking`); not_possible days are never
+"fixed" with a late shuttle. F4's `TrackingService._alternative` uses the
+same `day_options` + `faster_alternative`.
+
 ## Tracking (`app/services/tracking_service.py`)
 
 Timeline in minutes from scheduled departure t: scheduled (t < −15),
@@ -102,7 +121,7 @@ Manyata Tech Park) in `route_geometry.py`.
 | `python -m scripts.ingest_knowledge` | re-embed `knowledge/*.md` after editing a policy |
 | `python -m app.db.init_db` | create missing tables (+ vector extension) |
 
-## Tests (`backend/tests`, 86 tests, ~7s, no network)
+## Tests (`backend/tests`, 103 tests, ~8s, no network)
 
 - `conftest.py` switches to `<db>_test` via `app.isolated_database` before
   any `app.db` import, asserts it, rebuilds schema each session, seeds,

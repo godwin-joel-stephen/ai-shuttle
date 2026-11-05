@@ -1,6 +1,7 @@
 # Progress
 
-Last updated 2026-11-05. All work so far is merged into `main`.
+Last updated 2026-11-05. F3 is merged into `main` (not yet pushed). F7 is on
+branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -17,6 +18,7 @@ Last updated 2026-11-05. All work so far is merged into `main`.
 | F11/E MCP | 569efb9, 7fd6d81, 6125dec | verified in Claude Desktop 2026-11-04 |
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3 | backend address 172.20.1.13 |
+| F7 goal planning | branch `feature/f7-goal-planning` | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline. **Not yet verified on device.** |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
 ## Next (agreed order)
@@ -24,9 +26,9 @@ Last updated 2026-11-05. All work so far is merged into `main`.
 1. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
    Intelligence is on (on the Mac) and record the on-device model's numbers
    in AI.md.
-2. **F7 — goal-based planning**: "Get me to the office by 8:30" with a
-   planner + specialised agents (schedule / transport / booking) where it
-   genuinely helps; reuse for F4's alternative choice. Add eval cases first.
+2. **F7 — finish**: user tests goal requests on the iPhone (chat and Siri
+   "Ask Clear Path"), then merge. Multi-agent only if a future eval shows
+   a gap the single agent + planner can't close.
 3. **F10 — habit suggestions**: donate booking intents
    (`IntentDonationManager`), learn "usual" from history.
 4. **F13 — reliability demo**: script for "Gemini key off → Siri booking
@@ -40,8 +42,9 @@ Last updated 2026-11-05. All work so far is merged into `main`.
 - Xcode 26.4.1 build hang on the clang probe (workaround in CLAUDE.md).
 - Siri on iOS 27 sometimes answers itself instead of running the intent;
   chained Siri bookings can lose the day. Use the documented phrases.
-- Eval known failures: `delay-offers-alternative` (agent misstates delayed
-  pickup time), `book-sunday-refused` (judge miscount).
+- Eval: the judge occasionally miscounts (2026-11-05: `where-is-shuttle`
+  read the pickup time as the office arrival; earlier `book-sunday-refused`).
+  The two old failures passed in the 33-case run.
 - Free-tier Gemini: 429s and slow responses under bursts; 3.5-flash only
   20 requests/day. Evals pace themselves (`--pause`).
 - Live Activity can't update while the app is suspended unless trip mode is
@@ -74,3 +77,5 @@ Last updated 2026-11-05. All work so far is merged into `main`.
 | 2026-11-05 | F3 uses a share extension: iOS 26 can't put an App Intent in the share sheet without the user building a Shortcut |
 | 2026-11-05 | F3 planning is deterministic on the server, not the cloud agent: days→bookings is a rule; only typed `{date, kind}` days leave the phone, so document text can't reach Gemini or any tool |
 | 2026-11-05 | F3 falls back to keyword rules when Apple Intelligence is unavailable; the same rules are the eval baseline |
+| 2026-11-05 | F7 uses a deterministic trip planner exposed as tools to the one agent, not a multi-agent supervisor (user's choice): 2–3 Gemini calls per goal, no invented arrivals; goal eval 4/9 → 9/9 |
+| 2026-11-05 | Eval baseline re-saved at 33 cases (32/33) |

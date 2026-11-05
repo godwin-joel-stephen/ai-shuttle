@@ -21,7 +21,10 @@ START → agent ──(tool calls?)──→ tools (ToolNode) ──→ agent �
   tools for every fact, ISO dates, never guess ids, book-then-adjust,
   "already booked" wording, why-flow (eligibility → policy search → cite →
   suggest nearest bookable day), leave-now yes/no using `leave_in_minutes`,
-  weather check if available, offer faster alternative, answer policies
+  weather check if available, offer faster alternative, arrival/departure
+  goals → `book_trip_plan` for statements of need ("I need to be…",
+  "get me…", "meeting at…") and `plan_trip` only for questions; quote
+  times as given; not_possible → soonest option + offer, answer policies
   only from search results, 1–2 spoken-friendly sentences, 12-hour times.
 
 ### Tools (`app/tools/assistant_tools.py`)
@@ -31,13 +34,16 @@ session run one at a time (a lock — LangGraph runs parallel tool calls in
 threads and the SQLAlchemy session isn't thread-safe).
 
 `get_my_bookings`, `list_shuttle_options(date)`, `book_usual_shuttle(date)`,
+`plan_trip(dates, arrive_by?, leave_after?)` (read-only) and
+`book_trip_plan(…)` (F7: deterministic trip planner, see BACKEND.md; 12-hour
+times in results, accepts "08:30" or "8:30 am"),
 `change_booking_shuttle(booking_id, shuttle_id)` (routes through
 TrackingService.move_booking), `cancel_booking(booking_id)`,
 `get_shuttle_status(booking_id?)` (phase, minutes, delay, walk, leave_in,
 faster_alternative, pickup_coordinates; a simulated trip reports today's
 date), `check_booking_eligibility(date)` (reason_code + message),
 `search_policies(query)` (passages with similarity + `citable`).
-`MUTATING_TOOLS` drive `bookings_changed`.
+`MUTATING_TOOLS` (incl. `book_trip_plan`) drive `bookings_changed`.
 
 External MCP tools (weather) are appended at runtime; actions record the
 providing server so the app labels them "· via weather MCP server".
@@ -136,8 +142,9 @@ Apple Intelligence is off on the Mac; turn it on and run `./run.sh`.
 
 ## Evaluation (`backend/evals/`)
 
-`python -m evals.run` — 24 cases (`dataset.json`) across booking,
-follow-up, rules-rag, tracking, safety. Each case: optional setup
+`python -m evals.run` — 33 cases (`dataset.json`) across booking,
+follow-up, rules-rag, tracking, safety, goal (F7). Setup can also fill
+departures with other riders (`full_shuttles`). Each case: optional setup
 (bookings by day offset/departure, simulation), user turns, expectations
 (`tools_called`, `tools_not_called`, exact final `bookings`, `sources`,
 `rubric`). Runs in `<db>_eval` at fixed Monday 2026-11-02 06:00 with real
@@ -150,7 +157,22 @@ Options: `--cases a,b`, `--model`, `--fallback a,b`, `--no-fallback`,
 (git-ignored) and, when Langfuse is configured, each case is a trace tagged
 `eval` with `task_success`, `judge_score`, `tool_choice` scores.
 
-**Baseline (2026-11-04, gemini-3.5-flash-lite):** task success 91.7%
+**Baseline (2026-11-05, gemini-3.5-flash-lite, 33 cases):** task success
+97.0% (32/33), tool accuracy 100%, judge 4.94/5, 0 hallucination flags, p50
+5.5s, p95 22.6s. Only failure: `where-is-shuttle`, a judge error (it read
+the 7:30 pickup time as the office arrival).
+
+**F7 goal cases, before vs after the planner** (9 cases, same model):
+before (agent with booking tools only) 4/9, judge 3.44, 3 hallucination
+flags (booked a shuttle for an impossible 7:30 goal and claimed it arrives
+on time; misread arrival times), p50 11.3s; after (`plan_trip` /
+`book_trip_plan`) 9/9, judge 5.0, 0 flags. Prompt iterations on the way:
+statements of need must act without asking; not_possible must offer the
+soonest shuttle; blocked days carry `nearby_days`. The
+`goal-delayed-today` rubric was clarified after the first run (offering a
+switch is wanted; switching unasked isn't).
+
+Previous baseline (2026-11-04, 24 cases): task success 91.7%
 (22/24), tool accuracy 100%, judge 4.67/5, p50 6.8s, p95 25.9s, ~$0.0014
 per task estimated (free tier, not billed). Known failures:
 `book-sunday-refused` (judge miscount — reply was right) and

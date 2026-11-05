@@ -7,7 +7,7 @@ explain them instead of the request crashing.
 """
 
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from functools import wraps
 
 from langchain_core.tools import BaseTool, tool
@@ -25,6 +25,7 @@ from app.rag.retriever import search_knowledge
 from app.services.booking_service import BookingService
 from app.services.errors import BookingError
 from app.services.tracking_service import TrackingService
+from app.services.trip_planner import DayPlan, Option, TripGoal, TripPlanner
 
 
 # Tools that change bookings; the API reports when any of them succeeded.
@@ -32,6 +33,7 @@ MUTATING_TOOLS = frozenset({
     "book_usual_shuttle",
     "change_booking_shuttle",
     "cancel_booking",
+    "book_trip_plan",
 })
 
 
@@ -67,6 +69,66 @@ def scheduled(time_of_day, delay_minutes: int) -> datetime:
     return datetime.combine(date.min, time_of_day) + timedelta(minutes=delay_minutes)
 
 
+def _clock_time(value: str | None, name: str) -> time | None:
+    if value is None or value == "":
+        return None
+    try:
+        return datetime.strptime(value.strip().upper(), "%H:%M").time()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(value.strip().upper().replace(" ", ""), "%I:%M%p").time()
+    except ValueError:
+        raise BookingError(f"{name} must be a time like 08:30.") from None
+
+
+def _goal(arrive_by: str | None, leave_after: str | None) -> TripGoal:
+    arrive = _clock_time(arrive_by, "arrive_by")
+    leave = _clock_time(leave_after, "leave_after")
+    if arrive is None and leave is None:
+        raise BookingError("Give an arrival time (arrive_by) or departure time (leave_after).")
+    return TripGoal(arrive_by=arrive, leave_after=leave)
+
+
+def _option_dict(option: Option | None) -> dict | None:
+    if option is None:
+        return None
+    return {
+        "shuttle_id": option.shuttle.id,
+        "departure": f"{option.shuttle.departure_time:%-I:%M %p}",
+        "arrival": f"{option.arrival:%-I:%M %p}",
+        "delay_minutes": option.delay_minutes,
+    }
+
+
+def day_plan_to_dict(plan: DayPlan) -> dict:
+    result = {
+        "date": plan.date.isoformat(),
+        "weekday": f"{plan.date:%A}",
+        "action": plan.action.value,
+        "message": plan.message,
+        "current_booking": _option_dict(plan.current_option),
+        "chosen": _option_dict(plan.chosen),
+    }
+    if plan.current is not None:
+        result["current_booking"]["booking_id"] = plan.current.id
+    if plan.best_effort is not None:
+        result["soonest_possible"] = _option_dict(plan.best_effort)
+        result["late_by_minutes"] = plan.late_by_minutes
+    if plan.unavailable:
+        result["unavailable"] = [
+            {"departure": f"{o.shuttle.departure_time:%-I:%M %p}", "reason": o.unusable_reason}
+            for o in plan.unavailable
+        ]
+    if plan.reason_code:
+        result["reason_code"] = plan.reason_code
+    if plan.nearby_days:
+        result["nearby_days"] = [f"{d:%A} {d.isoformat()}" for d in plan.nearby_days]
+    if plan.succeeded is not None:
+        result["succeeded"] = plan.succeeded
+    return result
+
+
 def _report_booking_errors(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -100,6 +162,7 @@ def create_assistant_tools(
         booking_repository=BookingRepository(db),
     )
     tracking = TrackingService(db, service)
+    planner = TripPlanner(service, tracking)
 
     @tool
     @_report_booking_errors
@@ -222,6 +285,41 @@ def create_assistant_tools(
         }
 
     @tool
+    @_report_booking_errors
+    def plan_trip(
+        dates: list[date],
+        arrive_by: str | None = None,
+        leave_after: str | None = None,
+    ) -> dict:
+        """Work out which shuttle meets a goal such as "at the office by
+        8:30" (arrive_by="08:30") or "not before 7:40" (leave_after="07:40")
+        on one or more dates (YYYY-MM-DD). Accounts for existing bookings,
+        live delays, walking time, full shuttles and booking rules. Changes
+        nothing. Per date, action is keep (already on time), book, move,
+        not_possible (nothing meets the goal; see soonest_possible) or
+        blocked (a booking rule). Use for "will I make it by…" questions."""
+
+        goal = _goal(arrive_by, leave_after)
+        return {"days": [day_plan_to_dict(p) for p in planner.plan(user_id, dates, goal)]}
+
+    @tool
+    @_report_booking_errors
+    def book_trip_plan(
+        dates: list[date],
+        arrive_by: str | None = None,
+        leave_after: str | None = None,
+    ) -> dict:
+        """Book or move shuttles so the user meets a goal such as "get me
+        to the office by 8:30" on one or more dates (YYYY-MM-DD). Plans
+        like plan_trip, then books (book) or moves the existing booking
+        (move) on each date where a shuttle meets the goal. Dates where
+        nothing meets it (not_possible) or a rule blocks it are left
+        unchanged and reported. Returns per-date results with succeeded."""
+
+        goal = _goal(arrive_by, leave_after)
+        return {"days": [day_plan_to_dict(p) for p in planner.apply(user_id, dates, goal)]}
+
+    @tool
     def search_policies(query: str) -> dict:
         """Search Clear Path's policy documents (booking rules, cancellation,
         pickup rules, FAQ). Use specific wording, e.g. the rule message
@@ -249,6 +347,8 @@ def create_assistant_tools(
         cancel_booking,
         get_shuttle_status,
         check_booking_eligibility,
+        plan_trip,
+        book_trip_plan,
         search_policies,
     ]
 

@@ -126,6 +126,9 @@ opening the app); it reads `BookingAPIBaseURL` from its own Info.plist.
 
 ## Chat and voice
 
+Action labels include the F7 planner tools: `plan_trip` → "Planned your
+trip", `book_trip_plan` → "Booked your trip plan".
+
 `AssistantView` (sheet from Home "Ask Clear Path"): suggestions, replies
 with action rows (✓/✗, labels incl. "· via weather MCP server") and cited
 sources, new-conversation button. `VoiceInput` uses iOS 26 `SpeechAnalyzer`

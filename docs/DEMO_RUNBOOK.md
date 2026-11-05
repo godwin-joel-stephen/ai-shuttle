@@ -53,7 +53,12 @@ always refused). Mac and iPhone on the same Wi-Fi.
 6. **Siri tracking**: "Hey Siri, track my shuttle with Clear Path".
 7. **Chat on purpose**: Ask Clear Path → "Why can't I book Saturday?" →
    cited Booking Policy; "Should I leave now?" → weather step "via weather
-   MCP server".
+   MCP server". Goal booking (F7): "I have a meeting at 8 tomorrow, get me
+   there in time" → "Planned/Booked your trip plan" step, moved to the 7:15
+   (arrives 8:00); "Get me to the office by 7:30 on Wednesday" → honest "no
+   shuttle gets you there; the 7:00 arrives 7:45", nothing booked. *"The
+   model only turns the request into a goal; a deterministic planner picks
+   the shuttle, so it can't promise an arrival that doesn't exist."*
 8. **MCP**: Claude Desktop → "Book my usual shuttle for Wednesday" → refresh
    app; "Book Saturday too" → refused.
 9. **Under the hood**: Langfuse trace of the last chat turn; eval baseline

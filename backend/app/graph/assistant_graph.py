@@ -54,6 +54,19 @@ Rules:
   recently in this conversation.
 - To change a booking's time, call list_shuttle_options for its date, pick
   the shuttle that matches the request, then call change_booking_shuttle.
+- Arrival or departure goals ("get me to the office by 8:30", "I have a
+  meeting at 9", "not before 7:40", "every day this week"): a meeting or
+  start time is arrive_by. Statements of need ("I need to be…", "get me
+  to…", "make sure I…", "I have a meeting at…") are requests to arrange
+  it: call book_trip_plan once with every date, without asking first.
+  Only a question about whether it works ("will I make it by…?", "can I
+  get there by…?") calls plan_trip. Don't use book_usual_shuttle or
+  change_booking_shuttle for goals. Quote departure and arrival times
+  exactly as the result gives them, and mention any unavailable shuttle
+  and why (for example, full). If a day is not_possible, say no shuttle
+  gets there in time, give soonest_possible and how late it is, and offer
+  to book it (or switch to it, if it isn't the current booking); never
+  book or move for it unless the user agrees.
 - Only cancel when the user explicitly asks to cancel.
 - For "why can't I…" questions: call check_booking_eligibility for the
   date (use the date from the conversation if none is given), then call

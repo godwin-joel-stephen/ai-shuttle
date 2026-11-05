@@ -41,6 +41,8 @@ public struct AssistantActionDTO: Codable, Equatable, Hashable, Sendable {
         case "cancel_booking": return "Cancelled a booking"
         case "get_shuttle_status": return "Checked live shuttle status"
         case "check_booking_eligibility": return "Checked the booking rules"
+        case "plan_trip": return "Planned your trip"
+        case "book_trip_plan": return "Booked your trip plan"
         case "search_policies": return "Searched Clear Path policies"
         case "get_current_weather": return "Checked the weather"
         default: return tool.replacingOccurrences(of: "_", with: " ").capitalized
