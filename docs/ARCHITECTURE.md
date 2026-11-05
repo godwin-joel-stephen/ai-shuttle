@@ -9,9 +9,12 @@
  │   Book, Track, Ask Clear Path, snippet │──HTTP JSON──┐     │   /bookings  (structured, no LLM)        │
  │ Widgets / Control / Action button      │             │     │   /assistant (LangGraph tool agent)      │
  │ Live Activity (Lock Screen, Island)    │             ├────▶│   /tracking, /simulator, /users/location │
- │ Trip mode (background location,        │             │     │                                          │
+ │ Trip mode (background location,        │             │     │   /schedule  (typed days, no LLM)        │
  │   local notifications, Rebook action)  │             │     │ Agent ─▶ Tools ─▶ Services ─▶ Repos ─▶ PG │
- │ App: home, rides, map, chat + voice    │─────────────┘     │   │        │                             │
+ │ App: home, rides, map, chat + voice    │─────────────┤     │   │        │                             │
+ │ Share sheet / Import work schedule:    │             │     │   │        │                             │
+ │   Vision OCR + Foundation Models       │─typed days──┘     │   │        │                             │
+ │   (on-device; text never leaves)       │                   │   │        │                             │
  └────────────────────────────────────────┘                   │   │        ├─ RAG: pgvector + fastembed  │
                                                               │   │        └─ external MCP tools (weather)│
  Claude Desktop / any MCP client ──stdio──▶ app.mcp_server ───│───┘ (same tools, same rules)             │
@@ -50,6 +53,7 @@ API (FastAPI routers)  →  Agent/Graph (LangGraph)  →  Tools (LangChain)  →
 | Siri "Track my shuttle" (`WhereIsMyShuttleIntent`, LiveActivityIntent) | `GET /tracking/next` → starts Live Activity | No |
 | Trip mode (`TripMonitor`) every 15s | `POST /users/1/location`, `GET /tracking/next`; Rebook → `POST /bookings/{id}/move` | No |
 | Ask Clear Path chat / Siri "Ask Clear Path" | `POST /assistant/messages` (tool-calling agent), `GET /assistant/conversations/{id}` | Yes |
+| Share sheet / Home → Import work schedule (`ClearPathShare` extension, `ScheduleImport/`) | on-device OCR + Foundation Models → `POST /schedule/plan` → review → `POST /schedule/apply` (typed days only) | On-device only |
 | Claude Desktop | stdio MCP → `app.mcp_server` → same tools | (client's LLM) |
 | Natural-language `POST /bookings {message}` | booking graph with Gemini intent extraction | Yes (legacy path) |
 
