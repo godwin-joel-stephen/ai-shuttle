@@ -1,7 +1,6 @@
 # Progress
 
-Last updated 2026-11-05. F3 is on branch `feature/f3-schedule-import`
-(not merged; awaiting the user's iPhone test). Everything else is merged.
+Last updated 2026-11-05. All work so far is merged into `main`.
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -18,15 +17,13 @@ Last updated 2026-11-05. F3 is on branch `feature/f3-schedule-import`
 | F11/E MCP | 569efb9, 7fd6d81, 6125dec | verified in Claude Desktop 2026-11-04 |
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3 | backend address 172.20.1.13 |
-| F3 schedule import | branch `feature/f3-schedule-import` | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval. **Not yet verified on device.** |
+| F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
 ## Next (agreed order)
 
-1. **F3 — finish**: user tests on the iPhone (share sheet from Photos and
-   Files, in-app import, injection sample, Apple Intelligence on and off);
-   run `AIShuttle/ScheduleImportEvals/run.sh` with Apple Intelligence on
-   (on the Mac) to get the on-device model's numbers and save them in AI.md;
-   then merge.
+1. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
+   Intelligence is on (on the Mac) and record the on-device model's numbers
+   in AI.md.
 2. **F7 — goal-based planning**: "Get me to the office by 8:30" with a
    planner + specialised agents (schedule / transport / booking) where it
    genuinely helps; reuse for F4's alternative choice. Add eval cases first.

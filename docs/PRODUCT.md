@@ -35,7 +35,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 |---|---|---|---|
 | F1 | "Book my usual shuttle (for Friday) with Clear Path"; Siri card with Earlier/Later buttons | Siri | ✅ |
 | F2 | One-tap booking: home/Lock Screen widget, Control Center control, Action button | Widgets | ✅ |
-| F3 | Import a work schedule (office / home / offsite / leave days) from a photo, screenshot, PDF or text via the share sheet or Home → Import work schedule: Vision OCR + on-device Foundation Models → typed days → server plans book/cancel with the booking rules → review → **Apply** | Share sheet | 🟡 built and unit-tested; awaiting iPhone test |
+| F3 | Import a work schedule (office / home / offsite / leave days) from a photo, screenshot, PDF or text via the share sheet or Home → Import work schedule: Vision OCR + on-device Foundation Models → typed days → server plans book/cancel with the booking rules → review → **Apply** | Share sheet | ✅ (verified on iPhone 2026-11-05) |
 | F4 | Proactive delay alert: "Shuttle 20 min late… the 7:45 gets you there 5 min sooner. [Rebook] [Keep]" — Rebook works from the notification | Notification | ✅ (alternative chosen by deterministic logic, not yet a planner agent) |
 | F5 | "Time to leave" alert and "Should I leave now?" using walking time (+ weather via MCP) | Notification / chat | ✅ |
 | F6 | Live tracking: Siri "Track my shuttle with Clear Path", Live Activity (Lock Screen + Dynamic Island), live map | Siri / Live Activity | ✅ |
