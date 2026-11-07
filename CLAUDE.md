@@ -54,7 +54,7 @@ python -m scripts.demo_trip                         # live simulated trip for de
 
 iOS: open `AIShuttle/AIShuttle.xcodeproj`, scheme **AIShuttle**, run on
 "Godwin's iPhone". The backend address is the `BOOKING_API_BASE_URL` build
-setting (currently `http://172.20.1.13:8000`; check with
+setting (currently `http://192.168.1.6:8000`; check with
 `ipconfig getifaddr en0` and update if the Mac's IP changes).
 
 ## Working agreements (from the user)

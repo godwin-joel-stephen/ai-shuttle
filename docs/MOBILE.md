@@ -20,7 +20,7 @@ automatically). Info.plist = generated + `AIShuttle-Info.plist` /
 `ClearPathWidgets-Info.plist` / `ClearPathShare-Info.plist`:
 
 - `BookingAPIBaseURL = $(BOOKING_API_BASE_URL)` — project build setting,
-  currently `http://172.20.1.13:8000` (the Mac's Wi-Fi IP; update when it
+  currently `http://192.168.1.6:8000` (the Mac's Wi-Fi IP; update when it
   changes). Fallback constant in `Shared/BookingAPIClient.swift`.
 - `INAlternativeAppNames` (max 3, install fails with 4): ClearPath,
   Clear Path Shuttle, Clear Footpath (from a dictation test).

@@ -17,7 +17,7 @@ branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
 | F4/F5 trip mode | bc9fb5f, 44736dd, 0b3da67, 891db65, 027418e | background location, local notifications, Rebook, walk time, model latency fix |
 | F11/E MCP | 569efb9, 7fd6d81, 6125dec | verified in Claude Desktop 2026-11-04 |
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
-| Config | c4363e3 | backend address 172.20.1.13 |
+| Config | c4363e3, see git log | backend address (now 192.168.1.6, changed 2026-11-07) |
 | F7 goal planning | branch `feature/f7-goal-planning` | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline. **Not yet verified on device.** |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
