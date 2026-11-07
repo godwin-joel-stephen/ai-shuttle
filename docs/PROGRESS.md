@@ -67,8 +67,8 @@ isn't a demo day — planned for 2026-11-08 (baseline.json is still the 33-case 
 
 **P3 — Demo polish and rehearsal.** Demo story finalised 2026-11-07 in
 [DEMO_STORY.md](DEMO_STORY.md) (title "Hey Siri, Welcome to the Agentic
-Era"; Tuesday demo; every claim checked against the code). Next: slides
-built from it (not started; the user will ask). Architecture slides done 2026-11-07
+Era"; Tuesday demo; every claim checked against the code). Deck built 2026-11-08 (53 slides with speaker notes):
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ. Demo: Tuesday 2026-11-17. Architecture slides done 2026-11-07
 (3 slides, link in DEMO_RUNBOOK step 12; export a PDF as backup). Still:
 runbook timings and fallbacks, a full dry run on a Tuesday/Thursday, recorded backup video;
 update the original planning docs if wanted (outside the repo).

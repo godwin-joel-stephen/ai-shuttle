@@ -1,6 +1,9 @@
 # Demo runbook
 
-**The talk's order and narration are in [DEMO_STORY.md](DEMO_STORY.md)**
+**The talk's order and narration are in [DEMO_STORY.md](DEMO_STORY.md)**;
+the deck (53 slides, speaker notes on each) is
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (private; Present mode,
+export PDF/PPTX as an offline backup)
 (finalised 2026-11-07, demo on a **Tuesday**). This file keeps the setup and
 the commands for each feature; the story's prep adds: book **next Tuesday**
 before the demo (the schedule import cancels it), install a **Debug** build
