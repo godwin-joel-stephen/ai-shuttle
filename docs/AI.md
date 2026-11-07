@@ -159,8 +159,9 @@ expected), p50 latency. Results → `ScheduleImportEvals/results/`
 
 **Rules baseline (2026-11-05):** 11/15 exact, day precision 98%, recall
 69%, injection 4/4 safe; fails on prose, grids and ranges (by design —
-that's what the model is for). **On-device model: not measured yet** —
-Apple Intelligence is off on the Mac; turn it on and run `./run.sh`.
+that's what the model is for). **On-device model: not measured** —
+Apple Intelligence can't be enabled on this Mac (decided 2026-11-07 to
+skip); the model runs on the iPhone, where F3 was verified by hand.
 
 ## Evaluation (`backend/evals/`)
 

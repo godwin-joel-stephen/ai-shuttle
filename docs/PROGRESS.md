@@ -54,15 +54,7 @@ Full backend eval (36 cases) and `--save-baseline`; the baseline is still
 the 33-case run. Note: evals hit `/assistant/messages` directly, so F14
 routing doesn't change them.
 
-**P3 — On-device evals on the Mac** (needs Apple Intelligence on the Mac:
-System Settings → Apple Intelligence & Siri; free).
-1. F3 leftover: `AIShuttle/ScheduleImportEvals/run.sh` → record the
-   on-device model's numbers in AI.md (rules baseline 11/15).
-2. Optional build: an F14 routing eval in the same harness (phrases →
-   expected on-device request or "cloud"), to show the gate + model
-   accuracy with numbers.
-
-**P4 — Demo polish and rehearsal.** Runbook timings and fallbacks,
+**P3 — Demo polish and rehearsal.** Runbook timings and fallbacks,
 architecture slide (now including on-device routing and the outage
 switch), a full dry run on a Tuesday/Thursday, recorded backup video;
 update the original planning docs if wanted (outside the repo).
@@ -102,10 +94,12 @@ and an in-app reminder toggle (iOS notification settings cover it).
 - A simulated trip replays a *future* booking now; the Lock Screen widget
   still shows its scheduled date (user accepted this).
 - `tests/manual_gemini_*.py` hit the live API (not in the pytest run).
-- Apple Intelligence is **off on the Mac**, so the schedule extraction eval
-  has only measured the keyword-rules baseline so far (11/15). Turning it on
-  (System Settings → Apple Intelligence & Siri; free, downloads the model)
-  lets `run.sh` measure the on-device model too.
+- Apple Intelligence can't be turned on on the Mac (user, 2026-11-07), so
+  the schedule extraction eval measures only the keyword-rules baseline
+  (11/15); the on-device model's accuracy is shown live on the iPhone
+  instead. This affects only the macOS eval harness: the app uses the
+  iPhone's Apple Intelligence, and `run.sh sample` / `--rules-only` work
+  without it.
 - Testing on a weekend: name weekdays ("on Monday", "next week"), since
   "tomorrow" may be Sunday. Backend scripts must run from `backend/` with
   `.venv` active (`python -m scripts…` fails from `~`).
@@ -132,6 +126,7 @@ and an in-app reminder toggle (iOS notification settings cover it).
 | 2026-11-05 | F7 uses a deterministic trip planner exposed as tools to the one agent, not a multi-agent supervisor (user's choice): 2–3 Gemini calls per goal, no invented arrivals; goal eval 4/9 → 9/9 |
 | 2026-11-05 | Eval baseline re-saved at 33 cases (32/33) |
 | 2026-11-07 | F10: the learned habit drives "usual" (per weekday, with overall fallback) and is always explained; a pinned shuttle beats it; nothing is ever booked without the rider asking (user's choice) |
+| 2026-11-07 | Skip the on-device evals on the Mac (Apple Intelligence can't be enabled there): no F3 on-device numbers, no F14 routing eval; app unaffected |
 | 2026-11-07 | F14: on-device always for a verified simple subset (rules gate + model must agree), cloud for the rest; Ask Clear Path too; on-device turns recorded in the shared conversation without synthetic tool calls |
 | 2026-11-07 | F13 outage switch is a runtime flag file (no restart); no deterministic chat fallback in this phase (user's choice) |
 | 2026-11-07 | F10 surfaces: donations + evening-before reminder with Book + Home card; no Smart Stack relevance. Donations run after the rides list loads, since that sees bookings from every surface (widget extension, chat, import, MCP) |
