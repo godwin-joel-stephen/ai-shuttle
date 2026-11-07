@@ -1,7 +1,16 @@
 # Demo runbook
 
-Demo day: Tuesday or Thursday (so "tomorrow" is a weekday and Saturday is
-always refused). Mac and iPhone on the same Wi-Fi.
+**The talk's order and narration are in [DEMO_STORY.md](DEMO_STORY.md)**;
+the deck (53 slides, speaker notes on each) is
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (private; Present mode,
+export PDF/PPTX as an offline backup)
+(finalised 2026-11-07, demo on a **Tuesday**). This file keeps the setup and
+the commands for each feature; the story's prep adds: book **next Tuesday**
+before the demo (the schedule import cancels it), install a **Debug** build
+("Preview reminder" is Debug-only), and mirror the phone over a cable.
+
+Demo day: Tuesday (the story's booking chain assumes it). Mac and iPhone on
+the same Wi-Fi.
 
 ## Before the demo (15 minutes)
 
@@ -92,6 +101,9 @@ always refused). Mac and iPhone on the same Wi-Fi.
     help."*
 11. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
    (`backend/evals/baseline.json`, or a fresh `--cases` run if quota allows).
-12. **Close** with the architecture slide.
+12. **Close** with the architecture slides (Claude artifact, private to the
+    user: https://claude.ai/artifact/24fPzL6pEbWvkL8mDXixuu; Present mode,
+    or export PDF/PPTX as an offline backup): one backend, many surfaces;
+    where the AI runs.
 
 After: `python -m scripts.demo_trip --stop`.

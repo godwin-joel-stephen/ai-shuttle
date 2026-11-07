@@ -2,8 +2,7 @@
 
 Last updated 2026-11-07. All features (F1–F14) are merged into `main` and
 pushed. What's left is verification, evals and demo polish: see
-"Pending phases". **Next: P1 device verification** (tested together with
-the user).
+"Pending phases". **Next: P2 full eval with `--save-baseline` (2026-11-08), then P3 demo polish.**
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -30,9 +29,10 @@ the user).
 
 No feature work is planned; these make the demo trustworthy.
 
-**P1 — Device verification (next; tested together with the user).**
+**P1 — Device verification: done 2026-11-07.** The user reported every
+step below passed (keyboard step handled by the user).
 Reset first: `python -m scripts.reset_demo_db`.
-1. Keyboard first tap (fix 2026-11-07, `Views/KeyboardPrewarmer.swift`):
+1. (User handles this one; skip.) Keyboard first tap (fix 2026-11-07, `Views/KeyboardPrewarmer.swift`):
    launch **from Xcode** (worst case) → wait ~1s on Home → open Ask Clear
    Path → tap the message box: the keyboard should appear without the
    multi-second stall. Also check no keyboard flashes on Home at launch,
@@ -49,14 +49,28 @@ Reset first: `python -m scripts.reset_demo_db`.
 3. Langfuse: `assistant-turn-on-device` trace (tag `on-device`) and the
    F13 ERROR trace, if not already seen.
 
-**P2 — Eval refresh** (not on a demo day; ~100 free Gemini requests).
-Full backend eval (36 cases) and `--save-baseline`; the baseline is still
-the 33-case run. Note: evals hit `/assistant/messages` directly, so F14
-routing doesn't change them.
+**P2 — Eval refresh** (mostly done 2026-11-07).
+Full 36-case run on gemini-3.5-flash-lite: 29/36. 4 failures were judge
+timeouts (replies correct); 3 were real and are fixed: the agent copied the
+prompt's "4 of your last 5" example when `book_usual_shuttle` returned no
+`usual_because` (prompt now says use only `usual_because`, never invent
+history); the FAQ answer on booking for someone else wasn't retrieved for
+"colleague" (FAQ heading/text reworded, also the stale "usual shuttle"
+answer; re-ingested); "Should I leave now?" got "Yes" with 11 minutes to
+spare (`get_shuttle_status` now returns a deterministic `leave_now`). The
+12 affected cases re-run: 12/12, judge 5.0. Colleague answer and
+"Should I leave now?" verified on iPhone 2026-11-07. The eval runner now refuses to
+start (exit 2) or stops when the F13 outage flag is on (a first run was
+wasted that way). **Remaining:** one clean full run with
+`python -m evals.run --pause 6 --save-baseline` on a fresh-quota day that
+isn't a demo day — planned for 2026-11-08 (baseline.json is still the 33-case run).
 
-**P3 — Demo polish and rehearsal.** Runbook timings and fallbacks,
-architecture slide (now including on-device routing and the outage
-switch), a full dry run on a Tuesday/Thursday, recorded backup video;
+**P3 — Demo polish and rehearsal.** Demo story finalised 2026-11-07 in
+[DEMO_STORY.md](DEMO_STORY.md) (title "Hey Siri, Welcome to the Agentic
+Era"; Tuesday demo; every claim checked against the code). Deck built 2026-11-08 (53 slides with speaker notes):
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ. Demo: Tuesday 2026-11-17. Architecture slides done 2026-11-07
+(3 slides, link in DEMO_RUNBOOK step 12; export a PDF as backup). Still:
+runbook timings and fallbacks, a full dry run on a Tuesday/Thursday, recorded backup video;
 update the original planning docs if wanted (outside the repo).
 
 **Optional, only if wanted:** more on-device intents (e.g. "book the

@@ -173,6 +173,21 @@ def test_agent_tool_reports_next_trip(db, tracking, booking, user_id):
     assert result["pickup_time"] == "7:30 AM"
 
 
+def test_agent_tool_decides_leave_now(db, tracking, booking, user_id):
+    tools = {t.name: t for t in create_assistant_tools(db, user_id, FakeEmbedder())}
+
+    # 20 minutes to pickup - 4 walking - 5 buffer = leave in 11: not yet.
+    tracking.start_simulation(user_id, booking.id, start_minutes=-20, walk_minutes=4)
+    result = tools["get_shuttle_status"].invoke({})
+    assert result["leave_in_minutes"] == 11
+    assert result["leave_now"] is False
+
+    # 8 minutes to pickup - 4 walking - 5 buffer = already late: go.
+    tracking.start_simulation(user_id, booking.id, start_minutes=-8, walk_minutes=4)
+    result = tools["get_shuttle_status"].invoke({})
+    assert result["leave_now"] is True
+
+
 # About 1 km north of the Home stop: 1.3 km of streets, a 17-minute walk.
 ONE_KM_FROM_HOME = (12.9719 + 0.008993, 77.6412)
 

@@ -67,12 +67,15 @@ from app.services.booking_service import BookingService  # noqa: E402
 from app.services.tracking_service import TrackingService  # noqa: E402
 from app.tools.assistant_tools import create_assistant_tools  # noqa: E402
 from app.observability import tracing  # noqa: E402
+from app.core.outage import is_llm_outage  # noqa: E402
 from evals.judge import judge  # noqa: E402
 
 
 EVALS_DIR = Path(__file__).resolve().parent
 DATASET = EVALS_DIR / "dataset.json"
 BASELINE = EVALS_DIR / "baseline.json"
+OUTAGE_MESSAGE = ("The simulated LLM outage is on; every model call would fail. "
+                  "Turn it off with `python -m scripts.llm_outage off` and run again.")
 RESULTS_DIR = EVALS_DIR / "results"
 
 FIXED_NOW = datetime(2026, 11, 2, 6, 0)  # a Monday, before the first shuttle
@@ -423,6 +426,12 @@ def main() -> int:
         wanted = set(args.cases.split(","))
         cases = [c for c in cases if c["id"] in wanted]
 
+    # The F13 demo switch makes every model fail, and the judge model is
+    # created once below: a run started with it on scores nothing.
+    if is_llm_outage():
+        print(OUTAGE_MESSAGE)
+        return 2
+
     clock.now = lambda: FIXED_NOW
     prepare_database()
     judge_model = create_chat_model(args.judge_model)
@@ -435,6 +444,9 @@ def main() -> int:
     for position, case in enumerate(cases):
         if position:
             time.sleep(args.pause)
+        if is_llm_outage():
+            print(f"\nStopped before {case['id']}: {OUTAGE_MESSAGE}")
+            return 2
         result = run_case(case, args.model, fallbacks, judge_model, run_id)
         print(f"  {'✓' if result.passed else '✗'} {case['id']}", flush=True)
         results.append(result)
