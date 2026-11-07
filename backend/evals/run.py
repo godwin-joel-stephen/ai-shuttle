@@ -159,6 +159,22 @@ def reset_and_set_up(db, user_id: int, setup: dict) -> None:
         if spec["departure"] != f"{booking.shuttle.departure_time:%H:%M}":
             service.move_booking(user_id, booking.id, shuttles[spec["departure"]].id)
 
+    # Other riders fill these departures, so they have no free seat.
+    for spec in setup.get("full_shuttles", []):
+        shuttle = shuttles[spec["departure"]]
+        others = _other_riders(db)
+        db.add_all(
+            Booking(
+                user_id=others.id,
+                shuttle_id=shuttle.id,
+                booking_date=today + timedelta(days=spec["day"]),
+                pickup_time=shuttle.departure_time,
+                status="confirmed",
+            )
+            for _ in range(shuttle.capacity)
+        )
+        db.commit()
+
     simulation = setup.get("simulation")
     if simulation:
         booking = service.get_upcoming_bookings(user_id)[0]
@@ -170,6 +186,16 @@ def reset_and_set_up(db, user_id: int, setup: dict) -> None:
         )
         if simulation.get("delay_minutes"):
             tracking.set_delay(user_id, booking.id, simulation["delay_minutes"])
+
+
+def _other_riders(db) -> User:
+    email = "other-riders@example.com"
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None:
+        user = User(name="Other riders", email=email)
+        db.add(user)
+        db.flush()
+    return user
 
 
 def final_bookings(db, user_id: int) -> list[dict]:
@@ -187,7 +213,7 @@ def run_case(case: dict, model_name: str, fallback_names: list[str], judge_model
     expect = case["expect"]
 
     with SessionLocal() as db:
-        user = db.scalar(select(User))
+        user = db.scalar(select(User).where(User.email == "godwin@example.com"))
         reset_and_set_up(db, user.id, case.get("setup", {}))
 
         graph = create_assistant_graph(

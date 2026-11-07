@@ -503,5 +503,202 @@
       ],
       "rubric": "Politely says it can't provide that and offers shuttle help, without inventing weather data."
     }
+  },
+  {
+    "id": "goal-usual-fits",
+    "category": "goal",
+    "turns": [
+      "Get me to the office by 8:30 tomorrow"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "rubric": "Books the usual 7:30 AM shuttle for tomorrow (Tuesday) and says it arrives at 8:15 AM, before 8:30."
+    }
+  },
+  {
+    "id": "goal-earlier-needed",
+    "category": "goal",
+    "turns": [
+      "I need to be at the office by 8 tomorrow"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:15"
+        }
+      ],
+      "rubric": "Books the 7:15 AM shuttle for tomorrow (Tuesday) because it arrives at 8:00 AM; the usual 7:30 arrives too late (8:15)."
+    }
+  },
+  {
+    "id": "goal-impossible",
+    "category": "goal",
+    "turns": [
+      "Get me to the office by 7:30 on Wednesday"
+    ],
+    "expect": {
+      "bookings": [],
+      "rubric": "Says no shuttle arrives by 7:30 AM (the earliest, 7:00 AM, arrives at 7:45 AM), does not book anything, and offers the 7:00 AM shuttle."
+    }
+  },
+  {
+    "id": "goal-move-existing",
+    "category": "goal",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ]
+    },
+    "turns": [
+      "I have a meeting at 8 tomorrow morning, make sure I get to the office in time"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:15"
+        }
+      ],
+      "tools_not_called": [
+        "cancel_booking"
+      ],
+      "rubric": "Moves tomorrow's booking from the 7:30 AM to the 7:15 AM shuttle, which arrives at 8:00 AM, keeping a single booking."
+    }
+  },
+  {
+    "id": "goal-already-on-time",
+    "category": "goal",
+    "setup": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ]
+    },
+    "turns": [
+      "Will I get to the office by 8:30 tomorrow?"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:30"
+        }
+      ],
+      "tools_not_called": [
+        "change_booking_shuttle",
+        "cancel_booking"
+      ],
+      "rubric": "Says yes: the booked 7:30 AM shuttle arrives at 8:15 AM, before 8:30. Changes nothing."
+    }
+  },
+  {
+    "id": "goal-full-shuttle",
+    "category": "goal",
+    "setup": {
+      "full_shuttles": [
+        {
+          "day": 1,
+          "departure": "07:15"
+        }
+      ]
+    },
+    "turns": [
+      "I need to be at the office by 8 tomorrow"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 1,
+          "departure": "07:00"
+        }
+      ],
+      "rubric": "Books the 7:00 AM shuttle for tomorrow (arrives 7:45 AM) because the 7:15 AM is full; mentions the 7:15 is full."
+    }
+  },
+  {
+    "id": "goal-every-day",
+    "category": "goal",
+    "turns": [
+      "Get me to the office by 8 every day this week"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 0,
+          "departure": "07:15"
+        },
+        {
+          "day": 1,
+          "departure": "07:15"
+        },
+        {
+          "day": 2,
+          "departure": "07:15"
+        },
+        {
+          "day": 3,
+          "departure": "07:15"
+        },
+        {
+          "day": 4,
+          "departure": "07:15"
+        }
+      ],
+      "rubric": "Books the 7:15 AM shuttle (arrives 8:00 AM) for every day Monday to Friday this week."
+    }
+  },
+  {
+    "id": "goal-delayed-today",
+    "category": "goal",
+    "setup": {
+      "bookings": [
+        {
+          "day": 0,
+          "departure": "07:30"
+        }
+      ],
+      "simulation": {
+        "start_minutes": -10,
+        "delay_minutes": 20
+      }
+    },
+    "turns": [
+      "I need to be at the office by 8:20, will I make it?"
+    ],
+    "expect": {
+      "bookings": [
+        {
+          "day": 0,
+          "departure": "07:30"
+        }
+      ],
+      "tools_not_called": [
+        "change_booking_shuttle",
+        "cancel_booking"
+      ],
+      "rubric": "Says no: the 7:30 AM shuttle is running about 20 minutes late and arrives around 8:35 AM, and no shuttle gets there by 8:20. Offers the 7:45 AM shuttle (arrives 8:30 AM, sooner); asking whether to switch is good, but it must not have switched already."
+    }
+  },
+  {
+    "id": "goal-weekend",
+    "category": "goal",
+    "turns": [
+      "Get me to the office by 8:30 on Saturday"
+    ],
+    "expect": {
+      "bookings": [],
+      "rubric": "Says shuttles don't run on Saturdays, books nothing, and suggests Friday or Monday instead."
+    }
   }
 ]

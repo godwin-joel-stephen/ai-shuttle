@@ -48,13 +48,13 @@ docker-compose.yml         app Postgres (pgvector/pgvector:pg17-trixie)
 docker compose up -d
 cd backend && source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000      # backend for the iPhone
-python -m pytest -q                                 # 86 tests, ~7s, no network
+python -m pytest -q                                 # 103 tests, ~8s, no network
 python -m scripts.demo_trip                         # live simulated trip for demos
 ```
 
 iOS: open `AIShuttle/AIShuttle.xcodeproj`, scheme **AIShuttle**, run on
 "Godwin's iPhone". The backend address is the `BOOKING_API_BASE_URL` build
-setting (currently `http://172.20.1.13:8000`; check with
+setting (currently `http://192.168.1.6:8000`; check with
 `ipconfig getifaddr en0` and update if the Mac's IP changes).
 
 ## Working agreements (from the user)
