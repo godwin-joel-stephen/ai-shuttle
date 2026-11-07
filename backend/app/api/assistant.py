@@ -34,6 +34,13 @@ from app.tools.assistant_tools import MUTATING_TOOLS, create_assistant_tools
 
 logger = logging.getLogger(__name__)
 
+# Siri reads this aloud and the chat shows it, so it also says what still
+# works without the cloud model.
+UNAVAILABLE_MESSAGE = (
+    "Clear Path's assistant is unavailable right now. Bookings still work: "
+    "say \"Book my usual shuttle with Clear Path\", or use the widget."
+)
+
 router = APIRouter(
     prefix="/assistant",
     tags=["assistant"],
@@ -196,7 +203,7 @@ def send_message(
         if not any(a.succeeded and a.tool in MUTATING_TOOLS for a in actions):
             raise HTTPException(
                 status_code=503,
-                detail="Clear Path's assistant is unavailable right now.",
+                detail=UNAVAILABLE_MESSAGE,
             ) from e
 
         reply = (

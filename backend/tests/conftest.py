@@ -63,6 +63,17 @@ def frozen_clock(monkeypatch):
     monkeypatch.setattr(clock, "now", lambda: FIXED_NOW)
 
 
+@pytest.fixture(autouse=True)
+def outage_flag(monkeypatch, tmp_path):
+    """Point the simulated-outage flag at a temp file, so a demo outage left
+    on can't fail tests and tests never flip the real one."""
+
+    from app.core import outage
+
+    monkeypatch.setattr(outage, "FLAG_PATH", tmp_path / ".llm_outage")
+    return outage
+
+
 @pytest.fixture
 def db():
     session = SessionLocal()

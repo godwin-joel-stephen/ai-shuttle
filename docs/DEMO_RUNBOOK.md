@@ -17,7 +17,9 @@ always refused). Mac and iPhone on the same Wi-Fi.
    past rides, so the learned habits show: Mondays 7:15, Thursdays 8:00;
    Wed/Fri stay 7:30 so steps 1, 5 and 6 are unchanged)
 5. App installed from Xcode (scheme AIShuttle). Keep
-   `pkill -f "clang -v -E -dM"` handy if the build stalls.
+   `pkill -f "clang -v -E -dM"` handy if the build stalls. Then stop it
+   in Xcode and launch from the home-screen icon (with the debugger
+   attached, the first chat keyboard stalls for seconds).
 6. On the phone: widget on the home screen, control in Control Center,
    notifications and Live Activities on for Clear Path.
 7. Claude Desktop open with the clear-path MCP server running
@@ -32,6 +34,8 @@ always refused). Mac and iPhone on the same Wi-Fi.
     cancel. Check Apple Intelligence is on (Settings → Apple Intelligence &
     Siri).
 11. Fallbacks ready: personal Shortcut, Type to Siri, recorded video.
+12. LLM outage switch off: `python -m scripts.llm_outage` → "off"
+    (`curl localhost:8000/health` shows `"llm": "ok"`).
 
 ## Script
 
@@ -70,8 +74,20 @@ always refused). Mac and iPhone on the same Wi-Fi.
    the shuttle, so it can't promise an arrival that doesn't exist."*
 9. **MCP**: Claude Desktop → "Book my usual shuttle for Wednesday" → refresh
    app; "Book Saturday too" → refused.
-10. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
+10. **Cloud LLM down** (F13), second terminal in `backend/`:
+    `python -m scripts.llm_outage on` (no restart). Ask Clear Path →
+    "Book my usual shuttle for Friday" → "Clear Path's assistant is
+    unavailable right now. Bookings still work: say "Book my usual shuttle
+    with Clear Path", or use the widget." (nothing booked). Then "Hey Siri,
+    book my usual shuttle for Friday with Clear Path" → booked as usual; or
+    the widget **Book tomorrow**. Langfuse → the failed turn is an ERROR
+    trace (every fallback model tried). `python -m scripts.llm_outage off`
+    → the chat works again. *"The AI is an enhancement, not a single point
+    of failure: every OS surface sends structured requests to
+    deterministic services, and the chat says honestly when it can't
+    help."*
+11. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
    (`backend/evals/baseline.json`, or a fresh `--cases` run if quota allows).
-11. **Close** with the architecture slide.
+12. **Close** with the architecture slide.
 
 After: `python -m scripts.demo_trip --stop`.
