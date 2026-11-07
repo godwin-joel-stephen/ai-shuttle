@@ -301,6 +301,14 @@ def create_assistant_tools(
             },
             "walk_minutes": status.walk_minutes,
             "leave_in_minutes": status.leave_in_minutes,
+            # The yes/no for "should I leave now", decided here so the
+            # model doesn't have to compare numbers (it once said "yes"
+            # with 11 minutes to spare).
+            "leave_now": (
+                status.leave_in_minutes <= 0
+                if status.leave_in_minutes is not None
+                else status.minutes_to_pickup is not None and status.minutes_to_pickup <= 10
+            ),
             "faster_alternative": (
                 {
                     "shuttle_id": status.alternative.shuttle.id,

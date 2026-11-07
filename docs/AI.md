@@ -181,6 +181,13 @@ Options: `--cases a,b`, `--model`, `--fallback a,b`, `--no-fallback`,
 (git-ignored) and, when Langfuse is configured, each case is a trace tagged
 `eval` with `task_success`, `judge_score`, `tool_choice` scores.
 
+**2026-11-07, 36 cases (not saved as baseline):** 29/36 first run (4
+judge timeouts, 3 real failures: invented habit reason, FAQ not retrieved
+for "colleague", "yes" to leaving with 11 minutes left). After the fixes
+(prompt wording, FAQ rewording, `leave_now` in `get_shuttle_status`) the 12
+affected cases passed 12/12, judge 5.0. A clean full `--save-baseline` run
+is still to do. The runner refuses to run while the F13 outage flag is on.
+
 **Baseline (2026-11-05, gemini-3.5-flash-lite, 33 cases):** task success
 97.0% (32/33), tool accuracy 100%, judge 4.94/5, 0 hallucination flags, p50
 5.5s, p95 22.6s. Only failure: `where-is-shuttle`, a judge error (it read
