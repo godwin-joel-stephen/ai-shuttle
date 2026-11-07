@@ -1,8 +1,8 @@
 # Progress
 
-Last updated 2026-11-07. All work through F10 (learned habits) is merged
-into `main` and pushed. **F13 — reliability demo** is built on
-`feature/f13-reliability` and awaits the iPhone check (below).
+Last updated 2026-11-07. All work through F13 (reliability demo) is merged
+into `main` and pushed. **Next implementation phase: on-device routing**
+(brief below); the device checks in "Remaining work" can run alongside.
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -21,41 +21,48 @@ into `main` and pushed. **F13 — reliability demo** is built on
 | Config | c4363e3, see git log | backend address (now 192.168.1.6, changed 2026-11-07) |
 | F7 goal planning | 544da0a | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline; tested on iPhone 2026-11-07 |
 | F10 learned habits | e7301b4, 245144d | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. Merged 2026-11-07 at the user's request. On iPhone so far: in-app chat books the learned 8:00 Thursday with its reason; two issues found and fixed in 245144d (Siri dropping the day on a weekend, garbled model reply). Rest of the device checklist below is still to report |
+| F13 reliability demo | 5c4301d | `scripts.llm_outage on\|off` (runtime flag file, no restart) → failing stand-in models, real fallback chain → honest 503 that points to Siri booking; structured surfaces unaffected; ERROR span in Langfuse; `/health` shows `llm`; 11 tests; runbook step 10. Verified live on a temporary backend; merged 2026-11-07 at the user's request. iPhone run of runbook step 10 still to report |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
-## Current phase: F13 — reliability demo (built, awaiting iPhone check)
+## Next phase: on-device routing (optional item 6, F14)
 
-Branch `feature/f13-reliability`, not merged yet. Built 2026-11-07:
-- `python -m scripts.llm_outage on|off` (runtime flag file
-  `backend/.llm_outage`, gitignored; user's choice over env var + restart).
-  `app/core/outage.py` holds the flag; `create_chat_model` / `create_llm`
-  return failing stand-ins (`app/agent/outage_models.py`) while it exists,
-  so the real fallback chain → 503 path runs with no network call.
-  `GET /health` reports `"llm": "ok"|"outage"`.
-- 503 wording points to what still works: assistant → "Clear Path's
-  assistant is unavailable right now. Bookings still work: say "Book my
-  usual shuttle with Clear Path", or use the widget."; natural-language
-  `POST /bookings` → "…Try "Book my usual shuttle with Clear Path"."
-  The iOS chat and Ask Clear Path already show/read the server `detail`,
-  so no app change was needed.
-- Langfuse: `traced` marks a failed turn's span `level=ERROR` with the
-  exception as status message.
-- 11 tests in `tests/test_llm_outage.py` (structured booking, Earlier/Later,
-  habits keep working; assistant + NL booking 503 with nothing booked;
-  every fallback model tried; health; error trace). The `outage_flag`
-  autouse fixture points the flag at a temp file in tests.
-- Verified live on a temporary uvicorn (port 8001): flag flips without a
-  restart; assistant 503 in 0.3s.
-- DEMO_RUNBOOK step 10 + pre-demo check 12; BACKEND/AI/PRODUCT updated.
+Goal: simple chat requests are answered **on the iPhone** by Apple's
+on-device model (Foundation Models, free, private, works offline and
+during a cloud-LLM outage); anything else still goes to the cloud agent.
+Pairs with F13 on stage: "LLM off → the chat still books my usual".
 
-Still to do: iPhone check (see the test steps given 2026-11-07), Langfuse
-error trace check, then merge when the user asks. Not built (user's
-choice): deterministic answers to simple chat requests during an outage
-(stays with the optional on-device routing item).
+Already in place (reuse, don't rebuild):
+- `AIShuttle/ScheduleImport/ScheduleExtractor.swift` already uses
+  `SystemLanguageModel.default` with `@Generable` output, availability
+  checks and guardrail/context-window error handling — copy its pattern.
+- Deterministic backend endpoints that need no LLM: `POST /bookings
+  {booking_date}` (habit-aware usual), `POST /bookings/{id}/reschedule
+  {direction}`, `GET /bookings`, `GET /habits`, `POST /schedule/plan|apply`
+  (cancel), tracking.
+- F13 outage switch and 503 message (`UNAVAILABLE_MESSAGE`) to demo it.
+
+To build (proposal; confirm scope with the user first):
+- `@Generable` intent for the chat: `bookUsual(date)`, `moveEarlier/Later
+  (date)`, `cancel(date)`, `whatsBooked`, or `other`. Dates resolved in
+  Swift (reuse the Siri intent's day handling), never trusted as free text.
+- Router in `AssistantViewModel.send`: on-device classify first (short
+  deadline, ~1–2s); confident simple intent → call the structured endpoint
+  and reply locally ("Done. You're on the 8:00 Thursday — your usual …",
+  marked "on device" in the activity row); `other`, low confidence, model
+  unavailable or error → existing `/assistant/messages`. Optionally also
+  when the cloud returns 503.
+- Decide with the user: route on-device always for simple requests, or
+  only as the outage fallback? Should "Ask Clear Path" (Siri) use it too?
+  Should on-device turns be appended to the shared server conversation?
+- Tests: Swift Testing for the router (stub classifier + API client);
+  an extraction-style eval for the classifier in `ScheduleImportEvals`
+  (macOS, needs Apple Intelligence on the Mac — it's currently off).
+- Docs: MOBILE.md, AI.md (routing table), runbook step, PRODUCT.md row.
 
 ## Remaining work (planned order)
 
-1. **F13 reliability demo**: iPhone check, then merge (above).
+1. **F13 device check**: run DEMO_RUNBOOK step 10 on the iPhone (restart
+   uvicorn first so it has the F13 code) and the Langfuse ERROR trace.
 2. **F10 device checklist** (from the 2026-11-07 test plan; reset with
    `python -m scripts.reset_demo_db`): Home "Your commute" card + Book;
    Siri "for Thursday" → 8:00 with reason (Console `day=` line; asks
@@ -74,8 +81,7 @@ choice): deterministic answers to simple chat requests during an outage
 5. **Demo runbook polish and rehearsal** (architecture slide, timings,
    fallbacks); update the original planning docs if wanted (outside the
    repo).
-6. Optional: on-device Foundation Models routing (simple requests answered
-   on the phone).
+6. **On-device routing** (brief above) — the next code phase.
 
 Not built in F10 on purpose: Smart Stack relevance (`RelevantIntentManager`)
 and an in-app reminder toggle (iOS notification settings cover it).
@@ -83,6 +89,10 @@ and an in-app reminder toggle (iOS notification settings cover it).
 ## Known issues / caveats
 
 - Xcode 26.4.1 build hang on the clang probe (workaround in CLAUDE.md).
+- 2026-11-07: the first tap on the chat message box stalls for a few
+  seconds **only when the app was launched from Xcode** (the debugger
+  slows iOS's first keyboard load); launched from the home screen there's
+  no stall (user checked). No code change; launch from the icon for demos.
 - Siri on iOS 27 sometimes answers itself instead of running the intent;
   chained Siri bookings can lose the day. Use the documented phrases.
   2026-11-07: "Book my usual shuttle for Thursday" on a Saturday answered

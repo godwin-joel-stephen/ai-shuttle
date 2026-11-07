@@ -17,7 +17,9 @@ always refused). Mac and iPhone on the same Wi-Fi.
    past rides, so the learned habits show: Mondays 7:15, Thursdays 8:00;
    Wed/Fri stay 7:30 so steps 1, 5 and 6 are unchanged)
 5. App installed from Xcode (scheme AIShuttle). Keep
-   `pkill -f "clang -v -E -dM"` handy if the build stalls.
+   `pkill -f "clang -v -E -dM"` handy if the build stalls. Then stop it
+   in Xcode and launch from the home-screen icon (with the debugger
+   attached, the first chat keyboard stalls for seconds).
 6. On the phone: widget on the home screen, control in Control Center,
    notifications and Live Activities on for Clear Path.
 7. Claude Desktop open with the clear-path MCP server running

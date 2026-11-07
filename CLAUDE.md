@@ -10,7 +10,7 @@ Read these before working on an area:
 
 | Doc | Covers |
 |---|---|
-| [docs/PRODUCT.md](docs/PRODUCT.md) | Goal, flows F1–F13 and their status, design principles |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | Goal, flows F1–F14 and their status, design principles |
 | [docs/PROGRESS.md](docs/PROGRESS.md) | What's done, what's next, known issues, decision log |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, layers, how each surface reaches the backend |
 | [docs/BACKEND.md](docs/BACKEND.md) | FastAPI app, endpoints, booking rules, data model, scripts, tests |
