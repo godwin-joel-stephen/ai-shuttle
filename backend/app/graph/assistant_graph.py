@@ -10,6 +10,7 @@ per-conversation memory through the checkpointer (thread_id =
 conversation id). Business rules stay in the tools' services.
 """
 
+import re
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -35,6 +36,30 @@ MODEL_DEADLINE_SECONDS = 8
 # A timed-out call keeps running in its thread until the HTTP request
 # returns; it is abandoned, not cancelled.
 _model_calls = ThreadPoolExecutor(max_workers=8, thread_name_prefix="model-call")
+
+
+class UnusableReplyError(RuntimeError):
+    """The model answered with something that isn't a reply to a person."""
+
+
+def is_unusable_reply(message, tool_names: frozenset[str]) -> bool:
+    """A final reply that must never reach the rider. Flash-Lite once
+    answered a habits question with the bare text
+    "ValueOfget_commute_habits", which Siri read out as the answer."""
+
+    if getattr(message, "tool_calls", None):
+        return False
+    text = message.text.strip()
+    if not text:
+        return True
+    # Internal tool names are never part of a good answer.
+    if any(name in text for name in tool_names):
+        return True
+    # A lone code-like identifier (snake_case or camelCase) isn't a sentence.
+    return bool(
+        re.fullmatch(r"[A-Za-z_][\w.()]*", text)
+        and ("_" in text or re.search(r"[a-z][A-Z]", text))
+    )
 
 
 def build_system_prompt(today: date, user_name: str) -> str:
@@ -111,6 +136,7 @@ def create_assistant_graph(
     deadline_seconds: float | None = None,
 ):
     attempts = [m.bind_tools(tools) for m in (model, *fallback_models)]
+    tool_names = frozenset(t.name for t in tools)
 
     def agent(state: MessagesState, config: RunnableConfig):
         messages = [SystemMessage(system_prompt), *state["messages"]]
@@ -122,6 +148,10 @@ def create_assistant_graph(
             try:
                 # Also raises TimeoutError when the deadline passes.
                 response = call.result(timeout=deadline_seconds or MODEL_DEADLINE_SECONDS)
+                # A garbled reply is a failure like a timeout: the next
+                # model gets a fresh attempt instead of the rider hearing it.
+                if is_unusable_reply(response, tool_names):
+                    raise UnusableReplyError(response.text[:200])
                 break
             except Exception:
                 if position == len(attempts) - 1:

@@ -43,6 +43,14 @@ it is merged into `main` and pushed.
 - Xcode 26.4.1 build hang on the clang probe (workaround in CLAUDE.md).
 - Siri on iOS 27 sometimes answers itself instead of running the intent;
   chained Siri bookings can lose the day. Use the documented phrases.
+  2026-11-07: "Book my usual shuttle for Thursday" on a Saturday answered
+  "Shuttles don't run on Sundays" (day dropped → tomorrow). The intent now
+  asks "Which day?" when the day is missing and tomorrow is a weekend, and
+  logs the received day (Console.app, category `Siri`).
+- 2026-11-07: Flash-Lite once replied with the bare text
+  `ValueOfget_commute_habits` after a tool call, and Siri read it out. The
+  agent now treats a reply that names a tool or is a lone identifier as a
+  failed attempt and moves on to the fallback model (503 if none is left).
 - Eval: the judge occasionally miscounts (2026-11-05: `where-is-shuttle`
   read the pickup time as the office arrival; earlier `book-sunday-refused`).
   The two old failures passed in the 33-case run.

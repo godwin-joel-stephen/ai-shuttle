@@ -350,7 +350,7 @@ extension MockedNetworkTests {
                 return (response, Data())
             }
 
-            let intent = BookMyUsualShuttleIntent(apiClient: client)
+            let intent = BookMyUsualShuttleIntent(day: .monday, apiClient: client)
             await #expect(throws: BookingIntentError.self) {
                 try await intent.perform()
             }
