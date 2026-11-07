@@ -39,7 +39,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | F4 | Proactive delay alert: "Shuttle 20 min late… the 7:45 gets you there 5 min sooner. [Rebook] [Keep]" — Rebook works from the notification | Notification | ✅ (alternative chosen by the F7 trip planner's option logic) |
 | F5 | "Time to leave" alert and "Should I leave now?" using walking time (+ weather via MCP) | Notification / chat | ✅ |
 | F6 | Live tracking: Siri "Track my shuttle with Clear Path", Live Activity (Lock Screen + Dynamic Island), live map | Siri / Live Activity | ✅ |
-| F7 | Goal-based booking ("get me to the office by 8:30", "I have a meeting at 8", "by 8 every day this week", "will I make it by 8:20?") via a deterministic trip planner the agent calls (`plan_trip` / `book_trip_plan`) | Chat / Siri Ask Clear Path / MCP | 🟡 built and evaluated; awaiting iPhone test |
+| F7 | Goal-based booking ("get me to the office by 8:30", "I have a meeting at 8", "by 8 every day this week", "will I make it by 8:20?") via a deterministic trip planner the agent calls (`plan_trip` / `book_trip_plan`) | Chat / Siri Ask Clear Path / MCP | ✅ (tested on iPhone 2026-11-07) |
 | F8 | "Why can't I book Saturday?" — real rule + RAG over policies, cited sources | Chat / Siri | ✅ |
 | F9 | Ask Clear Path chat + on-device voice + Siri "Ask Clear Path", shared memory, activity log | Chat / Siri | ✅ |
 | F10 | Habit-based suggestions (IntentDonationManager → Siri Suggestions/Spotlight; learned "usual") | Lock Screen / Spotlight | ⏳ |

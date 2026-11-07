@@ -1,7 +1,7 @@
 # Progress
 
-Last updated 2026-11-05. F3 is merged into `main` (not yet pushed). F7 is on
-branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
+Last updated 2026-11-07. All work so far (through F7) is merged into `main`
+and pushed. **Next phase: F10** (see "Next" below for the brief).
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -18,7 +18,7 @@ branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
 | F11/E MCP | 569efb9, 7fd6d81, 6125dec | verified in Claude Desktop 2026-11-04 |
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3, see git log | backend address (now 192.168.1.6, changed 2026-11-07) |
-| F7 goal planning | branch `feature/f7-goal-planning` | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline. **Not yet verified on device.** |
+| F7 goal planning | 544da0a | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline; tested on iPhone 2026-11-07 |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
 ## Next (agreed order)
@@ -26,12 +26,27 @@ branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
 1. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
    Intelligence is on (on the Mac) and record the on-device model's numbers
    in AI.md.
-2. **F7 — finish**: user tests goal requests on the iPhone (chat and Siri
-   "Ask Clear Path"), then merge. Multi-agent only if a future eval shows
-   a gap the single agent + planner can't close.
-3. **F10 — habit suggestions**: donate booking intents
-   (`IntentDonationManager`), learn "usual" from history.
-4. **F13 — reliability demo**: script for "Gemini key off → Siri booking
+2. **F10 — habit suggestions (next phase)**. Goal: the OS suggests the
+   rider's usual booking before they ask (Siri Suggestions, Spotlight, Lock
+   Screen), and "usual" is learned from history instead of fixed in seed.
+   Starting points:
+   - iOS: donate `BookMyUsualShuttleIntent` (with its day) via
+     `IntentDonationManager` after every successful booking path (Siri,
+     widget/control `BookTomorrowIntent` in the extension, chat actions,
+     schedule import, trip plan). Check what iOS 26/27 surfaces from
+     donations (relevant shortcuts / Siri Suggestions) before building UI.
+   - Backend: today "usual" = `preferences.usual_shuttle_id` (seeded 7:30).
+     Learn it from confirmed bookings (most frequent departure over the
+     last N weeks, maybe per weekday) behind a service; keep explicit
+     preference as the override; expose why ("you took the 7:15 on 4 of
+     the last 5 Mondays"). The planner's "usual wins" rule and
+     `book_usual_shuttle` then follow the learned habit automatically.
+   - Possibly a "you usually book Monday by Friday evening — book now?"
+     local notification (no APNs).
+   - Write eval cases / unit tests first (history fixtures → expected
+     usual), as in F7. Decide with the user whether learned usual may
+     change bookings silently (recommend: never; it only suggests).
+3. **F13 — reliability demo**: script for "Gemini key off → Siri booking
    still works" (document injection screening is done in F3).
 5. **Demo runbook polish and rehearsal**; update the original planning docs
    if wanted (they live outside the repo).
@@ -57,6 +72,9 @@ branch `feature/f7-goal-planning`, awaiting the user's iPhone test.
   has only measured the keyword-rules baseline so far (11/15). Turning it on
   (System Settings → Apple Intelligence & Siri; free, downloads the model)
   lets `run.sh` measure the on-device model too.
+- Testing on a weekend: name weekdays ("on Monday", "next week"), since
+  "tomorrow" may be Sunday. Backend scripts must run from `backend/` with
+  `.venv` active (`python -m scripts…` fails from `~`).
 - The share extension adds a third bundle id
   (`com.yourcompany.AIShuttle.ClearPathShare`); free accounts may register
   only 10 App IDs per 7 days.
