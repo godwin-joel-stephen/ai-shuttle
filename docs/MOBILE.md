@@ -39,10 +39,13 @@ AIShuttle/Assistant/   AssistantAPI (DTOs, ConversationStore), AssistantViewMode
 AIShuttle/Tracking/    TrackingAPI (TripStatusDTO), TrackingView (MapKit), ShuttleActivityController,
                        TripMonitor (trip mode), TripNotifications (+ NotificationResponder, AppDelegate)
 AIShuttle/Views/       AppShellView (tabs, refresh on foreground), HomeView, RidesView, RideDetailsView, UpcomingRideCard
-AIShuttle/ViewModels/  RidesViewModel (joins in-flight loads; survives cancelled .task callers)
+AIShuttle/ViewModels/  RidesViewModel (joins in-flight loads; survives cancelled .task callers; after each
+                       load syncs habits: donations + reminders; bookUsual / pinUsual)
+AIShuttle/Habits/      HabitSurfaces (HabitDonations, HabitReminders), HabitCard (Home → Your commute)
 Shared/                BookingAPIClient (+ withTimeouts/forAssistant, ISO8601 decoder, NoContent),
                        BookingDTOs, BookingConfirmation (spoken text, BookingIntentError, notifier),
-                       BookTomorrowIntent (widget/control), ShuttleActivityAttributes
+                       BookTomorrowIntent (widget/control), ShuttleActivityAttributes,
+                       HabitDTOs (GET /habits, pin, HabitReminderID — any booking path withdraws that day's reminder)
 ClearPathWidgets/      NextRideWidget, BookShuttleControl, ShuttleLiveActivity, bundle
 ScheduleImport/        (app + share extension) ScheduleModels (WorkdayKind, ScheduleCalendar), ScheduleTextReader
                        (Vision/PDFKit), DocumentSafety, RuleBasedScheduleParser, ScheduleExtractor (Foundation
@@ -85,6 +88,29 @@ Lessons (iOS 27 Siri routes with its own model):
 - Debugging the widget scheme directly needs `_XCWidgetKind` /
   `_XCWidgetFamily` env vars; normally run the AIShuttle scheme and add the
   widget by hand.
+
+## Learned habits (F10)
+
+- **Donations**: after every rides load, `HabitDonations` donates
+  `BookMyUsualShuttleIntent(day: <weekday>)` via `IntentDonationManager`
+  for each booking not donated before (ids kept in UserDefaults). The rides
+  list is the one place that sees bookings from every surface (widget
+  extension, chat, schedule import, Claude Desktop), so iOS can surface
+  "Book My Usual Shuttle" in Siri Suggestions / Spotlight / Lock Screen.
+  Siri runs donate themselves.
+- **Reminders**: `HabitReminders.schedule` replaces pending
+  `habit-reminder-<date>` notifications with one at 19:00 the evening
+  before each upcoming day that is `regular` and not booked: "Book
+  Monday's shuttle? Your usual Monday shuttle is the 7:15 AM, arriving
+  8:00 AM — you took it on 4 of your last 5 Mondays." **Book** (category
+  `HABIT_BOOK_REMINDER`) books in the background via `NotificationResponder`
+  and confirms with a notification. Booking that day from Siri, the widget
+  or the card withdraws its reminder. Debug builds: card menu → **Preview
+  reminder** fires it in 5 s.
+- **Home → Your commute** (`HabitCard`): next usual day not booked, why,
+  **Book**; "Your usual week" (sparkles = learned, pin = pinned); menu
+  pins the shown shuttle or unpins.
+- Siri/widget confirmations append the backend's `usual_reason`.
 
 ## Trip mode (F4/F5) — replaces push
 
@@ -136,7 +162,7 @@ sources, new-conversation button. `VoiceInput` uses iOS 26 `SpeechAnalyzer`
 "shuttle"); tap mic to talk, tap again to stop and send. Shares the
 conversation with Siri "Ask Clear Path" (30-minute expiry).
 
-## Tests (52 Swift Testing tests)
+## Tests (61 Swift Testing tests)
 
 All suites that use `MockURLProtocol.requestHandler` (a process-wide static)
 are nested under `@Suite(.serialized) struct MockedNetworkTests` — suites

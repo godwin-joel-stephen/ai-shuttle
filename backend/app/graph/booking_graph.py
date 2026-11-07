@@ -5,6 +5,7 @@ from app.agent.schemas import AgentIntent
 
 from app.agent.llm import LLM, LLMUnavailableError
 from app.graph.state import BookingState
+from app.services.habit_service import HabitSource
 from app.tools.booking_tools import create_booking_tool
 
 
@@ -67,6 +68,7 @@ def execute_booking(
         "booking_id": outcome.booking.id,
         "booking": outcome.booking,
         "already_booked": outcome.already_booked,
+        "habit": outcome.habit,
     }
 
 
@@ -91,6 +93,15 @@ def describe_booking(booking) -> str:
     )
 
 
+def habit_note(habit) -> str | None:
+    """Why "your usual" meant this shuttle, when it isn't simply the
+    saved default: "you took it on 4 of your last 5 Mondays"."""
+
+    if habit is None or habit.source == HabitSource.DEFAULT:
+        return None
+    return habit.reason
+
+
 def respond(state: BookingState) -> BookingState:
     description = describe_booking(state["booking"])
 
@@ -98,6 +109,8 @@ def respond(state: BookingState) -> BookingState:
         response = f"You're already booked on {description}."
     else:
         response = f"Done. You're booked on {description}."
+        if note := habit_note(state.get("habit")):
+            response += f" That's your usual: {note}."
 
     return {
         **state,

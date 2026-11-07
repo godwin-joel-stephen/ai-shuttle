@@ -20,9 +20,11 @@ extension BookingResponse {
         let ride = "the \(booking.formattedPickupTime) shuttle \(booking.spokenDay)"
         let arrival = booking.formattedArrivalTime.map { ", arriving at \(booking.destination ?? "your stop") by \($0)" } ?? ""
 
-        return alreadyBooked
-            ? "You're already booked on \(ride)."
-            : "Done. You're on \(ride)\(arrival)."
+        if alreadyBooked {
+            return "You're already booked on \(ride)."
+        }
+        let habit = usualReason.map { " That's your usual: \($0)." } ?? ""
+        return "Done. You're on \(ride)\(arrival).\(habit)"
     }
 }
 

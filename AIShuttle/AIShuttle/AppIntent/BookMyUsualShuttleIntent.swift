@@ -64,6 +64,7 @@ enum ShuttleBooking {
         }
 
         WidgetCenter.shared.reloadAllTimelines()
+        HabitReminderID.withdraw(for: date)
 
         return Booked(
             dialog: IntentDialog(stringLiteral: response.spokenConfirmation),

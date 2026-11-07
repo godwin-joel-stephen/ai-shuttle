@@ -22,7 +22,7 @@ nonisolated enum TripNotifications {
             actions: [rebook, keep],
             intentIdentifiers: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([delay])
+        UNUserNotificationCenter.current().setNotificationCategories([delay, HabitReminders.notificationCategory])
     }
 
     static func post(
@@ -67,7 +67,8 @@ nonisolated enum TripNotifications {
     }
 }
 
-/// Receives notification taps, including Rebook/Keep, even when the app
+/// Receives notification taps, including Rebook/Keep and the habit
+/// reminder's Book, even when the app
 /// was in the background.
 ///
 /// Uses the completion-handler callbacks, called on the main actor: with
@@ -94,9 +95,17 @@ final class NotificationResponder: NSObject, UNUserNotificationCenterDelegate {
         let isRebook = response.actionIdentifier == TripNotifications.rebookAction
         let bookingId = userInfo["bookingId"] as? Int
         let shuttleId = userInfo["shuttleId"] as? Int
+        let habitDay = response.actionIdentifier == HabitReminders.bookAction
+            ? userInfo[HabitReminders.dayKey] as? String
+            : nil
 
         Task { @MainActor in
             defer { completionHandler() }
+
+            if let habitDay {
+                await HabitReminders.book(dayText: habitDay)
+                return
+            }
 
             guard isRebook, let bookingId, let shuttleId else { return }
             await Self.rebook(bookingId: bookingId, shuttleId: shuttleId)

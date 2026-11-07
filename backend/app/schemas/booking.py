@@ -50,3 +50,6 @@ class BookingResponse(BaseModel):
     message: str
     already_booked: bool = False
     booking: BookingDetailResponse | None = None
+    # Why "your usual" was this shuttle ("you took it on 4 of your last 5
+    # Mondays"); only for a new booking of a learned or pinned usual.
+    usual_reason: str | None = None

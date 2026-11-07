@@ -7,7 +7,8 @@ and booking rules, and the booking the rider already has — and picks one
 per day:
 
 1. the current booking, if it already meets the goal (no churn);
-2. otherwise the usual shuttle, if it meets the goal (habit);
+2. otherwise the usual shuttle, if it meets the goal (the habit learned
+   for that weekday, see habit_service);
 3. otherwise the latest departure that meets an arrive-by goal (most time
    at home), or the earliest after a leave-after goal.
 
@@ -230,7 +231,7 @@ class TripPlanner:
         suggest_nearby: bool = True,
     ) -> DayPlan:
         service = self.booking_service
-        usual = service.get_usual_shuttle(user_id)
+        usual = service.get_usual_shuttle(user_id, booking_date)
         shuttles = service.shuttle_repository.list_by_route(usual.route_id)
         current = service.booking_repository.get_confirmed_on_route(
             user_id=user_id, route_id=usual.route_id, booking_date=booking_date,

@@ -170,6 +170,14 @@ public struct HomeView: View {
                             }
                         }
                     }
+
+                    if let habits = viewModel.habits {
+                        HabitCard(
+                            habits: habits,
+                            onBook: { [viewModel] day in await viewModel.bookUsual(on: day) },
+                            onPin: { [viewModel] shuttleId in await viewModel.pinUsual(shuttleId: shuttleId) }
+                        )
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)

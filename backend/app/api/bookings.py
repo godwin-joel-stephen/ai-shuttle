@@ -8,7 +8,7 @@ from app.agent.llm import LLM, LLMUnavailableError
 from app.agent.schemas import AgentIntent
 from app.core import clock
 from app.db.database import get_db
-from app.graph.booking_graph import create_booking_graph, describe_booking
+from app.graph.booking_graph import create_booking_graph, describe_booking, habit_note
 from app.models.booking import Booking
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.preference_repository import PreferenceRepository
@@ -151,6 +151,9 @@ def create_booking(
         message=result["response"],
         already_booked=result["already_booked"],
         booking=_to_detail(result["booking"], _create_service(db)),
+        usual_reason=(
+            None if result["already_booked"] else habit_note(result.get("habit"))
+        ),
     )
 
 

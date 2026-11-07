@@ -700,5 +700,65 @@
       "bookings": [],
       "rubric": "Says shuttles don't run on Saturdays, books nothing, and suggests Friday or Monday instead."
     }
+  },
+  {
+    "id": "habit-book-thursday",
+    "category": "habit",
+    "setup": {
+      "history": "demo"
+    },
+    "turns": [
+      "Book my usual shuttle for Thursday"
+    ],
+    "expect": {
+      "tools_called": [
+        "book_usual_shuttle"
+      ],
+      "bookings": [
+        {
+          "day": 3,
+          "departure": "08:00"
+        }
+      ],
+      "rubric": "Confirms the 8:00 AM shuttle on Thursday, November 5, and says it's the usual because the rider took it on 4 of their last 5 Thursdays."
+    }
+  },
+  {
+    "id": "habit-explain",
+    "category": "habit",
+    "setup": {
+      "history": "demo"
+    },
+    "turns": [
+      "What's my usual shuttle on Mondays, and why?"
+    ],
+    "expect": {
+      "tools_called": [
+        "get_commute_habits"
+      ],
+      "tools_not_called": [
+        "book_usual_shuttle",
+        "set_usual_shuttle"
+      ],
+      "bookings": [],
+      "rubric": "Says the usual Monday shuttle is the 7:15 AM because the rider took it on 4 of their last 5 Mondays. Books nothing."
+    }
+  },
+  {
+    "id": "habit-pin",
+    "category": "habit",
+    "setup": {
+      "history": "demo"
+    },
+    "turns": [
+      "Make the 7:45 my usual shuttle"
+    ],
+    "expect": {
+      "tools_called": [
+        "set_usual_shuttle"
+      ],
+      "bookings": [],
+      "rubric": "Confirms the 7:45 AM is now the rider's usual shuttle (pinned over the learned habit) and books nothing."
+    }
   }
 ]

@@ -1,7 +1,8 @@
 # Progress
 
-Last updated 2026-11-07. All work so far (through F7) is merged into `main`
-and pushed. **Next phase: F10** (see "Next" below for the brief).
+Last updated 2026-11-07. F10 (learned habits) is built on branch
+`f10-habit-suggestions`, awaiting the user's iPhone test; everything before
+it is merged into `main` and pushed.
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -19,6 +20,7 @@ and pushed. **Next phase: F10** (see "Next" below for the brief).
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3, see git log | backend address (now 192.168.1.6, changed 2026-11-07) |
 | F7 goal planning | 544da0a | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline; tested on iPhone 2026-11-07 |
+| F10 learned habits | (branch f10-habit-suggestions) | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. **Not yet tested on iPhone** |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
 ## Next (agreed order)
@@ -26,26 +28,10 @@ and pushed. **Next phase: F10** (see "Next" below for the brief).
 1. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
    Intelligence is on (on the Mac) and record the on-device model's numbers
    in AI.md.
-2. **F10 — habit suggestions (next phase)**. Goal: the OS suggests the
-   rider's usual booking before they ask (Siri Suggestions, Spotlight, Lock
-   Screen), and "usual" is learned from history instead of fixed in seed.
-   Starting points:
-   - iOS: donate `BookMyUsualShuttleIntent` (with its day) via
-     `IntentDonationManager` after every successful booking path (Siri,
-     widget/control `BookTomorrowIntent` in the extension, chat actions,
-     schedule import, trip plan). Check what iOS 26/27 surfaces from
-     donations (relevant shortcuts / Siri Suggestions) before building UI.
-   - Backend: today "usual" = `preferences.usual_shuttle_id` (seeded 7:30).
-     Learn it from confirmed bookings (most frequent departure over the
-     last N weeks, maybe per weekday) behind a service; keep explicit
-     preference as the override; expose why ("you took the 7:15 on 4 of
-     the last 5 Mondays"). The planner's "usual wins" rule and
-     `book_usual_shuttle` then follow the learned habit automatically.
-   - Possibly a "you usually book Monday by Friday evening — book now?"
-     local notification (no APNs).
-   - Write eval cases / unit tests first (history fixtures → expected
-     usual), as in F7. Decide with the user whether learned usual may
-     change bookings silently (recommend: never; it only suggests).
+2. **F10 — iPhone test, then merge** when the user says so. Afterwards,
+   when quota allows, one full eval run (36 cases) and `--save-baseline`.
+   Not built (deliberately): Smart Stack relevance (`RelevantIntentManager`);
+   a settings toggle for reminders (iOS notification settings cover it).
 3. **F13 — reliability demo**: script for "Gemini key off → Siri booking
    still works" (document injection screening is done in F3).
 5. **Demo runbook polish and rehearsal**; update the original planning docs
@@ -97,3 +83,5 @@ and pushed. **Next phase: F10** (see "Next" below for the brief).
 | 2026-11-05 | F3 falls back to keyword rules when Apple Intelligence is unavailable; the same rules are the eval baseline |
 | 2026-11-05 | F7 uses a deterministic trip planner exposed as tools to the one agent, not a multi-agent supervisor (user's choice): 2–3 Gemini calls per goal, no invented arrivals; goal eval 4/9 → 9/9 |
 | 2026-11-05 | Eval baseline re-saved at 33 cases (32/33) |
+| 2026-11-07 | F10: the learned habit drives "usual" (per weekday, with overall fallback) and is always explained; a pinned shuttle beats it; nothing is ever booked without the rider asking (user's choice) |
+| 2026-11-07 | F10 surfaces: donations + evening-before reminder with Book + Home card; no Smart Stack relevance. Donations run after the rides list loads, since that sees bookings from every surface (widget extension, chat, import, MCP) |

@@ -42,7 +42,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | F7 | Goal-based booking ("get me to the office by 8:30", "I have a meeting at 8", "by 8 every day this week", "will I make it by 8:20?") via a deterministic trip planner the agent calls (`plan_trip` / `book_trip_plan`) | Chat / Siri Ask Clear Path / MCP | ✅ (tested on iPhone 2026-11-07) |
 | F8 | "Why can't I book Saturday?" — real rule + RAG over policies, cited sources | Chat / Siri | ✅ |
 | F9 | Ask Clear Path chat + on-device voice + Siri "Ask Clear Path", shared memory, activity log | Chat / Siri | ✅ |
-| F10 | Habit-based suggestions (IntentDonationManager → Siri Suggestions/Spotlight; learned "usual") | Lock Screen / Spotlight | ⏳ |
+| F10 | Learned habits: "usual" is learned per weekday from recent rides ("you took the 7:15 on 4 of your last 5 Mondays") and explained wherever it's used; pin to override. Every booking is donated (Siri Suggestions/Spotlight); an evening-before reminder with a **Book** button for usual days not yet booked; Home → Your commute card. Never books by itself | Lock Screen / Spotlight / notification / Siri | 🟡 built 2026-11-07, awaiting iPhone test |
 | F11 | MCP server: book from Claude Desktop with the same rules | Laptop | ✅ (verified in Claude Desktop) |
 | E | Agent uses an external MCP server (weather) | Chat | ✅ |
 | F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
@@ -57,10 +57,11 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 4. Proactive delay alert → Rebook from the notification (F4)
 5. "Time to leave" alert (F5)
 6. Siri "Track my shuttle" → Live Activity (F6)
-7. Open the app: everything already reflected; chat used on purpose for "Why can't I book?" with citations (F8), optionally goal booking (F7)
-8. Laptop: Claude Desktop books through MCP; agent's weather step labelled "via weather MCP server" (F11 + E)
-9. Laptop: Langfuse trace of a turn, evaluation results (F12); "LLM off" reliability (F13)
-10. Architecture slide
+7. Habit reminder "Book Monday's shuttle? … you took it on 4 of your last 5 Mondays" → **Book** from the notification (F10)
+8. Open the app: everything already reflected; chat used on purpose for "Why can't I book?" with citations (F8), optionally goal booking (F7)
+9. Laptop: Claude Desktop books through MCP; agent's weather step labelled "via weather MCP server" (F11 + E)
+10. Laptop: Langfuse trace of a turn, evaluation results (F12); "LLM off" reliability (F13)
+11. Architecture slide
 
 See [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) for exact commands.
 

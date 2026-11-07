@@ -26,13 +26,15 @@ time; tests/evals monkeypatch it.
 | `GET /health` | liveness |
 | `GET /bookings?user_id=1` | upcoming confirmed bookings |
 | `GET /bookings/{id}?user_id=1` | one booking + `earlier_available` / `later_available` |
-| `POST /bookings` | `{user_id, booking_date}` structured (no LLM) **or** `{user_id, message}` natural language; idempotent (returns `already_booked`) |
+| `POST /bookings` | `{user_id, booking_date}` structured (no LLM) **or** `{user_id, message}` natural language; idempotent (returns `already_booked`); books the usual **for that weekday** and returns `usual_reason` when it's learned or pinned (the message ends "That's your usual: you took it on 4 of your last 5 Mondays.") |
 | `POST /bookings/{id}/reschedule` | `{user_id, direction: earlier|later}` (Siri card buttons) |
 | `POST /bookings/{id}/move` | `{user_id, shuttle_id}`; returns trip status; keeps a running simulation aligned |
 | `POST /assistant/messages` | `{user_id, message, conversation_id?}` → `{conversation_id, reply, actions[{tool, arguments, succeeded, error, server}], bookings_changed, sources[]}` |
 | `GET /assistant/conversations/{id}?user_id=1` | replay a conversation (Siri turns show in the app) |
 | `GET /tracking/next?user_id=1` | live status of the next (or simulated) trip |
 | `GET /bookings/{id}/tracking` | live status of a booking |
+| `GET /habits?user_id=1` | F10: per weekday (Mon–Fri) the usual shuttle with `source` pinned/weekday/overall/default, `reason`, `rides`/`sample`, `regular`; `upcoming` = service days tomorrow…+7 with `booked`/`booked_departure` and that day's habit; `pinned_shuttle_id` |
+| `POST /habits/pin` | `{user_id, shuttle_id}` pins a usual (beats the habit); `shuttle_id: null` unpins; returns the same as `GET /habits`; 409 for another route |
 | `POST /schedule/plan` | `{user_id, days: [{date, kind: office|remote|offsite|leave}]}` (1–31 unique dates) → per day `action` book/keep/cancel/none/blocked + `message`, `reason_code`, `bookings`; `summary`, `changes`. Changes nothing |
 | `POST /schedule/apply` | same body (only the days the user approved) → re-plans, books/cancels, per-day `succeeded`; `summary`, `bookings_changed` |
 | `POST /users/{id}/location` | `{latitude, longitude}` from trip mode (204) |
@@ -45,7 +47,7 @@ Errors: `NotFoundError` → 404, other `BookingError` → 409, model failure →
 
 ## Data model (`app/models/`)
 
-`users`, `routes`, `shuttles`, `preferences` (usual shuttle), `bookings`
+`users`, `routes`, `shuttles`, `preferences` (saved usual shuttle + `usual_pinned`), `bookings`
 (`status` confirmed/cancelled), `knowledge_chunks` (pgvector 384-d, HNSW
 cosine index), `trip_simulations` (per booking: started_at, start_minutes,
 speed, delay_minutes, walk_minutes; cascades with booking), `user_locations`.
@@ -79,6 +81,31 @@ left), else *none*. Past dates are *blocked* (`date_passed`). Apply
 re-plans first, so a day booked meanwhile isn't booked twice, and reports
 each day's success separately (a failed day never hides the others). No
 LLM: `ScheduleService` sits on `BookingService`, so every rule is shared.
+
+## Learned habits (`app/services/habit_service.py`, F10)
+
+"Usual" is per weekday. `HabitService.usual_for(user_id, date)` →
+`Habit(shuttle, source, rides, sample, regular, reason)`, precedence:
+**pinned** (`preferences.usual_pinned`) → **weekday** (most common departure
+in the last 5 rides on that weekday) → **overall** (last 10 rides) →
+**default** (the saved `usual_shuttle_id`, seeded 7:30). A habit needs ≥ 3
+rides on that departure *and* more than half the sample; ties go to the most
+recent. Rides = confirmed bookings on the saved shuttle's route dated in the
+8 weeks before today (future bookings and cancellations don't count).
+`regular` = ≥ 3 rides on that weekday in the window (drives reminders).
+`BookingService.book_usual_shuttle`, `check_eligibility`, the trip
+planner's "usual wins" rule and schedule import all resolve the usual
+through it (`get_usual_shuttle(user_id, date)`; without a date it's the
+saved shuttle, used only for the route). A habit only decides what "my
+usual" means when the rider asks; nothing books by itself (user decision
+2026-11-07).
+
+Demo history (`app/db/ride_history.py`, `demo_rides(today)`): six weeks
+before the current week: Mon 7:15 (4 of last 5), Tue 7:30 (every week),
+Wed one ride (works from home → not regular, falls back to 7:30), Thu 8:00
+(4 of last 5), Fri 7:30. Wed and Fri stay 7:30 on purpose: they're
+"tomorrow" on Tue/Thu demo days and the delay demo needs the 7:30. Used by `reset_demo_db`, tests and evals
+(`"setup": {"history": "demo"}`).
 
 ## Trip planner (`app/services/trip_planner.py`, F7)
 
@@ -116,18 +143,19 @@ Manyata Tech Park) in `route_geometry.py`.
 | Command | Use |
 |---|---|
 | `python -m scripts.demo_trip` | books next weekday if needed and replays it now; defaults `--start -11 --walk 4 --speed 2` ("Time to leave" ~1 min after trip mode starts); `--delay 20`, `--stop`, `--walk 0` = use GPS |
-| `python -m scripts.reset_demo_db` | delete bookings (simulations cascade) and locations |
+| `python -m scripts.reset_demo_db` | delete bookings (simulations cascade) and locations, unpin the usual, then add the demo ride history (`--no-history`: none, so the usual is the saved 7:30) |
 | `python -m scripts.rebuild_demo_db` | drop schema, recreate, seed, ingest policies |
 | `python -m scripts.ingest_knowledge` | re-embed `knowledge/*.md` after editing a policy |
-| `python -m app.db.init_db` | create missing tables (+ vector extension) |
+| `python -m app.db.init_db` | create missing tables (+ vector extension) and add `preferences.usual_pinned` if missing |
 
-## Tests (`backend/tests`, 103 tests, ~8s, no network)
+## Tests (`backend/tests`, 122 tests, ~6s, no network)
 
 - `conftest.py` switches to `<db>_test` via `app.isolated_database` before
   any `app.db` import, asserts it, rebuilds schema each session, seeds,
   ingests policies with `FakeEmbedder`, pins the clock to Monday
   2026-11-02 06:00 (`FIXED_NOW`, `TODAY`, `TOMORROW`), disables tracing,
-  and cleans bookings/locations after each test.
+  and cleans bookings/locations (and restores the unpinned 7:30 usual)
+  after each test. `test_habits.py`: history fixtures → expected usual.
 - `ScriptedChatModel` (tests/scripted_chat_model.py) replays scripted
   AIMessages/callables in place of Gemini; `call(name, **args)` builds tool
   calls.

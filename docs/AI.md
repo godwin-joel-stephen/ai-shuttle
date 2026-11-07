@@ -43,7 +43,11 @@ TrackingService.move_booking), `cancel_booking(booking_id)`,
 faster_alternative, pickup_coordinates; a simulated trip reports today's
 date), `check_booking_eligibility(date)` (reason_code + message),
 `search_policies(query)` (passages with similarity + `citable`).
-`MUTATING_TOOLS` (incl. `book_trip_plan`) drive `bookings_changed`.
+F10: `book_usual_shuttle` returns `usual_because` for a learned or pinned
+usual; `get_commute_habits()` (per weekday: departure, source, reason,
+regular) and `set_usual_shuttle(shuttle_id?)` (pin; none = unpin; changes
+no bookings). `MUTATING_TOOLS` (incl. `book_trip_plan`, `set_usual_shuttle`)
+drive `bookings_changed`.
 
 External MCP tools (weather) are appended at runtime; actions record the
 providing server so the app labels them "· via weather MCP server".
@@ -142,8 +146,9 @@ Apple Intelligence is off on the Mac; turn it on and run `./run.sh`.
 
 ## Evaluation (`backend/evals/`)
 
-`python -m evals.run` — 33 cases (`dataset.json`) across booking,
-follow-up, rules-rag, tracking, safety, goal (F7). Setup can also fill
+`python -m evals.run` — 36 cases (`dataset.json`) across booking,
+follow-up, rules-rag, tracking, safety, goal (F7), habit (F10; setup
+`"history": "demo"` adds the demo ride history). Setup can also fill
 departures with other riders (`full_shuttles`). Each case: optional setup
 (bookings by day offset/departure, simulation), user turns, expectations
 (`tools_called`, `tools_not_called`, exact final `bookings`, `sources`,
@@ -171,6 +176,12 @@ statements of need must act without asking; not_possible must offer the
 soonest shuttle; blocked days carry `nearby_days`. The
 `goal-delayed-today` rubric was clarified after the first run (offering a
 switch is wanted; switching unasked isn't).
+
+**F10 habit cases** (2026-11-07, gemini-3.5-flash-lite, run alone with
+`--cases`): 3/3 (`habit-book-thursday` 5/5: books the 8:00 "since you
+took it on 4 of your last 5 Thursdays"; `habit-explain` 5/5; `habit-pin`
+4/5). The saved baseline is still the 33-case run; re-save at a
+full run when quota allows.
 
 Previous baseline (2026-11-04, 24 cases): task success 91.7%
 (22/24), tool accuracy 100%, judge 4.67/5, p50 6.8s, p95 25.9s, ~$0.0014

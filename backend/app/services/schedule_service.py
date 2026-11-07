@@ -154,7 +154,7 @@ class ScheduleService:
                 reason_code=error.code if error else None,
             )
 
-        shuttle = self.booking_service.get_usual_shuttle(user_id)
+        shuttle = self.booking_service.get_usual_shuttle(user_id, day.date)
         return PlannedDay(
             date=day.date,
             kind=day.kind,

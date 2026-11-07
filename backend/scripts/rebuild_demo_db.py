@@ -12,6 +12,7 @@ from app.db.database import SessionLocal
 from app.db.seed import seed_database
 from app.rag.embeddings import get_embedder
 from app.rag.ingest import ingest_knowledge
+from scripts.reset_demo_db import reset_demo_database
 
 
 def rebuild_demo_database():
@@ -21,6 +22,7 @@ def rebuild_demo_database():
 
     init_db()
     seed_database()
+    reset_demo_database()  # adds the demo ride history
 
     with SessionLocal() as session:
         count = ingest_knowledge(session, get_embedder())
