@@ -17,6 +17,7 @@ Read these before working on an area:
 | [docs/AI.md](docs/AI.md) | Agent graph, tools, prompt, models and fallbacks, RAG, evaluation, Langfuse |
 | [docs/MOBILE.md](docs/MOBILE.md) | iOS targets, Siri intents, widgets, Live Activity, trip mode, voice, tests |
 | [docs/MCP.md](docs/MCP.md) | MCP server (Claude Desktop), MCP client, weather server |
+| [docs/DEMO_STORY.md](docs/DEMO_STORY.md) | The talk: story, narration, under-the-hood notes, production gaps (verified against code) |
 | [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) | Exact setup commands and the demo script |
 
 ## Repository map
