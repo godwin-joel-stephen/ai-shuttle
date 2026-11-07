@@ -1,8 +1,8 @@
 # Progress
 
-Last updated 2026-11-07. F10 (learned habits) is built on branch
-`f10-habit-suggestions`, awaiting the user's iPhone test; everything before
-it is merged into `main` and pushed.
+Last updated 2026-11-07. All work through F10 (learned habits) is merged
+into `main` and pushed. **Next phase: F13 — reliability demo** (brief
+below).
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -20,23 +20,70 @@ it is merged into `main` and pushed.
 | F12 evals + Langfuse | 4045638, 2ffc947, 52116d8 | baseline 22/24; self-hosted Langfuse |
 | Config | c4363e3, see git log | backend address (now 192.168.1.6, changed 2026-11-07) |
 | F7 goal planning | 544da0a | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline; tested on iPhone 2026-11-07 |
-| F10 learned habits | (branch f10-habit-suggestions) | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. **Not yet tested on iPhone** |
+| F10 learned habits | e7301b4, 245144d | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. Merged 2026-11-07 at the user's request. On iPhone so far: in-app chat books the learned 8:00 Thursday with its reason; two issues found and fixed in 245144d (Siri dropping the day on a weekend, garbled model reply). Rest of the device checklist below is still to report |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
-## Next (agreed order)
+## Next phase: F13 — reliability demo
 
-1. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
-   Intelligence is on (on the Mac) and record the on-device model's numbers
-   in AI.md.
-2. **F10 — iPhone test, then merge** when the user says so. Afterwards,
-   when quota allows, one full eval run (36 cases) and `--save-baseline`.
-   Not built (deliberately): Smart Stack relevance (`RelevantIntentManager`);
-   a settings toggle for reminders (iOS notification settings cover it).
-3. **F13 — reliability demo**: script for "Gemini key off → Siri booking
-   still works" (document injection screening is done in F3).
-5. **Demo runbook polish and rehearsal**; update the original planning docs
-   if wanted (they live outside the repo).
-6. Optional: on-device Foundation Models routing.
+Goal: prove on stage that the OS surfaces keep working when the cloud LLM
+is down, and that the chat degrades honestly instead of failing silently.
+
+Already true (verify, don't rebuild):
+- Siri "Book my usual shuttle…", the widget/Control Center button, the
+  Siri card Earlier/Later, tracking, trip mode, habits/reminders and the
+  schedule import never call Gemini (structured `POST /bookings
+  {booking_date}`, deterministic services, on-device extraction).
+- The agent tries `agent_model` then `agent_fallback_models`
+  (`app/core/config.py`, `create_assistant_graph`); if every model fails
+  the API returns 503 "Clear Path's assistant is unavailable right now",
+  or "I made changes … but couldn't finish replying" when a mutating tool
+  already succeeded. Garbled replies count as failures (245144d).
+- Imported documents are screened for prompt injection (F3).
+
+To build (starting points):
+- An outage switch that needs no `.env` edit, e.g. `python -m
+  scripts.llm_outage on|off` (a flag the model factory checks —
+  `app/agent/factory.py` `create_chat_model` / `create_llm` — raising like
+  a 503) so it can be flipped live without restarting uvicorn. Decide with
+  the user: runtime flag vs env var + restart.
+- Tests first: with the outage on, structured booking still 200,
+  `/habits` works, `/assistant/messages` → 503 with the honest message and
+  no booking change, natural-language `POST /bookings {message}` → 503.
+- App: check how the chat and Siri "Ask Clear Path" show the 503 (should
+  say the assistant is unavailable and point to "Book my usual shuttle",
+  not a generic error).
+- Langfuse: the failed turn should appear as an error trace.
+- DEMO_RUNBOOK: a step "LLM off → Siri booking still works → chat says
+  it's unavailable → LLM on". PRODUCT.md F13 → ✅.
+- Optional, ties into the on-device item below: in an outage, answer
+  simple chat requests ("book my usual for Friday") deterministically.
+
+## Remaining work (planned order)
+
+1. **F13 reliability demo** (above).
+2. **F10 device checklist** (from the 2026-11-07 test plan; reset with
+   `python -m scripts.reset_demo_db`): Home "Your commute" card + Book;
+   Siri "for Thursday" → 8:00 with reason (Console `day=` line; asks
+   "Which day?" if dropped on a weekend); Preview reminder → **Book** from
+   the notification; real 7 PM reminder the evening before an unbooked
+   usual day; pin/unpin from card and chat; trip planner picks the 7:15 on
+   Monday for "by 8:30"; schedule import says "your usual 7:15"; Claude
+   Desktop `get_commute_habits`; `--no-history` fallback (all 7:30, no
+   reason); widget "Book tomorrow" on a weekday; Spotlight suggestions
+   after a few days.
+3. **Full eval run** (36 cases, ~100 free requests, not on a demo day) and
+   `--save-baseline`; current baseline is still the 33-case run.
+4. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
+   Intelligence is on (on the Mac) and record the on-device model's
+   numbers in AI.md.
+5. **Demo runbook polish and rehearsal** (architecture slide, timings,
+   fallbacks); update the original planning docs if wanted (outside the
+   repo).
+6. Optional: on-device Foundation Models routing (simple requests answered
+   on the phone).
+
+Not built in F10 on purpose: Smart Stack relevance (`RelevantIntentManager`)
+and an in-app reminder toggle (iOS notification settings cover it).
 
 ## Known issues / caveats
 
