@@ -92,6 +92,9 @@ always refused). Mac and iPhone on the same Wi-Fi.
     help."*
 11. **Under the hood**: Langfuse trace of the last chat turn; eval baseline
    (`backend/evals/baseline.json`, or a fresh `--cases` run if quota allows).
-12. **Close** with the architecture slide.
+12. **Close** with the architecture slides (Claude artifact, private to the
+    user: https://claude.ai/artifact/24fPzL6pEbWvkL8mDXixuu; Present mode,
+    or export PDF/PPTX as an offline backup): one backend, many surfaces;
+    where the AI runs.
 
 After: `python -m scripts.demo_trip --stop`.
