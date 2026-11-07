@@ -11,6 +11,7 @@ from app.repositories.booking_repository import BookingRepository
 from app.repositories.preference_repository import PreferenceRepository
 from app.repositories.shuttle_repository import ShuttleRepository
 from app.repositories.user_repository import UserRepository
+from app.services.habit_service import Habit, HabitService
 from app.services.errors import (
     BookingCutoffPassedError,
     BookingError,
@@ -38,6 +39,8 @@ class RescheduleDirection(StrEnum):
 class BookingOutcome:
     booking: Booking
     already_booked: bool
+    # Why this shuttle, when it was booked as the rider's usual.
+    habit: Habit | None = None
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,9 @@ class BookingService:
         self.preference_repository = preference_repository
         self.shuttle_repository = shuttle_repository
         self.booking_repository = booking_repository
+        self.habits = HabitService(
+            db, preference_repository, shuttle_repository, booking_repository
+        )
 
     def _resolve_user(self, user_id: int):
         user = self.user_repository.get_by_id(user_id)
@@ -76,25 +82,17 @@ class BookingService:
 
         return user
 
-    def _resolve_usual_shuttle(self, user_id: int):
-        preference = self.preference_repository.get_by_user_id(user_id)
+    def _resolve_usual_shuttle(
+        self,
+        user_id: int,
+        booking_date: date | None = None,
+    ) -> Shuttle:
+        """The usual shuttle for a date (learned per weekday), or without a
+        date the saved one, which is enough to know the route."""
 
-        if preference is None or preference.usual_shuttle_id is None:
-            raise NotFoundError(
-                "You haven't set a usual shuttle yet."
-            )
-
-        shuttle = self.shuttle_repository.get_by_id(
-            preference.usual_shuttle_id
-        )
-
-        if shuttle is None:
-            raise NotFoundError(
-                f"Usual shuttle "
-                f"{preference.usual_shuttle_id} not found."
-            )
-
-        return shuttle
+        if booking_date is None:
+            return self.habits.saved_shuttle(user_id)
+        return self.habits.usual_for(user_id, booking_date).shuttle
 
     def _resolve_booking(self, user_id: int, booking_id: int) -> Booking:
         booking = self.booking_repository.get_by_id(booking_id)
@@ -162,7 +160,7 @@ class BookingService:
         """Whether the usual shuttle could be booked, without booking it."""
 
         now = now or clock.now()
-        shuttle = self._resolve_usual_shuttle(user_id)
+        shuttle = self._resolve_usual_shuttle(user_id, booking_date)
 
         if self.booking_repository.get_confirmed_on_route(
             user_id=user_id,
@@ -184,8 +182,9 @@ class BookingService:
         booking_date: date,
         now: datetime | None = None,
     ) -> BookingOutcome:
-        shuttle = self._resolve_usual_shuttle(user_id)
-        return self.book_shuttle(user_id, booking_date, shuttle, now)
+        habit = self.habits.usual_for(user_id, booking_date)
+        outcome = self.book_shuttle(user_id, booking_date, habit.shuttle, now)
+        return BookingOutcome(outcome.booking, outcome.already_booked, habit)
 
     def book_shuttle(
         self,
@@ -243,8 +242,12 @@ class BookingService:
             return error
         return None
 
-    def get_usual_shuttle(self, user_id: int) -> Shuttle:
-        return self._resolve_usual_shuttle(user_id)
+    def get_usual_shuttle(
+        self,
+        user_id: int,
+        booking_date: date | None = None,
+    ) -> Shuttle:
+        return self._resolve_usual_shuttle(user_id, booking_date)
 
     def get_booking(self, user_id: int, booking_id: int) -> Booking:
         return self._resolve_booking(user_id, booking_id)

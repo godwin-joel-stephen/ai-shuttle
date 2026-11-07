@@ -24,6 +24,7 @@ struct BookTomorrowIntent: AppIntent {
         do {
             let response = try await BookingAPIClient.withTimeouts().bookUsualShuttle(userId: 1, on: tomorrow)
             WidgetCenter.shared.reloadAllTimelines()
+            HabitReminderID.withdraw(for: tomorrow)
             await BookingNotifier.post(
                 title: response.alreadyBooked ? "Already booked" : "Shuttle booked",
                 body: response.spokenConfirmation

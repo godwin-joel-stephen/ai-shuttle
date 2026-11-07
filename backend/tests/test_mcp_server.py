@@ -36,8 +36,12 @@ def test_lists_the_agents_tools_with_safety_hints(server):
         "check_booking_eligibility",
         "plan_trip",
         "book_trip_plan",
+        "get_commute_habits",
+        "set_usual_shuttle",
         "search_policies",
     }
+    assert tools["get_commute_habits"].annotations.read_only_hint is True
+    assert tools["set_usual_shuttle"].annotations.read_only_hint is False
     assert tools["plan_trip"].annotations.read_only_hint is True
     assert tools["book_trip_plan"].annotations.read_only_hint is False
     assert tools["get_my_bookings"].annotations.read_only_hint is True

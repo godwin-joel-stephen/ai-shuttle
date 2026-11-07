@@ -10,5 +10,6 @@ class BookingState(TypedDict, total=False):
     booking_id: int | None
     booking: Any
     already_booked: bool
+    habit: Any
     response: str | None
     error: str | None

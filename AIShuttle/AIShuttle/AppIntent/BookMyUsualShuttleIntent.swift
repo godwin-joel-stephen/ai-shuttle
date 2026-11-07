@@ -5,6 +5,7 @@
 
 import AppIntents
 import Foundation
+import OSLog
 import WidgetKit
 
 public struct BookMyUsualShuttleIntent: AppIntent {
@@ -42,6 +43,18 @@ public struct BookMyUsualShuttleIntent: AppIntent {
     }
 
     public func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetIntent {
+        // Visible in Console.app (subsystem com.yourcompany.AIShuttle): shows
+        // whether Siri filled the day from "…for Thursday…".
+        Logger.siri.info("BookMyUsualShuttleIntent day=\(day?.rawValue ?? "nil", privacy: .public)")
+
+        // Siri on iOS 27 sometimes drops the spoken day. Defaulting to
+        // tomorrow on a Saturday then answered "Shuttles don't run on
+        // Sundays" to "…for Thursday…"; ask for the day instead.
+        let tomorrow = BookingDay.tomorrow.date()
+        if day == nil, Calendar.current.isDateInWeekend(tomorrow) {
+            throw $day.needsValueError("Shuttles don't run on \(tomorrow.formatted(.dateTime.weekday(.wide)))s. Which day should I book?")
+        }
+
         let booked = try await ShuttleBooking.book(on: (day ?? .tomorrow).date(), using: apiClient)
         return .result(dialog: booked.dialog, snippetIntent: booked.snippet)
     }
@@ -64,10 +77,15 @@ enum ShuttleBooking {
         }
 
         WidgetCenter.shared.reloadAllTimelines()
+        HabitReminderID.withdraw(for: date)
 
         return Booked(
             dialog: IntentDialog(stringLiteral: response.spokenConfirmation),
             snippet: BookingSnippetIntent(bookingId: response.bookingId)
         )
     }
+}
+
+extension Logger {
+    nonisolated static let siri = Logger(subsystem: "com.yourcompany.AIShuttle", category: "Siri")
 }

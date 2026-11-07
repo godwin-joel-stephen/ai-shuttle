@@ -15,6 +15,7 @@ from app.api.assistant import (
     get_policy_embedder,
 )
 from app.db.database import get_db
+from app.graph.assistant_graph import is_unusable_reply
 from app.main import app
 from app.models.booking import Booking
 from tests.fake_embedder import FakeEmbedder
@@ -327,3 +328,39 @@ def test_parallel_tool_calls_share_the_session_safely(client, db, user_id):
 
     assert [a["succeeded"] for a in data["actions"]] == [True, True, True]
     assert db.query(Booking).filter_by(booking_date=TOMORROW).count() == 1
+
+
+def test_garbled_reply_falls_back_instead_of_reaching_the_rider(client, user_id):
+    # Flash-Lite once answered a habits question with this bare text.
+    use_model(ScriptedChatModel(script=[call("get_commute_habits"), AIMessage("ValueOfget_commute_habits")]))
+    app.dependency_overrides[get_fallback_chat_models] = lambda: [ScriptedChatModel(
+        script=[AIMessage("Your usual on Thursdays is the 7:30 AM shuttle.")]
+    )]
+
+    data = send(client, user_id, "What's my usual on Thursday?").json()
+
+    assert data["reply"] == "Your usual on Thursdays is the 7:30 AM shuttle."
+
+
+def test_garbled_reply_without_fallback_is_unavailable_not_shown(client, user_id):
+    use_model(ScriptedChatModel(script=[AIMessage("ValueOfget_commute_habits")]))
+
+    response = send(client, user_id, "What's my usual?")
+
+    assert response.status_code == 503
+    assert "get_commute_habits" not in response.text
+
+
+@pytest.mark.parametrize("text, unusable", [
+    ("ValueOfget_commute_habits", True),
+    ("get_commute_habits", True),
+    ("I called get_my_bookings for you.", True),
+    ("getCommuteHabits", True),
+    ("", True),
+    ("Done.", False),
+    ("Yes.", False),
+    ("Your usual on Thursdays is the 8:00 AM shuttle.", False),
+])
+def test_unusable_reply_detection(text, unusable):
+    names = frozenset({"get_commute_habits", "get_my_bookings"})
+    assert is_unusable_reply(AIMessage(text), names) is unusable

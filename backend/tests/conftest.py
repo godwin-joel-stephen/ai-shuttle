@@ -39,6 +39,7 @@ FIXED_NOW = datetime(2026, 11, 2, 6, 0)
 TODAY = FIXED_NOW.date()
 TOMORROW = TODAY + timedelta(days=1)
 from app.models.booking import Booking  # noqa: E402
+from app.models.preference import Preference  # noqa: E402
 from app.models.shuttle import Shuttle  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.user_location import UserLocation  # noqa: E402
@@ -73,6 +74,11 @@ def db():
         # Trip simulations go with their bookings (ON DELETE CASCADE).
         session.query(Booking).delete()
         session.query(UserLocation).delete()
+        # Habit tests pin other shuttles; restore the seeded 7:30, unpinned.
+        seeded = session.scalar(select(Shuttle.id).where(Shuttle.name == "Morning Shuttle C"))
+        session.query(Preference).update(
+            {Preference.usual_shuttle_id: seeded, Preference.usual_pinned: False}
+        )
         session.commit()
         session.close()
 

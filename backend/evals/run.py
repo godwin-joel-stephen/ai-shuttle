@@ -45,6 +45,7 @@ from app.db.database import SessionLocal, engine  # noqa: E402
 
 # Evaluations drop and reseed every table; never against the demo database.
 assert_isolated(engine.url, "eval")
+from app.db.ride_history import add_past_rides, demo_rides  # noqa: E402
 from app.db.seed import seed_database  # noqa: E402
 from app.graph.assistant_graph import (  # noqa: E402
     RECURSION_LIMIT,
@@ -52,6 +53,7 @@ from app.graph.assistant_graph import (  # noqa: E402
     create_assistant_graph,
 )
 from app.models.booking import Booking  # noqa: E402
+from app.models.preference import Preference  # noqa: E402
 from app.models.shuttle import Shuttle  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.user_location import UserLocation  # noqa: E402
@@ -147,12 +149,19 @@ def booking_service(db) -> BookingService:
 def reset_and_set_up(db, user_id: int, setup: dict) -> None:
     db.query(Booking).delete()  # trip simulations cascade
     db.query(UserLocation).delete()
+    # A case may pin another usual shuttle; restore the seeded 7:30.
+    seeded = db.scalar(select(Shuttle.id).where(Shuttle.name == "Morning Shuttle C"))
+    db.query(Preference).update({Preference.usual_shuttle_id: seeded, Preference.usual_pinned: False})
     db.commit()
 
     service = booking_service(db)
     tracking = TrackingService(db, service)
     shuttles = {f"{s.departure_time:%H:%M}": s for s in db.scalars(select(Shuttle))}
     today = FIXED_NOW.date()
+
+    # Past rides habits are learned from (see app/db/ride_history.py).
+    if setup.get("history") == "demo":
+        add_past_rides(db, user_id, demo_rides(today))
 
     for spec in setup.get("bookings", []):
         booking = service.book_usual_shuttle(user_id, today + timedelta(days=spec["day"])).booking

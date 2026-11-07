@@ -24,16 +24,19 @@ from app.rag.embeddings import Embedder
 from app.rag.retriever import search_knowledge
 from app.services.booking_service import BookingService
 from app.services.errors import BookingError
+from app.services.habit_service import HabitSource
 from app.services.tracking_service import TrackingService
 from app.services.trip_planner import DayPlan, Option, TripGoal, TripPlanner
 
 
-# Tools that change bookings; the API reports when any of them succeeded.
+# Tools that change the rider's data (bookings, or the usual shuttle);
+# the API reports when any of them succeeded, so the app refreshes.
 MUTATING_TOOLS = frozenset({
     "book_usual_shuttle",
     "change_booking_shuttle",
     "cancel_booking",
     "book_trip_plan",
+    "set_usual_shuttle",
 })
 
 
@@ -164,6 +167,24 @@ def create_assistant_tools(
     tracking = TrackingService(db, service)
     planner = TripPlanner(service, tracking)
 
+    # Shared by two tools; calling one tool from another would deadlock on
+    # the lock below.
+    def habits_dict() -> dict:
+        return {
+            "days": [
+                {
+                    "weekday": h.weekday_name,
+                    "shuttle_id": h.shuttle.id,
+                    "departure": f"{h.shuttle.departure_time:%-I:%M %p}",
+                    "arrival": f"{h.shuttle.arrival_time:%-I:%M %p}",
+                    "source": h.source.value,
+                    "reason": h.reason,
+                    "regular": h.regular,
+                }
+                for h in service.habits.week(user_id)
+            ]
+        }
+
     @tool
     @_report_booking_errors
     def get_my_bookings() -> dict:
@@ -194,10 +215,36 @@ def create_assistant_tools(
         twice."""
 
         outcome = service.book_usual_shuttle(user_id, booking_date)
-        return {
+        result = {
             "already_booked": outcome.already_booked,
             "booking": booking_to_dict(outcome.booking),
         }
+        habit = outcome.habit
+        if habit is not None and habit.source != HabitSource.DEFAULT:
+            result["usual_because"] = habit.reason
+        return result
+
+    @tool
+    @_report_booking_errors
+    def get_commute_habits() -> dict:
+        """The user's usual shuttle for each weekday and why: learned from
+        recent rides (source weekday/overall, with reason such as "you took
+        it on 4 of your last 5 Mondays"), pinned by the user, or the saved
+        default. regular=true means they usually ride that weekday. Use for
+        "what's my usual", "why did you book the 7:15" and habit questions."""
+
+        return habits_dict()
+
+    @tool
+    @_report_booking_errors
+    def set_usual_shuttle(shuttle_id: int | None = None) -> dict:
+        """Pin a shuttle as the user's usual on every day, overriding the
+        learned habit ("make the 7:45 my usual"). Get shuttle_id from
+        list_shuttle_options. Pass no shuttle_id to unpin, so the usual is
+        learned from their rides again. Changes no bookings."""
+
+        service.habits.pin(user_id, shuttle_id)
+        return habits_dict()
 
     @tool
     @_report_booking_errors
@@ -349,6 +396,8 @@ def create_assistant_tools(
         check_booking_eligibility,
         plan_trip,
         book_trip_plan,
+        get_commute_habits,
+        set_usual_shuttle,
         search_policies,
     ]
 

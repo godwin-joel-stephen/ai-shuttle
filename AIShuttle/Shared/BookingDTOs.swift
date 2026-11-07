@@ -51,17 +51,22 @@ public struct BookingResponse: Codable, Equatable, Sendable {
     public let message: String
     public let alreadyBooked: Bool
     public let booking: BookingDetailDTO?
+    /// Why "your usual" meant this shuttle, for a new booking of a learned
+    /// or pinned usual: "you took it on 4 of your last 5 Mondays".
+    public let usualReason: String?
 
     public init(
         bookingId: Int,
         message: String,
         alreadyBooked: Bool = false,
-        booking: BookingDetailDTO? = nil
+        booking: BookingDetailDTO? = nil,
+        usualReason: String? = nil
     ) {
         self.bookingId = bookingId
         self.message = message
         self.alreadyBooked = alreadyBooked
         self.booking = booking
+        self.usualReason = usualReason
     }
 
     enum CodingKeys: String, CodingKey {
@@ -69,6 +74,7 @@ public struct BookingResponse: Codable, Equatable, Sendable {
         case message
         case alreadyBooked = "already_booked"
         case booking
+        case usualReason = "usual_reason"
     }
 
     public init(from decoder: Decoder) throws {
@@ -77,6 +83,7 @@ public struct BookingResponse: Codable, Equatable, Sendable {
         message = try container.decode(String.self, forKey: .message)
         alreadyBooked = try container.decodeIfPresent(Bool.self, forKey: .alreadyBooked) ?? false
         booking = try container.decodeIfPresent(BookingDetailDTO.self, forKey: .booking)
+        usualReason = try container.decodeIfPresent(String.self, forKey: .usualReason)
     }
 }
 
@@ -199,7 +206,7 @@ public struct BookingDetailDTO: Codable, Equatable, Identifiable, Hashable, Send
         return formatter.date(from: bookingDate)
     }
 
-    nonisolated private static func formatTime(_ time: String) -> String {
+    nonisolated static func formatTime(_ time: String) -> String {
         let parts = time.split(separator: ":")
         if parts.count >= 2, let hour = Int(parts[0]), let minute = Int(parts[1]) {
             let period = hour >= 12 ? "PM" : "AM"

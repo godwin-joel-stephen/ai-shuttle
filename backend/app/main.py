@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.assistant import router as assistant_router
 from app.api.bookings import router as bookings_router
+from app.api.habits import router as habits_router
 from app.api.schedule import router as schedule_router
 from app.api.tracking import router as tracking_router
 
@@ -46,6 +47,7 @@ app = FastAPI(
 
 app.include_router(assistant_router)
 app.include_router(bookings_router)
+app.include_router(habits_router)
 app.include_router(schedule_router)
 app.include_router(tracking_router)
 

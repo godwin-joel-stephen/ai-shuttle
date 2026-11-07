@@ -33,6 +33,20 @@ public enum BookingDay: String, AppEnum {
         .sunday: DisplayRepresentation(title: "Sunday")
     ]
 
+    /// The weekday of a date, for donating "Book my usual shuttle for
+    /// Monday" after a booking.
+    public init(weekdayOf date: Date, calendar: Calendar = .current) {
+        switch calendar.component(.weekday, from: date) {
+        case 1: self = .sunday
+        case 2: self = .monday
+        case 3: self = .tuesday
+        case 4: self = .wednesday
+        case 5: self = .thursday
+        case 6: self = .friday
+        default: self = .saturday
+        }
+    }
+
     /// Resolves to a calendar day. Weekdays mean the next occurrence after
     /// today, so "Friday" said on a Friday books next week.
     public func date(from reference: Date = .now, calendar: Calendar = .current) -> Date {

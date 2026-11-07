@@ -72,6 +72,32 @@ class BookingRepository:
 
         return list(self.db.scalars(statement).all())
 
+    def get_rides(
+        self,
+        user_id: int,
+        route_id: int,
+        start: date,
+        end: date,
+    ) -> list[Booking]:
+        """Confirmed bookings on a route with start <= date < end, newest
+        first: the rides a habit is learned from."""
+
+        statement = (
+            select(Booking)
+            .join(Booking.shuttle)
+            .where(
+                Booking.user_id == user_id,
+                Booking.status == "confirmed",
+                Shuttle.route_id == route_id,
+                Booking.booking_date >= start,
+                Booking.booking_date < end,
+            )
+            .options(selectinload(Booking.shuttle))
+            .order_by(Booking.booking_date.desc(), Booking.id.desc())
+        )
+
+        return list(self.db.scalars(statement).all())
+
     def get_upcoming_by_user_id(
         self,
         user_id: int,

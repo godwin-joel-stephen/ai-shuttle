@@ -350,7 +350,7 @@ extension MockedNetworkTests {
                 return (response, Data())
             }
 
-            let intent = BookMyUsualShuttleIntent(apiClient: client)
+            let intent = BookMyUsualShuttleIntent(day: .monday, apiClient: client)
             await #expect(throws: BookingIntentError.self) {
                 try await intent.perform()
             }
@@ -398,7 +398,10 @@ extension MockedNetworkTests {
             let client = makeTestClient()
             nonisolated(unsafe) var requestCount = 0
             MockURLProtocol.requestHandler = { request in
-                requestCount += 1
+                // A load also refreshes /habits; count the rides requests.
+                if request.url?.path == "/bookings" {
+                    requestCount += 1
+                }
                 Thread.sleep(forTimeInterval: 0.2)
                 let response = HTTPURLResponse(
                     url: request.url!,
