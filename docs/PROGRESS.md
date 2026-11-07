@@ -58,11 +58,12 @@ history); the FAQ answer on booking for someone else wasn't retrieved for
 "colleague" (FAQ heading/text reworded, also the stale "usual shuttle"
 answer; re-ingested); "Should I leave now?" got "Yes" with 11 minutes to
 spare (`get_shuttle_status` now returns a deterministic `leave_now`). The
-12 affected cases re-run: 12/12, judge 5.0. The eval runner now refuses to
+12 affected cases re-run: 12/12, judge 5.0. Colleague answer and
+"Should I leave now?" verified on iPhone 2026-11-07. The eval runner now refuses to
 start (exit 2) or stops when the F13 outage flag is on (a first run was
 wasted that way). **Remaining:** one clean full run with
 `python -m evals.run --pause 6 --save-baseline` on a fresh-quota day that
-isn't a demo day (baseline.json is still the 33-case run).
+isn't a demo day — planned for 2026-11-08 (baseline.json is still the 33-case run).
 
 **P3 — Demo polish and rehearsal.** Runbook timings and fallbacks,
 architecture slide (now including on-device routing and the outage
