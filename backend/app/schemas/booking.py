@@ -24,6 +24,10 @@ class BookingRequest(BaseModel):
         return self
 
 
+class UserRequest(BaseModel):
+    user_id: int = Field(gt=0)
+
+
 class RescheduleRequest(BaseModel):
     user_id: int = Field(gt=0)
     direction: RescheduleDirection

@@ -28,9 +28,11 @@ time; tests/evals monkeypatch it.
 | `GET /bookings/{id}?user_id=1` | one booking + `earlier_available` / `later_available` |
 | `POST /bookings` | `{user_id, booking_date}` structured (no LLM) **or** `{user_id, message}` natural language; idempotent (returns `already_booked`); books the usual **for that weekday** and returns `usual_reason` when it's learned or pinned (the message ends "That's your usual: you took it on 4 of your last 5 Mondays.") |
 | `POST /bookings/{id}/reschedule` | `{user_id, direction: earlier|later}` (Siri card buttons) |
+| `POST /bookings/{id}/cancel` | `{user_id}` → `BookingResponse` "Done. I cancelled …" (F14 on-device assistant; no LLM) |
 | `POST /bookings/{id}/move` | `{user_id, shuttle_id}`; returns trip status; keeps a running simulation aligned |
 | `POST /assistant/messages` | `{user_id, message, conversation_id?}` → `{conversation_id, reply, actions[{tool, arguments, succeeded, error, server}], bookings_changed, sources[]}` |
-| `GET /assistant/conversations/{id}?user_id=1` | replay a conversation (Siri turns show in the app) |
+| `GET /assistant/conversations/{id}?user_id=1` | replay a conversation (Siri turns show in the app); assistant messages carry `on_device` |
+| `POST /assistant/on-device-turns` | F14: `{user_id, conversation_id?, message, reply, actions[]}` → `{conversation_id}`. Appends a turn the app answered on device via `graph.update_state(as_node="agent")`; actions live in the reply's `response_metadata` (no synthetic tool calls in Gemini's history). Langfuse trace `assistant-turn-on-device`, tag `on-device`. No LLM, works in an outage |
 | `GET /tracking/next?user_id=1` | live status of the next (or simulated) trip |
 | `GET /bookings/{id}/tracking` | live status of a booking |
 | `GET /habits?user_id=1` | F10: per weekday (Mon–Fri) the usual shuttle with `source` pinned/weekday/overall/default, `reason`, `rides`/`sample`, `regular`; `upcoming` = service days tomorrow…+7 with `booked`/`booked_departure` and that day's habit; `pinned_shuttle_id` |

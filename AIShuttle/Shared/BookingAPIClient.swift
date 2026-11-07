@@ -187,3 +187,18 @@ public final class BookingAPIClient: Sendable {
         return formatter.string(from: date)
     }
 }
+
+struct UserRequest: Encodable, Sendable {
+    let userId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+    }
+}
+
+extension BookingAPIClient {
+    /// Structured cancel: no LLM involved.
+    public func cancelBooking(id bookingId: Int, userId: Int = 1) async throws -> BookingResponse {
+        try await post("bookings/\(bookingId)/cancel", body: UserRequest(userId: userId))
+    }
+}

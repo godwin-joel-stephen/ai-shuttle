@@ -47,7 +47,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | E | Agent uses an external MCP server (weather) | Chat | ✅ |
 | F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
 | F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | ✅ `scripts.llm_outage on\|off` flips a live simulated outage; structured surfaces keep working, the chat/Ask Clear Path answer an honest 503 that points to Siri booking; error trace in Langfuse; imported documents are screened (F3); runbook step 10 (merged 2026-11-07) |
-| F14 | Optional: on-device Foundation Models routing (simple chat requests answered on the iPhone; cloud agent for the rest) | Chat | ⏳ next phase (brief in PROGRESS.md) |
+| F14 | On-device routing: simple chat / "Ask Clear Path" requests (book usual, move earlier/later, cancel, what's booked — with a named day) answered on the iPhone by Apple's on-device model + structured endpoints, labelled "On device"; cloud agent for everything else; recorded in the shared conversation; works during an LLM outage | Chat / Siri | ✅ merged 2026-11-07 (verified on iPhone) |
 
 ## Demo order (planned)
 

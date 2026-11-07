@@ -19,6 +19,7 @@ from app.schemas.booking import (
     BookingRequest,
     BookingResponse,
     RescheduleRequest,
+    UserRequest,
 )
 from app.services.booking_service import BookingService
 from app.services.errors import BookingError, NotFoundError
@@ -181,4 +182,26 @@ def reschedule_booking(
         booking_id=booking.id,
         message=f"Done. You're now on {describe_booking(booking)}.",
         booking=_to_detail(booking, service),
+    )
+
+
+@router.post("/{booking_id}/cancel", response_model=BookingResponse)
+def cancel_booking(
+    booking_id: int,
+    request: UserRequest,
+    db: Session = Depends(get_db),
+):
+    """Structured cancel (no LLM), e.g. for the app's on-device assistant."""
+
+    service = _create_service(db)
+
+    try:
+        booking = service.cancel_booking(user_id=request.user_id, booking_id=booking_id)
+    except BookingError as e:
+        _raise_http(e)
+
+    return BookingResponse(
+        booking_id=booking.id,
+        message=f"Done. I cancelled {describe_booking(booking)}.",
+        booking=_to_detail(booking),
     )

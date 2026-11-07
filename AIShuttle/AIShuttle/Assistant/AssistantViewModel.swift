@@ -5,6 +5,7 @@
 
 import Foundation
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -20,6 +21,8 @@ final class AssistantViewModel {
         let text: String
         var actions: [AssistantActionDTO] = []
         var sources: [String] = []
+        /// Answered by Apple's on-device model, not the cloud agent.
+        var onDevice = false
     }
 
     static let suggestions = [
@@ -38,14 +41,19 @@ final class AssistantViewModel {
     private let apiClient: BookingAPIClient
     private let store: ConversationStore
     private let onBookingsChanged: () async -> Void
+    /// Answers simple requests on the phone; nil sends everything to the
+    /// cloud agent (tests, or no Apple Intelligence).
+    private let onDevice: OnDeviceAssistant?
 
     init(
         apiClient: BookingAPIClient = .forAssistant(),
         store: ConversationStore = ConversationStore(),
+        onDevice: OnDeviceAssistant? = nil,
         onBookingsChanged: @escaping () async -> Void = {}
     ) {
         self.apiClient = apiClient
         self.store = store
+        self.onDevice = onDevice
         self.onBookingsChanged = onBookingsChanged
     }
 
@@ -63,7 +71,8 @@ final class AssistantViewModel {
                 role: $0.role == "user" ? .user : .assistant,
                 text: $0.text,
                 actions: $0.actions,
-                sources: $0.sources ?? []
+                sources: $0.sources ?? [],
+                onDevice: $0.onDevice ?? false
             )
         }
     }
@@ -77,6 +86,17 @@ final class AssistantViewModel {
         messages.append(Message(role: .user, text: message))
         isSending = true
         defer { isSending = false }
+
+        if let onDevice, let answer = await onDevice.answer(message) {
+            messages.append(
+                Message(role: .assistant, text: answer.reply, actions: answer.actions, onDevice: true)
+            )
+            await OnDeviceTurns.record(message: message, answer: answer, apiClient: apiClient, store: store)
+            if answer.bookingsChanged {
+                await onBookingsChanged()
+            }
+            return
+        }
 
         do {
             let response = try await apiClient.sendAssistantMessage(
@@ -105,5 +125,32 @@ final class AssistantViewModel {
         store.reset()
         messages = []
         errorMessage = nil
+    }
+}
+
+/// Shared by the chat and "Ask Clear Path" after an on-device answer.
+enum OnDeviceTurns {
+    /// Best effort: the answer has already been given, so a failure here
+    /// only means the cloud agent won't see this turn.
+    static func record(
+        message: String,
+        answer: OnDeviceAnswer,
+        apiClient: BookingAPIClient,
+        store: ConversationStore
+    ) async {
+        if let date = answer.bookedDate, answer.bookingsChanged {
+            HabitReminderID.withdraw(for: date)
+        }
+        do {
+            let id = try await apiClient.recordOnDeviceTurn(
+                message: message,
+                reply: answer.reply,
+                actions: answer.actions,
+                conversationId: store.currentConversationId
+            )
+            store.save(id)
+        } catch {
+            Logger.onDevice.error("Couldn't record the on-device turn: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

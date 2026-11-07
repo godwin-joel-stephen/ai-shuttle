@@ -82,6 +82,8 @@ struct AssistantView: View {
                 }
             }
             .task {
+                // Load Apple's model now, so the first on-device answer is quick.
+                FoundationModelsClassifier.prewarm()
                 await viewModel.loadConversation()
             }
             .onDisappear {
@@ -215,6 +217,13 @@ private struct MessageRow: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+
+                if message.onDevice {
+                    Label("On device · Apple Intelligence", systemImage: "iphone")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Answered on this iPhone")
+                }
 
                 if !message.sources.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {

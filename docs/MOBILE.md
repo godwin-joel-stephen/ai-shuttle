@@ -162,7 +162,46 @@ sources, new-conversation button. `VoiceInput` uses iOS 26 `SpeechAnalyzer`
 "shuttle"); tap mic to talk, tap again to stop and send. Shares the
 conversation with Siri "Ask Clear Path" (30-minute expiry).
 
-## Tests (61 Swift Testing tests)
+## On-device routing (F14, `Assistant/OnDeviceAssistant.swift`)
+
+The chat and Siri "Ask Clear Path" first try `OnDeviceAssistant.answer`;
+nil means "send it to the cloud agent" (`/assistant/messages`), exactly
+as before.
+- **Gate** (`OnDeviceGate.screen`, rules): ≤100 chars / 14 words, no
+  digits, none of the cloud words (why/how/can/should, weather, leave,
+  plan, meeting, by/before/after, latest/earliest, it/that/this, and/also/
+  then/too, next/week, minutes, policy, negations), at most one named day
+  (today, tomorrow, Monday…Sunday → `BookingDay`, "Friday" on a Friday =
+  next Friday, like Siri), exactly one action keyword: book / earlier /
+  later / cancel / booked|bookings|rides|upcoming. Changing a booking
+  needs a day ("make it earlier" depends on the conversation → cloud).
+- **Model** (`FoundationModelsClassifier`): `SystemLanguageModel.default`,
+  fresh `LanguageModelSession` per message, greedy, `@Generable
+  GeneratedChatRequest {kind, day}`; 3s deadline; prewarmed when the chat
+  opens. Unavailable (Apple Intelligence off / not ready / unsupported
+  locale) → `OnDeviceAssistant.live()` is nil → cloud for everything.
+- **Verify** (`OnDeviceGate.verify`): the model's kind and day must equal
+  what the gate read from the words; any mismatch, error or timeout →
+  cloud. So the model can only *decline*, never pick a different action.
+- **Perform**: structured endpoints only — `POST /bookings
+  {booking_date}` (reply = `spokenConfirmation`, with the habit reason),
+  `GET /bookings` + `POST /bookings/{id}/reschedule` or `/cancel`,
+  `GET /bookings` for listing. A booking-rule refusal (409) is the answer;
+  a network error → cloud path.
+- **Record**: `POST /assistant/on-device-turns` adds the turn to the shared
+  conversation (best effort), so the chat history, Siri, and a later cloud
+  follow-up all see it. Withdraws that day's habit reminder after a
+  booking.
+- UI: on-device replies show "On device · Apple Intelligence" (also after
+  reloading the conversation: `on_device` in the replay).
+
+Keyboard prewarm (`Views/KeyboardPrewarmer.swift`): Home's `.task`
+focuses and unfocuses an off-screen `UITextField` once per launch, 0.5s
+after the rides load, so iOS loads the keyboard system before the chat
+opens (the first chat tap used to stall, for seconds under the debugger).
+Skipped if something already has focus.
+
+## Tests (76 Swift Testing tests)
 
 All suites that use `MockURLProtocol.requestHandler` (a process-wide static)
 are nested under `@Suite(.serialized) struct MockedNetworkTests` — suites

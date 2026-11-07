@@ -17,6 +17,35 @@ public struct AssistantMessageRequest: Encodable, Sendable {
     }
 }
 
+struct OnDeviceTurnRequest: Encodable, Sendable {
+    struct Action: Encodable, Sendable {
+        let tool: String
+        let arguments: [String: String]
+        let succeeded: Bool
+        let error: String?
+    }
+
+    let userId: Int
+    let conversationId: String?
+    let message: String
+    let reply: String
+    let actions: [Action]
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case conversationId = "conversation_id"
+        case message, reply, actions
+    }
+}
+
+struct OnDeviceTurnResponse: Decodable, Sendable {
+    let conversationId: String
+
+    enum CodingKeys: String, CodingKey {
+        case conversationId = "conversation_id"
+    }
+}
+
 /// One tool call the agent made while answering.
 public struct AssistantActionDTO: Codable, Equatable, Hashable, Sendable {
     public let tool: String
@@ -74,6 +103,13 @@ public struct ConversationDTO: Decodable, Equatable, Sendable {
         public let text: String
         public let actions: [AssistantActionDTO]
         public let sources: [String]?
+        /// Answered on the iPhone by Apple's on-device model (F14).
+        public let onDevice: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case role, text, actions, sources
+            case onDevice = "on_device"
+        }
     }
 
     public let conversationId: String
@@ -104,6 +140,30 @@ extension BookingAPIClient {
             "assistant/messages",
             body: AssistantMessageRequest(userId: userId, message: message, conversationId: conversationId)
         )
+    }
+
+    /// Records a turn answered on device in the shared conversation, so
+    /// the chat history and the cloud agent's memory include it.
+    public func recordOnDeviceTurn(
+        message: String,
+        reply: String,
+        actions: [AssistantActionDTO],
+        conversationId: String?,
+        userId: Int = 1
+    ) async throws -> String {
+        let response: OnDeviceTurnResponse = try await post(
+            "assistant/on-device-turns",
+            body: OnDeviceTurnRequest(
+                userId: userId,
+                conversationId: conversationId,
+                message: message,
+                reply: reply,
+                actions: actions.map {
+                    OnDeviceTurnRequest.Action(tool: $0.tool, arguments: [:], succeeded: $0.succeeded, error: $0.error)
+                }
+            )
+        )
+        return response.conversationId
     }
 
     public func fetchConversation(id: String, userId: Int = 1) async throws -> ConversationDTO {

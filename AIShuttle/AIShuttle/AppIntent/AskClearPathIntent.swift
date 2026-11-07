@@ -31,6 +31,23 @@ struct AskClearPathIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let store = ConversationStore()
+
+        // Simple requests are answered on the iPhone (F14); the rest, or
+        // anything the on-device model can't handle, goes to the cloud.
+        if let onDevice = await OnDeviceAssistant.live(),
+           let answer = await onDevice.answer(request) {
+            await OnDeviceTurns.record(
+                message: request,
+                answer: answer,
+                apiClient: .withTimeouts(),
+                store: store
+            )
+            if answer.bookingsChanged {
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+            return .result(dialog: IntentDialog(stringLiteral: answer.reply))
+        }
+
         let response: AssistantMessageResponse
         do {
             response = try await BookingAPIClient.forAssistant().sendAssistantMessage(
