@@ -54,4 +54,7 @@ app.include_router(tracking_router)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    from app.core.outage import is_llm_outage
+
+    # "llm" shows whether the simulated outage (scripts.llm_outage) is on.
+    return {"status": "ok", "llm": "outage" if is_llm_outage() else "ok"}

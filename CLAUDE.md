@@ -48,7 +48,7 @@ docker-compose.yml         app Postgres (pgvector/pgvector:pg17-trixie)
 docker compose up -d
 cd backend && source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000      # backend for the iPhone
-python -m pytest -q                                 # 122 tests, ~6s, no network
+python -m pytest -q                                 # 143 tests, ~6s, no network
 python -m scripts.demo_trip                         # live simulated trip for demos
 ```
 

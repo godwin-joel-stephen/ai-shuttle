@@ -79,3 +79,6 @@ backend/.cache/
 
 # Evaluation run outputs (the baseline is committed)
 backend/evals/results/
+
+# Simulated LLM outage flag (python -m scripts.llm_outage on|off)
+backend/.llm_outage

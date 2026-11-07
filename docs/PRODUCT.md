@@ -46,7 +46,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | F11 | MCP server: book from Claude Desktop with the same rules | Laptop | ✅ (verified in Claude Desktop) |
 | E | Agent uses an external MCP server (weather) | Chat | ✅ |
 | F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
-| F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | 🟡 structured Siri path skips the LLM; imported documents are screened (F3); demo script missing |
+| F13 | Reliability demo: "LLM off" → Siri booking still works; prompt-injection checks for imported documents | Siri | ✅ `scripts.llm_outage on\|off` flips a live simulated outage; structured surfaces keep working, the chat/Ask Clear Path answer an honest 503 that points to Siri booking; error trace in Langfuse; imported documents are screened (F3); runbook step 10 (built 2026-11-07 on `feature/f13-reliability`; iPhone check pending) |
 | — | Optional: on-device Foundation Models routing (simple requests on-device) | — | ⏳ |
 
 ## Demo order (planned)

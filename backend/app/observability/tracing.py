@@ -67,11 +67,17 @@ def traced(
             tags=tags or [],
             trace_name=name,
         ):
-            yield Trace(
-                callbacks=[CallbackHandler()],
-                trace_id=langfuse.get_current_trace_id(),
-                span=span,
-            )
+            try:
+                yield Trace(
+                    callbacks=[CallbackHandler()],
+                    trace_id=langfuse.get_current_trace_id(),
+                    span=span,
+                )
+            except Exception as e:
+                # A failed turn shows up as an error in Langfuse, with the
+                # reason, instead of a trace that just has no output.
+                span.update(level="ERROR", status_message=f"{type(e).__name__}: {e}"[:500])
+                raise
 
 
 def score(trace_id: str | None, name: str, value: float, comment: str | None = None) -> None:

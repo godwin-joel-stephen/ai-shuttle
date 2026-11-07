@@ -55,7 +55,10 @@ def _raise_http(error: Exception):
     if isinstance(error, LLMUnavailableError):
         raise HTTPException(
             status_code=503,
-            detail="I couldn't understand that request right now.",
+            detail=(
+                "I couldn't understand that request right now. "
+                "Try \"Book my usual shuttle with Clear Path\"."
+            ),
         )
 
     raise error

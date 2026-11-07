@@ -43,7 +43,10 @@ time; tests/evals monkeypatch it.
 | `DELETE /simulator/trips/{id}` | stop replaying |
 
 Errors: `NotFoundError` → 404, other `BookingError` → 409, model failure →
-503. `detail` is user-facing (Siri reads it aloud).
+503. `detail` is user-facing (Siri reads it aloud); the assistant's 503
+(`UNAVAILABLE_MESSAGE` in `app/api/assistant.py`) and the natural-language
+booking 503 both point to "Book my usual shuttle with Clear Path", which
+never needs the LLM.
 
 ## Data model (`app/models/`)
 
@@ -145,6 +148,7 @@ Manyata Tech Park) in `route_geometry.py`.
 | `python -m scripts.demo_trip` | books next weekday if needed and replays it now; defaults `--start -11 --walk 4 --speed 2` ("Time to leave" ~1 min after trip mode starts); `--delay 20`, `--stop`, `--walk 0` = use GPS |
 | `python -m scripts.reset_demo_db` | delete bookings (simulations cascade) and locations, unpin the usual, then add the demo ride history (`--no-history`: none, so the usual is the saved 7:30) |
 | `python -m scripts.rebuild_demo_db` | drop schema, recreate, seed, ingest policies |
+| `python -m scripts.llm_outage on\|off` | F13: simulated cloud-LLM outage, live (no restart). Creates/removes `backend/.llm_outage` (gitignored); while it exists `create_chat_model`/`create_llm` return failing stand-ins (`app/agent/outage_models.py`), so the assistant runs its whole fallback chain and answers 503, natural-language `POST /bookings` answers 503, everything structured keeps working. No argument shows the state; so does `GET /health` (`"llm": "ok"\|"outage"`) |
 | `python -m scripts.ingest_knowledge` | re-embed `knowledge/*.md` after editing a policy |
 | `python -m app.db.init_db` | create missing tables (+ vector extension) and add `preferences.usual_pinned` if missing |
 

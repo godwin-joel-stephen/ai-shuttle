@@ -1,8 +1,8 @@
 # Progress
 
 Last updated 2026-11-07. All work through F10 (learned habits) is merged
-into `main` and pushed. **Next phase: F13 — reliability demo** (brief
-below).
+into `main` and pushed. **F13 — reliability demo** is built on
+`feature/f13-reliability` and awaits the iPhone check (below).
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -23,44 +23,39 @@ below).
 | F10 learned habits | e7301b4, 245144d | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. Merged 2026-11-07 at the user's request. On iPhone so far: in-app chat books the learned 8:00 Thursday with its reason; two issues found and fixed in 245144d (Siri dropping the day on a weekend, garbled model reply). Rest of the device checklist below is still to report |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
-## Next phase: F13 — reliability demo
+## Current phase: F13 — reliability demo (built, awaiting iPhone check)
 
-Goal: prove on stage that the OS surfaces keep working when the cloud LLM
-is down, and that the chat degrades honestly instead of failing silently.
+Branch `feature/f13-reliability`, not merged yet. Built 2026-11-07:
+- `python -m scripts.llm_outage on|off` (runtime flag file
+  `backend/.llm_outage`, gitignored; user's choice over env var + restart).
+  `app/core/outage.py` holds the flag; `create_chat_model` / `create_llm`
+  return failing stand-ins (`app/agent/outage_models.py`) while it exists,
+  so the real fallback chain → 503 path runs with no network call.
+  `GET /health` reports `"llm": "ok"|"outage"`.
+- 503 wording points to what still works: assistant → "Clear Path's
+  assistant is unavailable right now. Bookings still work: say "Book my
+  usual shuttle with Clear Path", or use the widget."; natural-language
+  `POST /bookings` → "…Try "Book my usual shuttle with Clear Path"."
+  The iOS chat and Ask Clear Path already show/read the server `detail`,
+  so no app change was needed.
+- Langfuse: `traced` marks a failed turn's span `level=ERROR` with the
+  exception as status message.
+- 11 tests in `tests/test_llm_outage.py` (structured booking, Earlier/Later,
+  habits keep working; assistant + NL booking 503 with nothing booked;
+  every fallback model tried; health; error trace). The `outage_flag`
+  autouse fixture points the flag at a temp file in tests.
+- Verified live on a temporary uvicorn (port 8001): flag flips without a
+  restart; assistant 503 in 0.3s.
+- DEMO_RUNBOOK step 10 + pre-demo check 12; BACKEND/AI/PRODUCT updated.
 
-Already true (verify, don't rebuild):
-- Siri "Book my usual shuttle…", the widget/Control Center button, the
-  Siri card Earlier/Later, tracking, trip mode, habits/reminders and the
-  schedule import never call Gemini (structured `POST /bookings
-  {booking_date}`, deterministic services, on-device extraction).
-- The agent tries `agent_model` then `agent_fallback_models`
-  (`app/core/config.py`, `create_assistant_graph`); if every model fails
-  the API returns 503 "Clear Path's assistant is unavailable right now",
-  or "I made changes … but couldn't finish replying" when a mutating tool
-  already succeeded. Garbled replies count as failures (245144d).
-- Imported documents are screened for prompt injection (F3).
-
-To build (starting points):
-- An outage switch that needs no `.env` edit, e.g. `python -m
-  scripts.llm_outage on|off` (a flag the model factory checks —
-  `app/agent/factory.py` `create_chat_model` / `create_llm` — raising like
-  a 503) so it can be flipped live without restarting uvicorn. Decide with
-  the user: runtime flag vs env var + restart.
-- Tests first: with the outage on, structured booking still 200,
-  `/habits` works, `/assistant/messages` → 503 with the honest message and
-  no booking change, natural-language `POST /bookings {message}` → 503.
-- App: check how the chat and Siri "Ask Clear Path" show the 503 (should
-  say the assistant is unavailable and point to "Book my usual shuttle",
-  not a generic error).
-- Langfuse: the failed turn should appear as an error trace.
-- DEMO_RUNBOOK: a step "LLM off → Siri booking still works → chat says
-  it's unavailable → LLM on". PRODUCT.md F13 → ✅.
-- Optional, ties into the on-device item below: in an outage, answer
-  simple chat requests ("book my usual for Friday") deterministically.
+Still to do: iPhone check (see the test steps given 2026-11-07), Langfuse
+error trace check, then merge when the user asks. Not built (user's
+choice): deterministic answers to simple chat requests during an outage
+(stays with the optional on-device routing item).
 
 ## Remaining work (planned order)
 
-1. **F13 reliability demo** (above).
+1. **F13 reliability demo**: iPhone check, then merge (above).
 2. **F10 device checklist** (from the 2026-11-07 test plan; reset with
    `python -m scripts.reset_demo_db`): Home "Your commute" card + Book;
    Siri "for Thursday" → 8:00 with reason (Console `day=` line; asks
@@ -139,4 +134,5 @@ and an in-app reminder toggle (iOS notification settings cover it).
 | 2026-11-05 | F7 uses a deterministic trip planner exposed as tools to the one agent, not a multi-agent supervisor (user's choice): 2–3 Gemini calls per goal, no invented arrivals; goal eval 4/9 → 9/9 |
 | 2026-11-05 | Eval baseline re-saved at 33 cases (32/33) |
 | 2026-11-07 | F10: the learned habit drives "usual" (per weekday, with overall fallback) and is always explained; a pinned shuttle beats it; nothing is ever booked without the rider asking (user's choice) |
+| 2026-11-07 | F13 outage switch is a runtime flag file (no restart); no deterministic chat fallback in this phase (user's choice) |
 | 2026-11-07 | F10 surfaces: donations + evening-before reminder with Book + Home card; no Smart Stack relevance. Donations run after the rides list loads, since that sees bookings from every surface (widget extension, chat, import, MCP) |

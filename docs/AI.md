@@ -15,6 +15,12 @@ START → agent ──(tool calls?)──→ tools (ToolNode) ──→ agent �
   (`MODEL_DEADLINE_SECONDS`); on error/timeout the next model in the
   fallback chain is tried with the same deadline. The run `config` is passed
   into the thread so tracing callbacks reach model calls.
+- If every model fails, `/assistant/messages` answers 503 with
+  `UNAVAILABLE_MESSAGE` (points to Siri "Book my usual shuttle" / the
+  widget); the iOS chat shows it and Siri reads it. The Langfuse span of
+  the failed turn is marked `level=ERROR` with the exception as its status
+  message (`traced` in `app/observability/tracing.py`). F13's
+  `scripts.llm_outage` simulates this live.
 - If a turn fails after a booking tool succeeded, the API still returns 200
   with "I made changes to your bookings…" (never hide a real change).
 - The system prompt (`build_system_prompt`) carries today's date and rules:
