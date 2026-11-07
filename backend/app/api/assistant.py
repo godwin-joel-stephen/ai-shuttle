@@ -10,6 +10,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from sqlalchemy.orm import Session
 
 from app.agent.factory import create_chat_model
+from app.agent.outage_models import OutageChatModel
 from app.agent.memory import get_checkpointer
 from app.core import clock
 from app.core.config import settings
@@ -28,6 +29,8 @@ from app.schemas.assistant import (
     AssistantMessageResponse,
     ConversationMessage,
     ConversationResponse,
+    OnDeviceTurnRequest,
+    OnDeviceTurnResponse,
 )
 from app.tools.assistant_tools import MUTATING_TOOLS, create_assistant_tools
 
@@ -228,6 +231,66 @@ def send_message(
     )
 
 
+@router.post("/on-device-turns", response_model=OnDeviceTurnResponse)
+def record_on_device_turn(
+    request: OnDeviceTurnRequest,
+    db: Session = Depends(get_db),
+    memory: BaseCheckpointSaver = Depends(get_conversation_memory),
+):
+    """Append a turn the app answered on device to the shared conversation.
+
+    The actions travel in the reply's metadata rather than as tool calls,
+    so the cloud model later sees a plain question and answer (no
+    synthetic function calls in its history), and a follow-up such as
+    "make it earlier" still has its context.
+    """
+
+    user = UserRepository(db).get_by_id(request.user_id)
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    conversation_id = request.conversation_id or uuid4().hex
+    # The same graph as a cloud turn, so the checkpoint stays compatible;
+    # its model is never invoked here.
+    graph = create_assistant_graph(
+        model=OutageChatModel(),
+        tools=[],
+        checkpointer=memory,
+        system_prompt="",
+    )
+    reply = AIMessage(
+        request.reply,
+        response_metadata={
+            "on_device": True,
+            "actions": [a.model_dump() for a in request.actions],
+        },
+    )
+
+    with traced(
+        "assistant-turn-on-device",
+        user_id=user.id,
+        session_id=conversation_id,
+        input=request.message,
+        tags=["assistant", "on-device"],
+    ) as trace:
+        graph.update_state(
+            _thread_config(user.id, conversation_id),
+            {"messages": [HumanMessage(request.message), reply]},
+            as_node="agent",
+        )
+        trace.finish({"reply": request.reply, "actions": [a.model_dump() for a in request.actions]})
+
+    return OnDeviceTurnResponse(conversation_id=conversation_id)
+
+
+def _on_device_actions(message: AIMessage) -> list[AssistantAction]:
+    return [
+        AssistantAction(**action)
+        for action in message.response_metadata.get("actions", [])
+    ]
+
+
 @router.get(
     "/conversations/{conversation_id}",
     response_model=ConversationResponse,
@@ -265,12 +328,18 @@ def get_conversation(
 
         messages.append(ConversationMessage(role="user", text=stored[start].text))
         if replies:
+            on_device = bool(replies[-1].response_metadata.get("on_device"))
             messages.append(
                 ConversationMessage(
                     role="assistant",
                     text=replies[-1].text,
-                    actions=_actions_in(turn, _tool_servers(external_tools)),
+                    actions=(
+                        _on_device_actions(replies[-1])
+                        if on_device
+                        else _actions_in(turn, _tool_servers(external_tools))
+                    ),
                     sources=_sources_in(turn),
+                    on_device=on_device,
                 )
             )
 

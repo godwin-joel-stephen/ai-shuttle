@@ -221,7 +221,7 @@ public struct HomeView: View {
             }
             .sheet(isPresented: $showingAssistant) {
                 AssistantView(
-                    viewModel: AssistantViewModel(onBookingsChanged: { [viewModel] in
+                    viewModel: AssistantViewModel(onDevice: .live(), onBookingsChanged: { [viewModel] in
                         await viewModel.loadBookings()
                         WidgetCenter.shared.reloadAllTimelines()
                     })

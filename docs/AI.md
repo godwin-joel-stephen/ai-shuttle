@@ -58,6 +58,18 @@ drive `bookings_changed`.
 External MCP tools (weather) are appended at runtime; actions record the
 providing server so the app labels them "· via weather MCP server".
 
+## On-device routing (F14)
+
+Simple chat / "Ask Clear Path" requests are answered on the iPhone by
+Apple's on-device model and the structured endpoints; details in
+MOBILE.md → On-device routing. Routing contract: rules gate → on-device
+classification (`@Generable`, greedy, 3s) → must agree with the words →
+structured call. Anything else, or any doubt, goes to the Gemini agent, so
+the cloud showcases (RAG citations, weather MCP, goal planning, follow-ups)
+are unchanged. On-device turns are written into the same LangGraph thread
+(`POST /assistant/on-device-turns`) as plain question/answer, so the cloud
+agent keeps the context. During an F13 outage these requests keep working.
+
 ## Models (Gemini, free tier only — never enable billing without asking)
 
 | Role | Model | Why |

@@ -35,6 +35,23 @@ class ConversationMessage(BaseModel):
     text: str
     actions: list[AssistantAction] = []
     sources: list[str] = []
+    # Answered on the iPhone by Apple's on-device model, not the cloud agent.
+    on_device: bool = False
+
+
+class OnDeviceTurnRequest(BaseModel):
+    """A request the app answered with its on-device model, recorded so the
+    cloud agent and the chat history see it like any other turn."""
+
+    user_id: int = Field(gt=0)
+    conversation_id: str | None = Field(default=None, max_length=64)
+    message: str = Field(min_length=1, max_length=1000)
+    reply: str = Field(min_length=1, max_length=2000)
+    actions: list[AssistantAction] = Field(default=[], max_length=10)
+
+
+class OnDeviceTurnResponse(BaseModel):
+    conversation_id: str
 
 
 class ConversationResponse(BaseModel):

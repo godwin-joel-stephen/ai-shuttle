@@ -64,7 +64,9 @@ always refused). Mac and iPhone on the same Wi-Fi.
 6. **Delay**: `python -m scripts.demo_trip --delay 20` → notification
    offers the 7:45 → long-press → **Rebook** → "Rebooked".
 7. **Siri tracking**: "Hey Siri, track my shuttle with Clear Path".
-8. **Chat on purpose**: Ask Clear Path → "Why can't I book Saturday?" →
+8. **Chat on purpose**: Ask Clear Path → "What do I have booked?" →
+   "On device · Apple Intelligence" label (F14: simple requests stay on the
+   phone; everything else goes to the cloud agent). Then "Why can't I book Saturday?" →
    cited Booking Policy; "Should I leave now?" → weather step "via weather
    MCP server". Goal booking (F7): "I have a meeting at 8 tomorrow, get me
    there in time" → "Planned/Booked your trip plan" step, moved to the 7:15
@@ -76,11 +78,13 @@ always refused). Mac and iPhone on the same Wi-Fi.
    app; "Book Saturday too" → refused.
 10. **Cloud LLM down** (F13), second terminal in `backend/`:
     `python -m scripts.llm_outage on` (no restart). Ask Clear Path →
-    "Book my usual shuttle for Friday" → "Clear Path's assistant is
-    unavailable right now. Bookings still work: say "Book my usual shuttle
-    with Clear Path", or use the widget." (nothing booked). Then "Hey Siri,
-    book my usual shuttle for Friday with Clear Path" → booked as usual; or
-    the widget **Book tomorrow**. Langfuse → the failed turn is an ERROR
+    "Why can't I book Saturday?" → "Clear Path's assistant is unavailable
+    right now. Bookings still work: …" (honest, nothing changed). Then
+    "Book my usual shuttle for Friday" in the same chat → answered with
+    "On device · Apple Intelligence" (F14) *"simple requests never needed
+    the cloud: Apple's on-device model understood it and the same booking
+    rules ran"*. "Hey Siri, book my usual shuttle for Friday with Clear
+    Path" and the widget **Book tomorrow** work too. Langfuse → the failed turn is an ERROR
     trace (every fallback model tried). `python -m scripts.llm_outage off`
     → the chat works again. *"The AI is an enhancement, not a single point
     of failure: every OS surface sends structured requests to
