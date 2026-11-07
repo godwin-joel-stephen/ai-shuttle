@@ -1,8 +1,9 @@
 # Progress
 
-Last updated 2026-11-07. All work through F13 (reliability demo) is merged
-into `main` and pushed. **F14 on-device routing** is built on
-`feature/f14-on-device-routing` and awaits the iPhone check (below).
+Last updated 2026-11-07. All features (F1–F14) are merged into `main` and
+pushed. What's left is verification, evals and demo polish: see
+"Pending phases". **Next: P1 device verification** (tested together with
+the user).
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -22,73 +23,52 @@ into `main` and pushed. **F14 on-device routing** is built on
 | F7 goal planning | 544da0a | deterministic `TripPlanner` + `plan_trip`/`book_trip_plan` tools; F4 alternative reuses it; 9 goal eval cases (4/9 → 9/9); full eval 32/33 saved as baseline; tested on iPhone 2026-11-07 |
 | F10 learned habits | e7301b4, 245144d | `HabitService`: usual per weekday from the last 5 rides that weekday → last 10 rides → saved 7:30; pin overrides; reason travels to Siri/chat/notifications. `/habits`, `/habits/pin`, `get_commute_habits` / `set_usual_shuttle` tools, demo ride history in `reset_demo_db`. iOS: donations after every rides load, evening-before reminder with **Book**, Home → Your commute card. 19 backend + 9 Swift tests; habit evals 3/3. Merged 2026-11-07 at the user's request. On iPhone so far: in-app chat books the learned 8:00 Thursday with its reason; two issues found and fixed in 245144d (Siri dropping the day on a weekend, garbled model reply). Rest of the device checklist below is still to report |
 | F13 reliability demo | 5c4301d | `scripts.llm_outage on\|off` (runtime flag file, no restart) → failing stand-in models, real fallback chain → honest 503 that points to Siri booking; structured surfaces unaffected; ERROR span in Langfuse; `/health` shows `llm`; 11 tests; runbook step 10. Merged 2026-11-07; outage scenario verified on iPhone by the user 2026-11-07 |
+| F14 on-device routing | f3c8df7 + keyboard prewarm | `OnDeviceAssistant`: rules gate → Foundation Models classifier → must agree with the words → structured call; book usual / move / cancel with a named day and "what's booked" stay on the phone ("On device · Apple Intelligence"), everything else to the cloud agent; Ask Clear Path too; turns recorded via `POST /assistant/on-device-turns`; `POST /bookings/{id}/cancel`. 7 pytest + 13 Swift tests. User's iPhone checklist all passed 2026-11-07; merged 2026-11-07 |
 | F3 schedule import | 1d7fe8f | share extension + in-app import, on-device OCR + Foundation Models, `/schedule/plan` + `/apply`, injection screening, extraction eval; verified on iPhone 2026-11-05 (share sheet, injection sample, in-app import) |
 
-## Current phase: F14 on-device routing (built, awaiting iPhone check)
+## Pending phases (planned order)
 
-Branch `feature/f14-on-device-routing`, not merged. Decisions (user said
-"do what is best for the demo without sacrificing features or
-showcases", 2026-11-07):
-- Route on-device **always**, but only for a narrow, verified subset:
-  book usual / move earlier|later / cancel with a named day, and "what do
-  I have booked". Everything else stays on the cloud agent, so RAG
-  citations, weather MCP, goal planning and follow-ups are unchanged.
-- Siri "Ask Clear Path" uses the same router.
-- On-device turns are recorded in the shared server conversation (and
-  traced in Langfuse, tag `on-device`) so the cloud agent keeps context.
+No feature work is planned; these make the demo trustworthy.
 
-Built: `AIShuttle/Assistant/OnDeviceAssistant.swift` (gate → Foundation
-Models classifier → verify → structured call), chat + Ask Clear Path
-routing, "On device · Apple Intelligence" label, prewarm on chat open;
-backend `POST /bookings/{id}/cancel`, `POST /assistant/on-device-turns`,
-`on_device` in the conversation replay. Tests: 7 pytest (150 total), 13
-Swift (76 total). Live check on a temporary backend with Postgres:
-recorded turn replays with `on_device: true`, and a later cloud turn
-loads it (checked under the outage switch, no quota used).
+**P1 — Device verification (next; tested together with the user).**
+Reset first: `python -m scripts.reset_demo_db`.
+1. Keyboard first tap (fix 2026-11-07, `Views/KeyboardPrewarmer.swift`):
+   launch **from Xcode** (worst case) → wait ~1s on Home → open Ask Clear
+   Path → tap the message box: the keyboard should appear without the
+   multi-second stall. Also check no keyboard flashes on Home at launch,
+   and repeat once launched from the home-screen icon.
+2. F10 checklist: Home "Your commute" card + Book; Siri "for Thursday" →
+   8:00 with reason (Console `day=` line; asks "Which day?" if dropped on
+   a weekend); Preview reminder → **Book** from the notification; real
+   7 PM reminder the evening before an unbooked usual day; pin/unpin from
+   card and chat; trip planner picks the 7:15 on Monday for "by 8:30";
+   schedule import says "your usual 7:15"; Claude Desktop
+   `get_commute_habits`; `--no-history` fallback (all 7:30, no reason);
+   widget "Book tomorrow" on a weekday; Spotlight suggestions after a few
+   days.
+3. Langfuse: `assistant-turn-on-device` trace (tag `on-device`) and the
+   F13 ERROR trace, if not already seen.
 
-iPhone checklist (Apple Intelligence must be on: Settings → Apple
-Intelligence & Siri; restart uvicorn so it has the new endpoints):
-1. Chat: "What do I have booked?" → reply with the "On device" label.
-2. "Book my usual shuttle for Thursday" → on device, 8:00 with the habit
-   reason; Home refreshes. "Move Thursday earlier" → 7:45; "Cancel my
-   Thursday shuttle" → cancelled.
-3. "Make it 30 minutes earlier", "Why can't I book Saturday?", "Should I
-   leave now?" → cloud (no label, tool steps / citation / weather).
-4. Book on device, then "make it earlier" → cloud agent understands "it".
-5. Close and reopen the chat → on-device replies keep the label.
-6. `python -m scripts.llm_outage on` → "Book my usual shuttle for Friday"
-   still works on device; "Why can't I book Saturday?" → honest 503.
-   `off` afterwards.
-7. Siri: "Ask Clear Path" → "Cancel my Friday shuttle" → spoken reply;
-   it appears in the chat with the label.
-8. Langfuse: an `assistant-turn-on-device` trace with tag `on-device`.
-If a request you expect on device goes to the cloud, Console.app,
-category `OnDevice`, logs why.
+**P2 — Eval refresh** (not on a demo day; ~100 free Gemini requests).
+Full backend eval (36 cases) and `--save-baseline`; the baseline is still
+the 33-case run. Note: evals hit `/assistant/messages` directly, so F14
+routing doesn't change them.
 
-## Remaining work (planned order)
+**P3 — On-device evals on the Mac** (needs Apple Intelligence on the Mac:
+System Settings → Apple Intelligence & Siri; free).
+1. F3 leftover: `AIShuttle/ScheduleImportEvals/run.sh` → record the
+   on-device model's numbers in AI.md (rules baseline 11/15).
+2. Optional build: an F14 routing eval in the same harness (phrases →
+   expected on-device request or "cloud"), to show the gate + model
+   accuracy with numbers.
 
-1. **F14 iPhone check** (checklist above), then merge when the user asks.
-2. **F10 device checklist** (from the 2026-11-07 test plan; reset with
-   `python -m scripts.reset_demo_db`): Home "Your commute" card + Book;
-   Siri "for Thursday" → 8:00 with reason (Console `day=` line; asks
-   "Which day?" if dropped on a weekend); Preview reminder → **Book** from
-   the notification; real 7 PM reminder the evening before an unbooked
-   usual day; pin/unpin from card and chat; trip planner picks the 7:15 on
-   Monday for "by 8:30"; schedule import says "your usual 7:15"; Claude
-   Desktop `get_commute_habits`; `--no-history` fallback (all 7:30, no
-   reason); widget "Book tomorrow" on a weekday; Spotlight suggestions
-   after a few days.
-3. **Full eval run** (36 cases, ~100 free requests, not on a demo day) and
-   `--save-baseline`; current baseline is still the 33-case run.
-4. **F3 leftover**: run `AIShuttle/ScheduleImportEvals/run.sh` once Apple
-   Intelligence is on (on the Mac) and record the on-device model's
-   numbers in AI.md.
-5. **Demo runbook polish and rehearsal** (architecture slide, timings,
-   fallbacks); update the original planning docs if wanted (outside the
-   repo).
-6. (done in F14: on-device routing.) Possible follow-ups only if wanted:
-   an on-device classifier eval in `ScheduleImportEvals`, more on-device
-   intents.
+**P4 — Demo polish and rehearsal.** Runbook timings and fallbacks,
+architecture slide (now including on-device routing and the outage
+switch), a full dry run on a Tuesday/Thursday, recorded backup video;
+update the original planning docs if wanted (outside the repo).
+
+**Optional, only if wanted:** more on-device intents (e.g. "book the
+7:15 on Friday"), Smart Stack relevance, in-app reminder toggle.
 
 Not built in F10 on purpose: Smart Stack relevance (`RelevantIntentManager`)
 and an in-app reminder toggle (iOS notification settings cover it).
@@ -96,10 +76,11 @@ and an in-app reminder toggle (iOS notification settings cover it).
 ## Known issues / caveats
 
 - Xcode 26.4.1 build hang on the clang probe (workaround in CLAUDE.md).
-- 2026-11-07: the first tap on the chat message box stalls for a few
-  seconds **only when the app was launched from Xcode** (the debugger
-  slows iOS's first keyboard load); launched from the home screen there's
-  no stall (user checked). No code change; launch from the icon for demos.
+- 2026-11-07: the first tap on the chat message box stalled for seconds
+  (worst when launched from Xcode: the debugger slows iOS's first keyboard
+  load). Fix: `KeyboardPrewarmer` focuses/unfocuses an off-screen field
+  once, 0.5s after Home loads, so the cost is paid before the chat opens.
+  Untested on the device yet → P1 step 1.
 - Siri on iOS 27 sometimes answers itself instead of running the intent;
   chained Siri bookings can lose the day. Use the documented phrases.
   2026-11-07: "Book my usual shuttle for Thursday" on a Saturday answered

@@ -188,6 +188,11 @@ public struct HomeView: View {
             }
             .task {
                 await viewModel.loadBookings()
+                // After Home has drawn and loaded, so launch isn't slowed:
+                // the first chat tap otherwise waits for iOS to load the
+                // keyboard (seconds under the debugger).
+                try? await Task.sleep(for: .milliseconds(500))
+                KeyboardPrewarmer.prewarm()
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $pickedPhoto, matching: .images)
             .onChange(of: pickedPhoto) { _, item in

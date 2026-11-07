@@ -195,6 +195,12 @@ as before.
 - UI: on-device replies show "On device · Apple Intelligence" (also after
   reloading the conversation: `on_device` in the replay).
 
+Keyboard prewarm (`Views/KeyboardPrewarmer.swift`): Home's `.task`
+focuses and unfocuses an off-screen `UITextField` once per launch, 0.5s
+after the rides load, so iOS loads the keyboard system before the chat
+opens (the first chat tap used to stall, for seconds under the debugger).
+Skipped if something already has focus.
+
 ## Tests (76 Swift Testing tests)
 
 All suites that use `MockURLProtocol.requestHandler` (a process-wide static)
