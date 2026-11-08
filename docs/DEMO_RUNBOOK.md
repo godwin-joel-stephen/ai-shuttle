@@ -359,8 +359,8 @@ failed naturally; otherwise skip.
 ### Testing AI Behaviour, Limitations, Architecture
 
 **Slides 32–36** (no live steps): how I know it works; three layers of
-checking; how an evaluation works; measured results (33-scenario baseline
-vs 36 scenarios today); four bugs evaluations caught, each tied to an
+checking; how an evaluation works; measured results (36-scenario baseline, the
+three failures and their fixes); four bugs evaluations caught, each tied to an
 earlier slide.
 
 **Slides 37–38**: ask the room for the failure count; Siri limits; model

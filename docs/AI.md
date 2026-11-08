@@ -185,10 +185,22 @@ Options: `--cases a,b`, `--model`, `--fallback a,b`, `--no-fallback`,
 judge timeouts, 3 real failures: invented habit reason, FAQ not retrieved
 for "colleague", "yes" to leaving with 11 minutes left). After the fixes
 (prompt wording, FAQ rewording, `leave_now` in `get_shuttle_status`) the 12
-affected cases passed 12/12, judge 5.0. A clean full `--save-baseline` run
-is still to do. The runner refuses to run while the F13 outage flag is on.
+affected cases passed 12/12, judge 5.0. The runner refuses to run while the F13 outage flag is on.
 
-**Baseline (2026-11-05, gemini-3.5-flash-lite, 33 cases):** task success
+**Baseline (2026-11-08, gemini-3.5-flash-lite, 36 cases):** task success
+91.7% (33/36), tool accuracy 100%, judge 4.67/5, 2 hallucination flags,
+p50 8.0s, p95 28.8s, ~$0.0020 per task, fallback share 0.08; every
+category 100% except tracking (2/5). The three failures, read by hand: two
+judge errors (`where-is-shuttle`, `delay-offers-alternative`: the judge
+compared a simulated trip's timetable times with the eval clock) and one
+real (`leave-now`: the agent added "by 7:25 AM", a clock time no tool
+returned). Fixes the same day: the agent prompt now gives leave timing in
+minutes only and quotes only tool clock times; the judge is told that
+simulated-trip times are timetable times. Re-run of the 5 tracking cases
+plus `goal-delayed-today`: 6/6, judge 5.0, 0 flags. The saved baseline is
+the pre-fix run; re-save on a later non-demo day if wanted.
+
+**Previous baseline (2026-11-05, gemini-3.5-flash-lite, 33 cases):** task success
 97.0% (32/33), tool accuracy 100%, judge 4.94/5, 0 hallucination flags, p50
 5.5s, p95 22.6s. Only failure: `where-is-shuttle`, a judge error (it read
 the 7:30 pickup time as the office arrival).

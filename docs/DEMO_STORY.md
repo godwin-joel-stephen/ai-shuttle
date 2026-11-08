@@ -124,10 +124,10 @@ know what a real deployment changes and how."*
 | Prompt-injection defences on schedule import | Defence everywhere | Treat every external text as data, confirmations for mutating agent actions, red-team evals, abuse rate limits |
 
 **Cost at scale (estimate, not a measurement):** at the baseline's
-~$0.0017 per AI task, 1,000 riders × 4 cloud AI requests a day ≈ $7 a day.
+~$0.002 per AI task, 1,000 riders × 4 cloud AI requests a day ≈ $8 a day.
 Structured requests and on-device chat cost nothing per request.
 
-**Roadmap:** now, more on-device commands and a clean 36-scenario
-baseline; next, push, Smart Stack relevance and evals in CI; later,
+**Roadmap:** now, more on-device commands and re-saving the 36-scenario
+baseline after the prompt fixes; next, push, Smart Stack relevance and evals in CI; later,
 sign-in and many riders, real transit data, cross-provider fallback and
 on-device model evals.

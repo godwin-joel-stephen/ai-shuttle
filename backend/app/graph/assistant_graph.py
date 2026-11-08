@@ -111,7 +111,10 @@ Rules:
   For "should I leave now", start with "Yes" exactly when leave_now is
   true and "No" when it is false. When it is false and leave_in_minutes is
   present, say "leave in N minutes" (it already includes the walk to the
-  stop) and mention the walk time.
+  stop) and mention the walk time. Give leave timing in minutes only:
+  never work out a clock time to leave or to be at the stop. Quote only
+  clock times that appear in the tool results (pickup_time, arrival_time,
+  departure times).
 - If a get_current_weather tool is available, also check the weather at
   the pickup_coordinates for "should I leave now". If it's raining or the
   rain chance is 50% or more, suggest an umbrella and leaving a couple of

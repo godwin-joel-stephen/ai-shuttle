@@ -1088,24 +1088,22 @@ NEXT: “And this is where the numbers stand.”
 
 Deck: `baseline` · Badge: Cloud AI (measured agent results) · Time: 1 min
 
-SAY: “Two numbers to keep apart. The suite today has 36 scenarios. The last
-saved baseline, from 5 November, has 33, because the three habit scenarios
-were added afterwards.
+SAY: “The saved baseline is a full run of all 36 scenarios on Gemini 3.5
+Flash-Lite, from 8 November. 33 of 36 passed, and the right tools were
+chosen every time. Average judge score 4.67 out of 5. Median reply 8
+seconds; the slowest 5% took about 29 seconds, which is the free tier.
+About $0.002 per task at list price; on the free tier, nothing.
 
-On that 33-scenario baseline, with Gemini 3.5 Flash-Lite: 32 of 33 passed,
-and the one failure was the judge’s mistake; it read the pickup time as
-the arrival time. The right tools were chosen every time. Average judge
-score 4.94 out of 5, zero hallucination flags. Median reply 5.5 seconds;
-the slowest 5% took 22.6 seconds, which is the free tier. About $0.0017 per
-task at list price; on the free tier, nothing.
+I read all three failures. Two were the judge’s mistakes: on a simulated
+trip the tool reports timetable times, and the judge compared them with
+the evaluation’s own clock and called them wrong. One was real: the model
+added a ‘leave by 7:25’ time that no tool gave it. I fixed both prompts,
+and the affected tracking scenarios then passed 6 of 6 with a judge score
+of 5.”
 
-The three habit scenarios passed 3 of 3 when run on their own. A full
-36-scenario run found real bugs, which I fixed and re-tested; I’ll show you
-those next. A clean full 36-scenario baseline is still to be saved.”
-
-NOTE: Don’t change these numbers unless a new baseline is saved with
-`--save-baseline`. If it is, replace the 33-scenario figures and drop the
-last sentence.
+NOTE: These are the 2026-11-08 baseline (saved before the two prompt
+fixes) plus the 6-scenario re-run after them. If a new full baseline is
+saved later, replace the numbers.
 
 NEXT: “The numbers matter less than what the evaluations found.”
 
@@ -1130,8 +1128,10 @@ booking didn’t find the FAQ. I reworded the FAQ and re-indexed it.
 ‘Should I leave now’ on slide 19: the model said yes with 11 minutes to
 spare. Now that’s computed in code.
 
-And the judge itself got one wrong, which is why hard checks come first and
-I read every failure myself.”
+The latest run added two more lessons: the model invented a leave-by clock
+time, so leave timing is now minutes only; and the judge itself misread
+simulated times, so its instructions now explain them. That’s why hard
+checks come first and I read every failure myself.”
 
 NEXT: “So if this can be engineered, why don’t we see many apps like this
 yet?”
@@ -1171,9 +1171,9 @@ Deck: `limits-platform` · Time: 1.5 min
 
 SAY: “Apple’s on-device AI isn’t available on every iPhone, so there’s
 always a fallback, and the screen says which one ran. Push needs a paid
-developer account, hence trip mode. Free-tier limits meant the slowest
-replies took over 22 seconds, so every call has an 8-second deadline and a
-fallback chain.
+developer account, hence trip mode. Free-tier limits mean the slowest
+replies take up to about 29 seconds, so every call has an 8-second deadline
+and a fallback chain.
 
 Once, the model replied with just the name of a tool instead of a
 sentence, and Siri read it out loud. Now that kind of reply is rejected and
@@ -1360,8 +1360,8 @@ NEXT: “What would that cost to run?”
 Deck: `cost` · Time: 0.5 min · [60-MIN CUT: one sentence, or skip]
 
 SAY: “An estimate, not a measurement. The evaluation baseline puts one AI
-task at about $0.0017 at list price. A thousand riders making four Cloud AI
-requests a day comes to about $7 a day. And most of the app never calls the
+task at about $0.002 at list price. A thousand riders making four Cloud AI
+requests a day comes to about $8 a day. And most of the app never calls the
 cloud model: Siri phrases, widgets, notifications, trip mode and on-device
 chat cost nothing per request. ‘AI only where it earns its place’ is a cost
 decision as much as a reliability one.”
@@ -1373,7 +1373,7 @@ NEXT: “Here’s the order I’d do it in.”
 Deck: `roadmap` · Time: 0.5 min · [60-MIN CUT: skip]
 
 SAY: “Now: teach the on-device path more commands, like ‘book the 7:15 on
-Friday’, and save a fresh full 36-scenario baseline. Next: push
+Friday’, and re-save the full 36-scenario baseline after the prompt fixes. Next: push
 notifications and push-updated Live Activities, Smart Stack relevance, and
 evaluations running automatically on every change. Later: sign-in and many
 riders, real transit data, fallback across model providers, and proper
