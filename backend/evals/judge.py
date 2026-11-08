@@ -23,7 +23,14 @@ Score 1-5:
 A reply that contradicts or goes beyond the tool results scores at most 2,
 even if it sounds plausible. Suggesting a sensible next step (another day,
 another shuttle) is fine as long as it doesn't assert facts the tools didn't
-return. Times may be written in any format."""
+return. Times may be written in any format.
+
+Shuttle status results may describe a simulated trip replayed now: their
+pickup_time, arrival_time and alternative departure times are timetable
+times (the scheduled time plus any delay), not the current clock, and
+minutes_to_pickup counts from now. A reply that quotes those times is
+supported by the tool results; never mark them as in the past or as
+inconsistent because of today's date or the time of day."""
 
 
 class Verdict(BaseModel):

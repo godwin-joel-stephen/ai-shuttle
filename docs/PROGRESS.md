@@ -2,7 +2,7 @@
 
 Last updated 2026-11-07. All features (F1–F14) are merged into `main` and
 pushed. What's left is verification, evals and demo polish: see
-"Pending phases". **Next: P2 full eval with `--save-baseline` (2026-11-08), then P3 demo polish.**
+"Pending phases". **Next: P3 rehearsal on a Tuesday, deck export, backup video.**
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -62,8 +62,11 @@ spare (`get_shuttle_status` now returns a deterministic `leave_now`). The
 "Should I leave now?" verified on iPhone 2026-11-07. The eval runner now refuses to
 start (exit 2) or stops when the F13 outage flag is on (a first run was
 wasted that way). **Remaining:** one clean full run with
-`python -m evals.run --pause 6 --save-baseline` on a fresh-quota day that
-isn't a demo day — planned for 2026-11-08 (baseline.json is still the 33-case run).
+`python -m evals.run --pause 6 --save-baseline` — **done 2026-11-08**: 33/36
+saved as the baseline (judge 4.67, p50 8.0s, p95 28.8s). Of the 3 failures,
+2 were judge errors on simulated-trip times and 1 real (an invented
+"leave by" clock time); both prompts fixed and the tracking cases re-ran
+6/6 (details in AI.md).
 
 **P3 — Demo polish and rehearsal.** Demo for Tuesday 2026-11-17 at BUsoft
 Tech. Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
@@ -75,8 +78,9 @@ was restructured to match, with the script as speaker notes;
 (prep, run of show with before/after state, trip clock, recovery);
 [DEMO_STORY.md](DEMO_STORY.md) is the overview. Still: a full rehearsal on
 a Tuesday (confirm the code-derived trip-clock timings and the "Should I
-leave now?" answer), PDF/PPTX export of the deck, a recorded backup video,
-and the clean 36-case eval baseline. Known demo quirk: pinning a shuttle
+leave now?" answer), PDF/PPTX export of the deck and a recorded backup
+video. Optional: re-save the 36-case baseline after the 2026-11-08 prompt
+fixes, on a non-demo day. Known demo quirk: pinning a shuttle
 also changes the saved default and `reset_demo_db` doesn't restore it
 (runbook section 2 step 7 does).
 

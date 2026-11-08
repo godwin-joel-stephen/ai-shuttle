@@ -1,22 +1,23 @@
 {
   "summary": {
     "model": "gemini-3.5-flash-lite",
-    "cases": 33,
-    "task_success": 0.97,
+    "cases": 36,
+    "task_success": 0.917,
     "tool_accuracy": 1.0,
-    "mean_judge_score": 4.94,
-    "hallucination_flags": 0,
-    "latency_p50_s": 5.45,
-    "latency_p95_s": 22.56,
-    "mean_cost_per_task_usd": 0.001739,
-    "fallback_share": 0.025,
+    "mean_judge_score": 4.67,
+    "hallucination_flags": 2,
+    "latency_p50_s": 8.04,
+    "latency_p95_s": 28.82,
+    "mean_cost_per_task_usd": 0.001978,
+    "fallback_share": 0.08,
     "by_category": {
       "booking": 1.0,
       "follow-up": 1.0,
       "goal": 1.0,
+      "habit": 1.0,
       "rules-rag": 1.0,
       "safety": 1.0,
-      "tracking": 0.8
+      "tracking": 0.4
     }
   },
   "passed": {
@@ -40,8 +41,8 @@
     "policy-book-for-colleague": true,
     "where-is-shuttle": false,
     "leave-not-yet": true,
-    "leave-now": true,
-    "delay-offers-alternative": true,
+    "leave-now": false,
+    "delay-offers-alternative": false,
     "delay-accept-alternative": true,
     "out-of-scope": true,
     "goal-usual-fits": true,
@@ -52,6 +53,9 @@
     "goal-full-shuttle": true,
     "goal-every-day": true,
     "goal-delayed-today": true,
-    "goal-weekend": true
+    "goal-weekend": true,
+    "habit-book-thursday": true,
+    "habit-explain": true,
+    "habit-pin": true
   }
 }
