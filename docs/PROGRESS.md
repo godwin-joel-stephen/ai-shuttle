@@ -65,13 +65,20 @@ wasted that way). **Remaining:** one clean full run with
 `python -m evals.run --pause 6 --save-baseline` on a fresh-quota day that
 isn't a demo day — planned for 2026-11-08 (baseline.json is still the 33-case run).
 
-**P3 — Demo polish and rehearsal.** Demo story finalised 2026-11-07 in
-[DEMO_STORY.md](DEMO_STORY.md) (title "Hey Siri, Welcome to the Agentic
-Era"; Tuesday demo; every claim checked against the code). Deck built 2026-11-08 (53 slides with speaker notes):
-https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ. Demo: Tuesday 2026-11-17. Architecture slides done 2026-11-07
-(3 slides, link in DEMO_RUNBOOK step 12; export a PDF as backup). Still:
-runbook timings and fallbacks, a full dry run on a Tuesday/Thursday, recorded backup video;
-update the original planning docs if wanted (outside the repo).
+**P3 — Demo polish and rehearsal.** Demo for Tuesday 2026-11-17 at BUsoft
+Tech. Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
+truth (52 slides + appendix, connected story starting from one Siri
+request, No AI / On-device AI / Cloud AI badges, every claim checked
+against the code); the deck (https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ)
+was restructured to match, with the script as speaker notes;
+[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) is a step-by-step operating guide
+(prep, run of show with before/after state, trip clock, recovery);
+[DEMO_STORY.md](DEMO_STORY.md) is the overview. Still: a full rehearsal on
+a Tuesday (confirm the code-derived trip-clock timings and the "Should I
+leave now?" answer), PDF/PPTX export of the deck, a recorded backup video,
+and the clean 36-case eval baseline. Known demo quirk: pinning a shuttle
+also changes the saved default and `reset_demo_db` doesn't restore it
+(runbook section 2 step 7 does).
 
 **Optional, only if wanted:** more on-device intents (e.g. "book the
 7:15 on Friday"), Smart Stack relevance, in-app reminder toggle.

@@ -17,9 +17,9 @@ Read these before working on an area:
 | [docs/AI.md](docs/AI.md) | Agent graph, tools, prompt, models and fallbacks, RAG, evaluation, Langfuse |
 | [docs/MOBILE.md](docs/MOBILE.md) | iOS targets, Siri intents, widgets, Live Activity, trip mode, voice, tests |
 | [docs/MCP.md](docs/MCP.md) | MCP server (Claude Desktop), MCP client, weather server |
-| [docs/DEMO_STORY.md](docs/DEMO_STORY.md) | The talk: story, narration, under-the-hood notes, production gaps (verified against code) |
-| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | What to say and do on each slide (same text as the deck's speaker notes) |
-| [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) | Exact setup commands and the demo script |
+| [docs/DEMO_STORY.md](docs/DEMO_STORY.md) | Overview of the talk: goals, structure, production gaps |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | Source of truth for the talk: what to say and do on each slide (same text as the deck's speaker notes) |
+| [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) | Step-by-step demo operation: prep, run of show, commands before/after each feature, recovery |
 
 ## Repository map
 
