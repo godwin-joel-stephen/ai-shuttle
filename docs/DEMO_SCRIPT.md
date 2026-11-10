@@ -654,7 +654,8 @@ Expected (confirm in rehearsal): before r = 8.5, **“No”** with about
 (17 − 2r) minutes until I should leave, e.g. about 3–5 minutes; from
 r = 8.5 to about 13, **“Yes”**. The reply ends with the weather: an
 umbrella tip if rain is likely, otherwise “It’s clear, so you won’t need
-an umbrella” (or similar, naming the actual conditions).
+an umbrella” (naming the actual conditions). The agent adds this sentence
+in code whenever it checked the weather and the model left it out.
 
 SAY: “‘Should I leave now?’ isn’t an action with a parameter. It’s a
 question that needs several facts combined: where the new shuttle is, how

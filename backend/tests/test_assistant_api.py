@@ -364,3 +364,41 @@ def test_garbled_reply_without_fallback_is_unavailable_not_shown(client, user_id
 def test_unusable_reply_detection(text, unusable):
     names = frozenset({"get_commute_habits", "get_my_bookings"})
     assert is_unusable_reply(AIMessage(text), names) is unusable
+
+
+def test_dry_weather_is_added_when_the_model_leaves_it_out(client, user_id):
+    def get_current_weather(latitude: float, longitude: float) -> dict:
+        """Current weather at a location."""
+        return {"conditions": "clear", "precipitation_mm": 0, "rain_chance_next_2h_percent": 10}
+
+    weather = StructuredTool.from_function(get_current_weather, metadata={"mcp_server": "weather"})
+    app.dependency_overrides[get_external_tools] = lambda: [weather]
+    use_model(ScriptedChatModel(script=[
+        call("get_current_weather", latitude=12.97, longitude=77.64),
+        AIMessage("Yes. Head out now for the 4-minute walk."),
+    ]))
+
+    data = send(client, user_id, "Should I leave now?").json()
+
+    assert data["reply"] == (
+        "Yes. Head out now for the 4-minute walk. It's clear, so you won't need an umbrella."
+    )
+
+
+def test_likely_rain_adds_an_umbrella_tip(client, user_id):
+    def get_current_weather(latitude: float, longitude: float) -> dict:
+        """Current weather at a location."""
+        return {"conditions": "overcast", "precipitation_mm": 0, "rain_chance_next_2h_percent": 70}
+
+    weather = StructuredTool.from_function(get_current_weather, metadata={"mcp_server": "weather"})
+    app.dependency_overrides[get_external_tools] = lambda: [weather]
+    use_model(ScriptedChatModel(script=[
+        call("get_current_weather", latitude=12.97, longitude=77.64),
+        AIMessage("No, leave in 3 minutes."),
+    ]))
+
+    data = send(client, user_id, "Should I leave now?").json()
+
+    assert data["reply"] == (
+        "No, leave in 3 minutes. Rain is likely (70% in the next two hours), so take an umbrella."
+    )
