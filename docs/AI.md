@@ -57,6 +57,10 @@ drive `bookings_changed`.
 
 External MCP tools (weather) are appended at runtime; actions record the
 providing server so the app labels them "· via weather MCP server".
+When the weather tool ran but the final reply doesn't mention the weather
+(Flash-Lite often skips it on dry days), `with_weather` in
+`assistant_graph.py` appends one umbrella sentence built from the tool
+result ("It's clear, so you won't need an umbrella" / "Rain is likely …").
 
 ## On-device routing (F14)
 

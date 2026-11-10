@@ -10,13 +10,14 @@ per-conversation memory through the checkpointer (thread_id =
 conversation id). Business rules stay in the tools' services.
 """
 
+import json
 import re
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -118,7 +119,9 @@ Rules:
 - If a get_current_weather tool is available, also check the weather at
   the pickup_coordinates for "should I leave now". If it's raining or the
   rain chance is 50% or more, suggest an umbrella and leaving a couple of
-  minutes earlier.
+  minutes earlier. Otherwise say briefly that the weather is dry, naming
+  the conditions (for example "It's clear, so you won't need an
+  umbrella").
 - If the shuttle is late and faster_alternative is present, mention it
   and offer to move the booking (change_booking_shuttle).
 - For questions about rules, cancellations, pickups or luggage, answer only
@@ -129,6 +132,62 @@ Rules:
   that can be booked.
 - Reply in one or two short sentences that read well aloud, with times in
   12-hour format (for example 7:30 AM)."""
+
+
+WEATHER_TOOL = "get_current_weather"
+_WET_CONDITIONS = {"drizzle", "rain", "thunderstorm", "snow"}
+_WEATHER_WORDS = re.compile(r"umbrella|rain|weather|\bdry\b|\bclear\b(?! path)|cloud|overcast|fog|drizzle|snow|storm", re.I)
+
+
+def weather_sentence(weather: dict) -> str | None:
+    """One sentence on whether to take an umbrella, from the weather tool."""
+
+    conditions = weather.get("conditions")
+    if not isinstance(conditions, str):
+        return None
+    chance = weather.get("rain_chance_next_2h_percent") or 0
+    wet = (
+        conditions in _WET_CONDITIONS
+        or (weather.get("precipitation_mm") or 0) > 0
+        or chance >= 50
+    )
+    if wet:
+        return f"Rain is likely ({chance}% in the next two hours), so take an umbrella."
+    if conditions == "unknown":
+        return "It's dry, so you won't need an umbrella."
+    return f"It's {conditions}, so you won't need an umbrella."
+
+
+def with_weather(response: AIMessage, messages: Sequence) -> AIMessage:
+    """Adds the umbrella advice to a final reply that left it out.
+
+    The prompt asks for it, but Flash-Lite often drops the weather when it's
+    dry, so the rider couldn't tell it had been checked. Applies only when
+    the weather tool ran in this turn.
+    """
+
+    if response.tool_calls or _WEATHER_WORDS.search(response.text):
+        return response
+
+    turn_start = max(
+        (i for i, m in enumerate(messages) if isinstance(m, HumanMessage)),
+        default=-1,
+    )
+    results = [
+        m for m in messages[turn_start + 1:]
+        if isinstance(m, ToolMessage) and m.name == WEATHER_TOOL and m.status != "error"
+    ]
+    if not results:
+        return response
+    try:
+        weather = json.loads(results[-1].text)
+    except ValueError:
+        return response
+    sentence = weather_sentence(weather) if isinstance(weather, dict) else None
+    if sentence is None:
+        return response
+
+    return response.model_copy(update={"content": f"{response.text.rstrip()} {sentence}"})
 
 
 def create_assistant_graph(
@@ -161,7 +220,7 @@ def create_assistant_graph(
                 if position == len(attempts) - 1:
                     raise
 
-        return {"messages": [response]}
+        return {"messages": [with_weather(response, state["messages"])]}
 
     graph = StateGraph(MessagesState)
     graph.add_node("agent", agent)
