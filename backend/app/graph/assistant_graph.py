@@ -118,7 +118,9 @@ Rules:
 - If a get_current_weather tool is available, also check the weather at
   the pickup_coordinates for "should I leave now". If it's raining or the
   rain chance is 50% or more, suggest an umbrella and leaving a couple of
-  minutes earlier.
+  minutes earlier. Otherwise say briefly that the weather is dry, naming
+  the conditions (for example "It's clear, so you won't need an
+  umbrella").
 - If the shuttle is late and faster_alternative is present, mention it
   and offer to move the booking (change_booking_shuttle).
 - For questions about rules, cancellations, pickups or luggage, answer only

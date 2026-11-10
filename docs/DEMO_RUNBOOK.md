@@ -269,8 +269,9 @@ answer them in order.
 **Slide 19 · A question, not a command** (Cloud AI)
 - Before: within a few minutes of the Rebook (ideally r ≈ 6–7).
 - Show: "Hey Siri, ask Clear Path" → "Should I leave now?" Expected: "No",
-  leave in about 3–5 minutes (or "Yes" if r is 8.5–13), maybe with an
-  umbrella tip.
+  leave in about 3–5 minutes (or "Yes" if r is 8.5–13), plus the weather:
+  an umbrella tip if rain is likely, otherwise "It's clear, so you won't
+  need an umbrella".
 - Say: a question needing several facts; the first interaction that needs
   cloud-based reasoning; the on-device assistant declined, so the cloud
   agent answered.
