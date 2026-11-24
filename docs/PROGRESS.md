@@ -73,8 +73,10 @@ saved as the baseline (judge 4.67, p50 8.0s, p95 28.8s). Of the 3 failures,
 Tech (moved from Tuesday 2026-11-17; on 2026-11-19 the script, runbook,
 story and deck notes were updated for a Thursday: tomorrow = Friday, the
 Claude Desktop and outage steps use next Thursday, the import applies 3
-changes). Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
-truth (52 slides + appendix, connected story starting from one Siri
+changes; on 2026-11-24 the talk was cut to 22 slides plus a backup glossary,
+about 50 minutes, around 22 demo steps, with no prompt-injection demo).
+Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
+truth (connected story starting from one Siri
 request, No AI / On-device AI / Cloud AI badges, every claim checked
 against the code); the deck (https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ)
 was restructured to match, with the script as speaker notes;
@@ -159,3 +161,4 @@ and an in-app reminder toggle (iOS notification settings cover it).
 | 2026-11-07 | F14: on-device always for a verified simple subset (rules gate + model must agree), cloud for the rest; Ask Clear Path too; on-device turns recorded in the shared conversation without synthetic tool calls |
 | 2026-11-07 | F13 outage switch is a runtime flag file (no restart); no deterministic chat fallback in this phase (user's choice) |
 | 2026-11-07 | F10 surfaces: donations + evening-before reminder with Book + Home card; no Smart Stack relevance. Donations run after the rides list loads, since that sees bookings from every surface (widget extension, chat, import, MCP) |
+| 2026-11-24 | Demo cut to 22 slides (about 50 minutes) around 22 demo steps: explanation slides merged into their demo slides; no prompt-injection demo (mentioned on the import slide and in Q&A); lessons-learned slide dropped; production and roadmap combined (user's choice) |
