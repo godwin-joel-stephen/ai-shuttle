@@ -1,8 +1,9 @@
 # Progress
 
-Last updated 2026-11-07. All features (F1–F14) are merged into `main` and
+Last updated 2026-11-19. All features (F1–F14) are merged into `main` and
 pushed. What's left is verification, evals and demo polish: see
-"Pending phases". **Next: P3 rehearsal on a Tuesday, deck export, backup video.**
+"Pending phases". **Next: P3 rehearsal on Thursday 26 November, deck export, backup video.
+Demo moved to Thursday 3 December 2026.**
 
 ## Done (verified on the user's iPhone unless noted)
 
@@ -68,8 +69,11 @@ saved as the baseline (judge 4.67, p50 8.0s, p95 28.8s). Of the 3 failures,
 "leave by" clock time); both prompts fixed and the tracking cases re-ran
 6/6 (details in AI.md).
 
-**P3 — Demo polish and rehearsal.** Demo for Tuesday 2026-11-17 at BUsoft
-Tech. Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
+**P3 — Demo polish and rehearsal.** Demo for Thursday 2026-12-03 at BUsoft
+Tech (moved from Tuesday 2026-11-17; on 2026-11-19 the script, runbook,
+story and deck notes were updated for a Thursday: tomorrow = Friday, the
+Claude Desktop and outage steps use next Thursday, the import applies 3
+changes). Done 2026-11-08: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) is the source of
 truth (52 slides + appendix, connected story starting from one Siri
 request, No AI / On-device AI / Cloud AI badges, every claim checked
 against the code); the deck (https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ)
@@ -77,7 +81,7 @@ was restructured to match, with the script as speaker notes;
 [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md) is a step-by-step operating guide
 (prep, run of show with before/after state, trip clock, recovery);
 [DEMO_STORY.md](DEMO_STORY.md) is the overview. Still: a full rehearsal on
-a Tuesday (confirm the code-derived trip-clock timings and the "Should I
+a Thursday (confirm the code-derived trip-clock timings and the "Should I
 leave now?" answer), PDF/PPTX export of the deck and a recorded backup
 video. Optional: re-save the 36-case baseline after the 2026-11-08 prompt
 fixes, on a non-demo day. Known demo quirk: pinning a shuttle

@@ -4,7 +4,7 @@ An iOS commuter-shuttle app whose AI works through the OS (Siri, widgets,
 Control Center, Live Activities, notifications, share sheet) rather than a
 chatbot, backed by a FastAPI + LangGraph agent with RAG, MCP (both
 directions), evaluation and tracing. It is a portfolio demo of production
-mobile + AI engineering. Demo days: Tuesday or Thursday.
+mobile + AI engineering. Demo: Thursday 3 December 2026 (moved from Tuesday 17 November).
 
 Read these before working on an area:
 

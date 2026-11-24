@@ -4,7 +4,7 @@
 **Subtitle:** Engineering Proactive Mobile Experiences with Agentic AI and Native iOS
 
 Internal technical knowledge-sharing session at BUsoft Tech (Chennai),
-Tuesday 17 November 2026, for developers, QA engineers, BAs, managers and
+Thursday 3 December 2026 (moved from 17 November), for developers, QA engineers, BAs, managers and
 tech leads. Live demo on the iPhone and the Mac.
 
 This file is the overview. The words for every slide are in
@@ -73,9 +73,13 @@ About 75 minutes in full; the script marks cuts that bring it to about
 
 ## Demo day assumptions
 
-Tuesday demo, so "tomorrow" is Wednesday. `reset_demo_db` run in the demo
-week (ride history is placed relative to the current week), the saved
-usual restored to the 7:30, and next Tuesday booked beforehand. Learned
+Thursday demo, so "tomorrow" is Friday and weekday names mean next week's
+day. `reset_demo_db` run in the demo week (ride history is placed relative
+to the current week), the saved usual restored to the 7:30, and next
+Tuesday (8 December) booked beforehand. Steps that named Friday on a
+Tuesday (Claude Desktop, the outage cancel and rebook) use next Thursday,
+so they never touch tomorrow's trip booking; the schedule import then
+cancels two days (Tuesday WFH and the reminder's Thursday booking). Learned
 usuals: Mon 7:15, Tue 7:30, Wed 7:30 (overall pattern), Thu 8:00, Fri 7:30.
 The booking chain, the trip clock (the delay must come within about 8.5
 minutes of starting the simulated trip) and every command are in the

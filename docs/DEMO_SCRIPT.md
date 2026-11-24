@@ -1,8 +1,8 @@
 # Demo script: Hey Siri, Welcome to the Agentic Era
 
 Engineering Proactive Mobile Experiences with Agentic AI and Native iOS.
-Internal technical knowledge-sharing session at BUsoft Tech, Tuesday
-17 November 2026, for developers, QA engineers, BAs and managers.
+Internal technical knowledge-sharing session at BUsoft Tech, Thursday
+3 December 2026, for developers, QA engineers, BAs and managers.
 
 This script is the source of truth for the deck redesign. Each slide has:
 
@@ -39,10 +39,13 @@ slide says No AI, it means my app ran no model for that step.
 ## Demo data and booking state
 
 Setup and prep commands are in [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). This
-script assumes a Tuesday demo after `python -m scripts.reset_demo_db`, run in
-the same week as the demo (the ride history is placed relative to the
-current week), and **next Tuesday booked beforehand** (the schedule import
-cancels it).
+script assumes a Thursday demo (3 December 2026, so tomorrow is Friday)
+after `python -m scripts.reset_demo_db`, run in the same week as the demo
+(the ride history is placed relative to the current week), and **next
+Tuesday (8 December) booked beforehand** (the schedule import cancels it).
+Weekday names said on a Thursday mean the next one: “Monday” is 7
+December, “Thursday” is 10 December (Siri, the on-device chat and the
+reminder all resolve them that way).
 
 Learned usuals after the reset (from `app/db/ride_history.py` and
 `HabitService`):
@@ -57,19 +60,19 @@ Learned usuals after the reset (from `app/db/ride_history.py` and
 
 | Step | Change |
 |---|---|
-| Slide 1 | Tomorrow (Wed) 7:30 booked by Siri; Earlier → 7:15, Later → back to 7:30 |
-| Slide 10 | Next Monday 7:15 booked by Siri |
+| Slide 1 | Tomorrow (Fri) 7:30 booked by Siri; Earlier → 7:15, Later → back to 7:30 |
+| Slide 10 | Next Monday 7:15 booked by Siri (the day the card suggested on slide 9) |
 | Slide 11 | Pin the 8:00, then unpin: no bookings change (see note on slide 11) |
 | Slide 12 | Control Center / Action button: tomorrow already booked, nothing changes |
-| Slide 13 | This Thursday 8:00 booked from the reminder |
-| Slide 14 | Import: next Mon keep, next Tue cancelled, next Wed booked |
+| Slide 13 | Next Thursday (10 Dec) 8:00 booked from the reminder |
+| Slide 14 | Import: next Mon keep, next Tue cancelled, next Wed booked, next Thu (offsite) cancelled |
 | Slide 15 | `demo_trip` replays tomorrow's 7:30 as "now" (the trip clock starts) |
 | Slide 18 | Delay → tomorrow moved 7:30 → 7:45; the simulation follows the 7:45 |
 | Slide 19 | "Should I leave now?" answered for the 7:45 |
 | Slide 23 | Next Monday moved 7:15 → 7:00 on device |
-| Slide 25 | Tomorrow moved 7:45 → 7:15 (goal); Friday "by 7:30" books nothing |
-| Slide 26 | Friday 7:30 booked from Claude Desktop |
-| Slide 29 | Friday cancelled on device during the outage, then booked again by Siri |
+| Slide 25 | Tomorrow moved 7:45 → 7:15 (goal); next Tuesday "by 7:30" books nothing |
+| Slide 26 | Next Thursday 8:00 booked from Claude Desktop |
+| Slide 29 | Next Thursday cancelled on device during the outage, then booked again by Siri |
 
 ## The trip clock (slides 15–19)
 
@@ -128,7 +131,8 @@ Deck: `cover` · Badge: No AI · Time: 2 min
 DO (before any slide; phone on the Lock Screen, mirrored over the cable):
 “Hey Siri, book my usual shuttle with Clear Path.”
 Expected: “Done. You’re on the 7:30 AM shuttle tomorrow, arriving at Office
-by 8:15 AM. That’s your usual: you took it on 6 of your last 10 rides.”
+by 8:15 AM. That’s your usual: you took it on each of your last 5
+Fridays.”
 plus a card with Earlier and Later.
 Tap **Earlier** (moves to the 7:15), then **Later** (back to the 7:30; the
 delay demo later needs the 7:30).
@@ -330,17 +334,19 @@ actually mean?”
 Deck: `habit` · Badge: No AI · Time: 2 min
 
 DO: Open the app → Home → **Your commute** card.
-Expected: “Thu isn’t booked yet”, “8:00 AM → arrives 8:45 AM”, “You took it
-on 4 of your last 5 Thursdays”, and a **Book Thursday 8:00 AM** button (don’t
-tap it; the reminder books Thursday on slide 13). Expand **Your usual
-week**: sparkles = learned, pin = pinned, circle = default.
+Expected: “Mon isn’t booked yet”, “7:15 AM → arrives 8:00 AM”, “You took it
+on 4 of your last 5 Mondays”, and a **Book Monday 7:15 AM** button (don’t
+tap it; Siri books Monday on slide 10). Expand **Your usual week**:
+sparkles = learned, pin = pinned, circle = default.
 
-SAY: “This card is the app’s idea of my usual commute. Thursday isn’t
-booked yet; my usual Thursday shuttle is the 8:00, and here’s why: I took
-it on four of my last five Thursdays. It doesn’t just recommend, it
-explains. And tomorrow’s 7:30 from the opening? Wednesday has only one past
-ride, so the app used my overall pattern instead: 6 of my last 10 rides
-were the 7:30. That’s what Siri said.
+SAY: “This card is the app’s idea of my usual commute. Tomorrow is booked,
+so it looks at the next usual day: Monday isn’t booked yet; my usual Monday
+shuttle is the 7:15, and here’s why: I took it on four of my last five
+Mondays. It doesn’t just recommend, it explains. Tomorrow’s 7:30 from the
+opening had a reason too: I took it every one of my last five Fridays.
+That’s what Siri said. And Wednesday? I rarely go in on Wednesdays, only
+one past ride, so the app uses my overall pattern instead: 6 of my last 10
+rides were the 7:30.
 
 How it works: the SwiftUI card calls one endpoint, GET /habits. On the
 backend, HabitService looks at my past rides in Postgres and decides the
@@ -368,8 +374,8 @@ Expected: “Done. You’re on the 7:15 AM shuttle on Monday, arriving at
 Office by 8:00 AM. That’s your usual: you took it on 4 of your last 5
 Mondays.” (the 7:15, not the saved 7:30).
 
-SAY: “Same intent as before, this time with a day. Siri filled in ‘Monday’
-using the day enum, and the backend asked HabitService for Monday’s usual:
+SAY: “Same intent as before, this time with a day: the Monday the card
+just suggested. Siri filled in ‘Monday’ using the day enum, and the backend asked HabitService for Monday’s usual:
 the 7:15, because that’s what I actually take on Mondays. The reason comes
 back with the booking, so Siri can say it.
 
@@ -440,7 +446,7 @@ No AI.”
 
 IF IT FAILS: “On a Friday or Saturday this control would say ‘Booking
 failed: Shuttles don’t run on Saturdays’, because tomorrow is a weekend.
-That’s why this demo is on a Tuesday.”
+That’s why this demo is on a Thursday and not a Friday.”
 
 NEXT: “All of these still wait for me to act. The next step is for the app
 to act before I ask.”
@@ -455,9 +461,11 @@ Deck: `reminder` · Badge: No AI · Time: 2 min
 
 DO: Card menu → **Preview reminder** (Debug build only; fires in 5 seconds)
 → lock the phone.
-Expected: “Book Thursday’s shuttle?” / “Your usual Thursday shuttle is the
-8:00 AM, arriving 8:45 AM — you took it on 4 of your last 5 Thursdays. You
-haven’t booked it yet.” Long-press → **Book** → “Shuttle booked”.
+Expected: “Book Thursday’s shuttle?” (next Thursday, 10 December: Friday,
+Monday and Tuesday are booked and Wednesday isn’t a usual day) / “Your
+usual Thursday shuttle is the 8:00 AM, arriving 8:45 AM — you took it on 4
+of your last 5 Thursdays. You haven’t booked it yet.” Long-press →
+**Book** → “Shuttle booked”.
 
 SAY: “In normal use this arrives at 7 PM the evening before any usual day I
 haven’t booked. I triggered it early. The text is the same habit and the
@@ -494,15 +502,17 @@ Deck: `import` · Badge: On-device AI · Time: 3 min
 DO: Photos → next week’s schedule image → Share → **Clear Path**.
 Expected review: Monday office **keep** (booked by Siri on slide 10),
 Tuesday WFH **cancel** (the booking made before the demo), Wednesday office
-**book**, Thursday offsite and Friday leave **nothing needed**. Switch one
-row off and on. Point at “Read on this iPhone with Apple Intelligence” and
-“Text read from your document”. Tap **Apply 2 Changes**.
+**book**, Thursday offsite **cancel** (booked from the reminder on slide
+13), Friday leave **nothing needed**. Switch one row off and on. Point at
+“Read on this iPhone with Apple Intelligence” and “Text read from your
+document”. Tap **Apply 3 Changes**.
 
 SAY: “Next week I’m working from home on Tuesday, offsite on Thursday and
 on leave Friday. The schedule came as an image, so I share it to Clear
-Path. It proposes: keep Monday, cancel Tuesday, book Wednesday, nothing for
-Thursday and Friday. Every change has a switch, and nothing happens until I
-tap Apply.
+Path. It proposes: keep Monday, cancel Tuesday, book Wednesday, and cancel
+Thursday: that’s the booking I made from the reminder a minute ago, and
+I’ll be offsite. Nothing for Friday. Every change has a switch, and nothing
+happens until I tap Apply.
 
 How it works, all inside the share sheet, on the phone. Vision reads the
 text from the image. A safety step removes any line that looks like an
@@ -816,12 +826,13 @@ Time: 2.5 min
 DO 1: “I have a meeting at 8 tomorrow, get me there in time.”
 Expected: action “Booked your trip plan”: tomorrow 7:45 → **7:15**,
 arriving 8:00.
-DO 2: “Get me to the office by 7:30 on Friday.”
+DO 2: “Get me to the office by 7:30 on Tuesday.” (next Tuesday, 8
+December; not booked since the import)
 Expected: “No shuttle gets you there by 7:30 AM. The soonest is the 7:00
 AM, arriving 7:45 AM (15 minutes late).” Nothing booked.
 
 SAY: “For the meeting at 8 it moved me from the 7:45 to the 7:15, which
-arrives at 8:00. For 7:30 on Friday it says honestly that no shuttle gets
+arrives at 8:00. For 7:30 on Tuesday it says honestly that no shuttle gets
 me there, offers the earliest, and books nothing.
 
 Here the model only reads: it turns my sentence into a date and an
@@ -851,18 +862,20 @@ at work. Can they use Clear Path too?”
 ## 26. Booking from Claude Desktop
 
 Deck: `mcp` · Badge: Cloud AI (external client: Claude Desktop); Clear
-Path’s side is No AI · Time: 3 min · [60-MIN CUT: skip the Thursday
+Path’s side is No AI · Time: 3 min · [60-MIN CUT: skip the Monday
 question]
 
-DO: Switch to Claude Desktop. “Book my usual shuttle for Friday” → allow
-the tool → booked → refresh the iPhone app: Friday is there. “What’s my
-usual Thursday?” → 8:00 with its reason. “Book Saturday too” → “Shuttles
-don’t run on Saturdays.”
+DO: Switch to Claude Desktop. “My offsite next Thursday was cancelled. Book
+my usual shuttle for Thursday 10 December” → allow the tool → booked, the
+8:00 with its reason (4 of my last 5 Thursdays) → refresh the iPhone app:
+Thursday is there. “What’s my usual Monday?” → 7:15 with its reason. “Book
+Saturday too” → “Shuttles don’t run on Saturdays.” (Name the date: said on
+a Thursday, “Thursday” alone could be read as today.)
 
 SAY: “Claude Desktop is a different AI, from a different company. It asked
-my permission to use a Clear Path tool, booked Friday, and the booking is
-already on my phone. It knows my usual Thursday and why. And Saturday is
-refused, by my rules, not by Claude.
+my permission to use a Clear Path tool, booked next Thursday, and the
+booking is already on my phone. It knows my usual shuttle for each day and
+why. And Saturday is refused, by my rules, not by Claude.
 
 This is MCP again, in the other direction. Earlier my agent was the client
 and the weather server was the tool provider. Here my backend is the
@@ -939,17 +952,17 @@ restart). Optional: `curl localhost:8000/health` → `"llm": "outage"`.
 Chat: “Why can’t I book Saturday?” → “Clear Path’s assistant is unavailable
 right now. Bookings still work: say “Book my usual shuttle with Clear
 Path”, or use the widget.”
-Same chat: “Cancel Friday” → **On device**, Friday (booked from Claude
-Desktop) cancelled.
-“Hey Siri, book my usual shuttle for Friday with Clear Path” → booked
-again. Optionally press the Control Center button.
+Same chat: “Cancel Thursday” → **On device**, next Thursday (booked from
+Claude Desktop) cancelled. (Not Friday: that’s tomorrow’s trip.)
+“Hey Siri, book my usual shuttle for Thursday with Clear Path” → the 8:00
+on Thursday, booked again. Optionally press the Control Center button.
 
 SAY: “I’ve just simulated the model provider going down, without
 restarting anything. A question that needs the cloud gets an honest
 answer: the assistant is unavailable, and here’s what still works. Nothing
 is made up.
 
-‘Cancel Friday’ still works: that’s On-device AI. Siri booking still works:
+‘Cancel Thursday’ still works: that’s On-device AI. Siri booking still works:
 that was always No AI. The widgets and the Control Center button still work
 too.
 
