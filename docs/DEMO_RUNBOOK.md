@@ -12,7 +12,7 @@ Three documents work together:
 |---|---|
 | This runbook | Operating the demo: setup, the 22 steps, commands, state checks, recovery |
 | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | The full words for every slide (the deck's speaker notes are the same text) |
-| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 22 slides plus a backup glossary, Present mode; private until shared |
+| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 24 slides, Present mode; private until shared |
 
 Step numbers in the run of show are the 22 demo steps; each names its
 slide. About 50 minutes plus questions.
@@ -44,14 +44,14 @@ the code, confirm in rehearsal):
 | Step | Slide | Phrase |
 |---|---|---|
 | 1 | 1 | "Hey Siri, book my usual shuttle with Clear Path" |
-| 4 | 5 | "Hey Siri, book my usual shuttle for Monday with Clear Path" |
-| 9 | 8 | "Hey Siri, track my shuttle with Clear Path" |
-| 10 | 10 | "Hey Siri, ask Clear Path" → "Should I leave now?" |
-| 11 | 11 | Chat: "What do I have booked?", then "Move Monday earlier" |
-| 12 | 12 | Chat mic: "Why can't I book Saturday?" |
-| 13 | 13 | Chat: "I have a meeting at 8 tomorrow, get me there in time", then "Get me to the office by 7:30 on Tuesday" |
-| 14 | 14 | Claude Desktop: "My offsite next Thursday was cancelled. Book my usual shuttle for Thursday 10 December", "What's my usual Monday?", "Book Saturday too" |
-| 15 | 15 | Chat: "Why can't I book Saturday?", then "Cancel Thursday"; Siri: "Hey Siri, book my usual shuttle for Thursday with Clear Path" |
+| 4 | 7 | "Hey Siri, book my usual shuttle for Monday with Clear Path" |
+| 9 | 10 | "Hey Siri, track my shuttle with Clear Path" |
+| 10 | 12 | "Hey Siri, ask Clear Path" → "Should I leave now?" |
+| 11 | 13 | Chat: "What do I have booked?", then "Move Monday earlier" |
+| 12 | 14 | Chat mic: "Why can't I book Saturday?" |
+| 13 | 15 | Chat: "I have a meeting at 8 tomorrow, get me there in time", then "Get me to the office by 7:30 on Tuesday" |
+| 14 | 16 | Claude Desktop: "My offsite next Thursday was cancelled. Book my usual shuttle for Thursday 10 December", "What's my usual Monday?", "Book Saturday too" |
+| 15 | 17 | Chat: "Why can't I book Saturday?", then "Cancel Thursday"; Siri: "Hey Siri, book my usual shuttle for Thursday with Clear Path" |
 
 **If Siri doesn't run the intent:** retry once, then Type to Siri (same
 phrase). Say: "That's iOS 27 Siri routing with its own model; one more for
@@ -139,15 +139,16 @@ to leave behind.
 - After: tomorrow (Fri) is on the **7:30**. If it ended on 7:15, tap Later
   again (the delay step needs the 7:30).
 
-### Step 2 · Intro and what just happened (slides 2–3) · No AI
+### Step 2 · Intro, AI and iOS terms, and what just happened (slides 2–5) · No AI
 - Show: slides only.
 - Say: mobile developer learning AI by building one real app; AI through
   the parts of iOS people already use; count the failures; the three
-  badges. Then: App Intents and App Shortcuts, the day enum (no day means
+  badges. Then the eight AI terms and the eight iOS terms (one line
+  each). Then: App Intents and App Shortcuts, the day enum (no day means
   tomorrow), HTTP to the Mac, one BookingService with five rules, no LLM
   because the request was already structured.
 
-### Step 3 · Your commute card (slide 4) · No AI
+### Step 3 · Your commute card (slide 6) · No AI
 - Show: app → Home → **Your commute**: "Mon isn't booked yet", 7:15 →
   8:00, "You took it on 4 of your last 5 Mondays". Expand **Your usual
   week**. **Don't tap Book.**
@@ -155,21 +156,21 @@ to leave behind.
   saved default), 3+ rides and a majority, 8 weeks; counting, so it can
   always say why.
 
-### Step 4 · Siri books Monday, with its reason (slide 5) · No AI
+### Step 4 · Siri books Monday, with its reason (slide 7) · No AI
 - Show: lock or leave the app, then "Hey Siri, book my usual shuttle for
   Monday with Clear Path." Expected: "Done. You're on the 7:15 AM shuttle
   on Monday, arriving at Office by 8:00 AM. That's your usual: you took it
   on 4 of your last 5 Mondays."
 - After: next Monday 7:15 booked.
 
-### Step 5 · Pin and unpin (slide 5) · No AI
+### Step 5 · Pin and unpin (slide 7) · No AI
 - Show: app → Your commute → menu → **Always use the 8:00 AM** (pin
   appears) → menu → **Learn from my rides again**.
 - Say: visible, explainable, overridable; a pin changes no bookings.
 - After: **must be unpinned** (while pinned every day's usual is 8:00).
   Don't say "the saved 7:30" from here on.
 
-### Step 6 · Widgets and Control Center (slide 6) · No AI
+### Step 6 · Widgets and Control Center (slide 8) · No AI
 - Show: Home Screen widget (tomorrow's ride, no Book tomorrow button);
   Lock Screen widget; Control Center → **Book Usual Shuttle** (or the
   Action button). Expected: notification "Already booked".
@@ -177,7 +178,7 @@ to leave behind.
   extension; the server's duplicate check answered.
 - After: nothing changes.
 
-### Step 7 · Reminder notification → Book (slide 6) · No AI
+### Step 7 · Reminder notification → Book (slide 8) · No AI
 - Show: app → Your commute → menu → **Preview reminder** → lock the phone
   → within ~5 s "Book Thursday's shuttle?" (next Thursday, 10 Dec) →
   long-press → **Book** → "Shuttle booked".
@@ -185,7 +186,7 @@ to leave behind.
   runs in the background; suggests, never books.
 - After: next Thursday (10 Dec) 8:00 booked.
 
-### Step 8 · Schedule image import (slide 7) · On-device AI
+### Step 8 · Schedule image import (slide 9) · On-device AI
 - Show: Photos → `clearpath-schedule.png` → Share → **Clear Path**. Review:
   Monday **keep**, Tuesday WFH **cancel**, Wednesday **book**, Thursday
   offsite **cancel** (the reminder's booking from step 7: point it out),
@@ -200,7 +201,7 @@ to leave behind.
 - If the label says "text rules": Apple Intelligence wasn't available;
   explain the fallback and continue.
 
-### Step 9 · Live trip: map, trip mode, Live Activity, time to leave, Siri track (slide 8) · No AI
+### Step 9 · Live trip: map, trip mode, Live Activity, time to leave, Siri track (slide 10) · No AI
 - Before: tomorrow is booked on the 7:30 (from step 1).
 - Show:
   1. **T2:** `python -m scripts.demo_trip` (**note the time: r = 0**).
@@ -215,7 +216,7 @@ to leave behind.
 - Watch the clock: if Siri fails, Type to Siri, but don't let it push the
   delay past ~7 min.
 
-### Step 10 · Delay → Rebook (slide 9) · No AI
+### Step 10 · Delay → Rebook (slide 11) · No AI
 - Show: at **r ≈ 5** (never after 8.5): **T2:** `python -m scripts.demo_trip
   --delay 20`. Within ~15 s: "20 min late", orange bar, notification
   offering the 7:45 → long-press → **Rebook** → "Rebooked".
@@ -227,7 +228,7 @@ to leave behind.
   behaviour, and step 11 answers for the 7:30.
 - (Trip mode stays on; stop it after the talk, section 5.)
 
-### Step 11 · "Should I leave now?" with MCP weather (slide 10) · Cloud AI
+### Step 11 · "Should I leave now?" with MCP weather (slide 12) · Cloud AI
 - Before: within a few minutes of the Rebook (ideally r ≈ 6–7).
 - Show: "Hey Siri, ask Clear Path" → "Should I leave now?" Expected: "No",
   leave in about 3–5 minutes (or "Yes" if r is 8.5–13), plus the umbrella
@@ -237,7 +238,7 @@ to leave behind.
   Flash-Lite → retry → 3.1 Flash-Lite, 8 s each.
 - If slow: free tier; 8 s per attempt, then fallback; count it.
 
-### Step 12 · Chat: shared conversation, then on device (slide 11) · Cloud AI + On-device AI
+### Step 12 · Chat: shared conversation, then on device (slide 13) · Cloud AI + On-device AI
 - Show: app → **Ask Clear Path**: the Siri question is there with "Checked
   the weather · via weather MCP server". Type "What do I have booked?" →
   **On device · Apple Intelligence**. Then "Move Monday earlier" → next
@@ -246,14 +247,14 @@ to leave behind.
   gate → on-device model (3 s) → must agree → same endpoints.
 - After: next Monday on the 7:00.
 
-### Step 13 · "Why can't I book Saturday?" by voice, RAG (slide 12) · On-device AI + Cloud AI
+### Step 13 · "Why can't I book Saturday?" by voice, RAG (slide 14) · On-device AI + Cloud AI
 - Show: tap the mic → "Why can't I book Saturday?" → tap stop. Expected:
   the rule and a cited Booking Policy.
 - Say: on-device speech; eligibility tool; RAG over 16 sections, local
   embeddings in pgvector; below 0.60 dropped, 0.70+ citable.
 - If the mic isn't available, type it.
 
-### Step 14 · Goal planning (slide 13) · Cloud AI + No AI
+### Step 14 · Goal planning (slide 15) · Cloud AI + No AI
 - Show: "I have a meeting at 8 tomorrow, get me there in time" → "Booked
   your trip plan": tomorrow 7:45 → 7:15 (arrives 8:00). Then "Get me to the
   office by 7:30 on Tuesday" (next Tuesday, unbooked since the import) →
@@ -261,7 +262,7 @@ to leave behind.
 - Say: the model reads, the deterministic planner decides; 4/9 → 9/9.
 - After: tomorrow on the 7:15; next Tuesday still unbooked.
 
-### Step 15 · Claude Desktop through MCP (slide 14) · Cloud AI; Clear Path side No AI
+### Step 15 · Claude Desktop through MCP (slide 16) · Cloud AI; Clear Path side No AI
 - Before: next Thursday (10 Dec) is not booked (the import cancelled it).
 - Show: Claude Desktop: "My offsite next Thursday was cancelled. Book my
   usual shuttle for Thursday 10 December" → allow the tool → the 8:00 with
@@ -272,7 +273,7 @@ to leave behind.
   annotations (cancel is destructive).
 - After: next Thursday 8:00 booked (the outage step cancels it).
 
-### Step 16 · The cloud AI goes down (slide 15) · Cloud AI (unavailable) + On-device AI + No AI
+### Step 16 · The cloud AI goes down (slide 17) · Cloud AI (unavailable) + On-device AI + No AI
 - Show: **T3:** `python -m scripts.llm_outage on`; optional `curl
   localhost:8000/health` → `"llm":"outage"`. Chat: "Why can't I book
   Saturday?" → the unavailable message. Chat: "Cancel Thursday" → On
@@ -285,7 +286,7 @@ to leave behind.
   failure.
 - After: next Thursday booked again; **outage still on** until step 17.
 
-### Step 17 · Langfuse (slide 16)
+### Step 17 · Langfuse (slide 18)
 - Show: Langfuse → the failed turn (ERROR, each attempt) → a normal turn
   (model calls, tool spans) → an on-device turn. Then **T3:** `python -m
   scripts.llm_outage off`, and ask the chat any question to show it's
@@ -294,14 +295,14 @@ to leave behind.
   your bookings…").
 - After: **outage off**, `/health` shows `"llm":"ok"`.
 
-### Step 18 · Evaluations (slides 17–18)
+### Step 18 · Evaluations (slides 19–20)
 - Show: slides only.
 - Say: three layers (≈150 backend tests, 76 Swift + 2 UI tests, 36 agent
   scenarios + 15 extraction documents); setup → messages → hard checks →
   judge; baseline 33/36, judge 4.67/5; four bugs caught, each tied to a
   slide (13, 5, 12, 10).
 
-### Step 19 · Why not reliable (slide 19)
+### Step 19 · Why not reliable (slide 21)
 - Show: slide only. Ask the room for the failure count and recap each in
   one line (natural-failure explanations are in the slide's notes).
 - Say: Siri routes with its own model ("Clear Footpath", dropped day,
@@ -309,21 +310,20 @@ to leave behind.
   a paid account; free-tier latency; making AI trustworthy is most of the
   work.
 
-### Step 20 · Architecture recap (slide 20)
+### Step 20 · Architecture recap (slide 22)
 - Show: slide only.
 - Say: iPhone surfaces and on-device models → Wi-Fi → FastAPI with two
   paths (REST / LangGraph → Gemini) → services → Docker (Postgres 17 +
   pgvector; Langfuse's six containers); MCP in and out; evals; ₹0; the five
   design rules.
 
-### Step 21 · Prototype → full scale (slide 21)
+### Step 21 · Prototype → full scale (slide 23)
 - Show: slide only.
 - Say: four areas (users and security, platform, mobile, AI quality and
   cost), the ~$8/day estimate, and the areas to focus on next.
 
-### Step 22 · Future scope, our projects, close and questions (slide 22)
-- Show: slide only; stay on it for questions. Slide A1 (glossary) only if
-  asked.
+### Step 22 · Future scope, our projects, close and questions (slide 24)
+- Show: slide only; stay on it for questions.
 - Say: the four-step pattern for any client app; the closing line;
   questions (prepared answers in the script, including prompt injection).
 
@@ -346,7 +346,7 @@ to leave behind.
 | Preview reminder missing | It's Debug-only; book next Thursday from the card's **Book** button instead | |
 | Wrong state discovered mid-demo | Carry on and explain; don't reset live | |
 
-Something that failed by itself is explained on slide 19 (the failure
+Something that failed by itself is explained on slide 21 (the failure
 count), not on a separate slide.
 
 ---

@@ -11,12 +11,13 @@ This file is the overview. The words for every slide are in
 [DEMO_SCRIPT.md](DEMO_SCRIPT.md) (the source of truth, and the deck's
 speaker notes); how to run it, step by step, is in
 [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Deck:
-https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (22 slides plus a
-backup glossary; private until shared). All facts were checked against the
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (24 slides; private
+until shared). All facts were checked against the
 code on 2026-11-07/08. On 2026-11-24 the deck was cut from 53 slides to 22
 around 22 demo steps: explanation slides were merged into their demo
 slides, the prompt-injection demo and the lessons-learned slide were
-dropped, and production and roadmap became one slide.
+dropped, and production and roadmap became one slide. The AI terms
+glossary then moved up to slide 3, followed by an iOS terms slide.
 
 ## What the session must convey
 
@@ -62,29 +63,30 @@ dropped, and production and roadmap became one slide.
 |---|---|---|
 | 1 | Hey Siri, Welcome to the Agentic Era | Cold open: Siri books tomorrow, Earlier → Later (1) |
 | 2 | Not a chat box inside an app | (who I am, the idea, live failures, the three badges) (2) |
-| 3 | What just happened? | (App Intents, the backend, BookingService, no LLM) (2) |
-| 4 | What "my usual" means | Your commute card (3) |
-| 5 | Why the 7:15? It tells you, and you can change it | Siri books Monday's learned 7:15; pin and unpin (4, 5) |
-| 6 | Book without opening the app: widgets, Control Center and notifications | Widgets, Control Center → "Already booked"; reminder → Book (6, 7) |
-| 7 | When the week changes | Share the schedule photo → review → Apply (8) |
-| 8 | Your commute, live | Map, trip mode, Live Activity, time to leave, Siri tracking (9) |
-| 9 | A delay, and a better shuttle | Delay → Rebook (10) |
-| 10 | When AI needs to think | Siri "Should I leave now?": agent, tools, MCP weather (11) |
-| 11 | One conversation, and not every message needs the cloud | Chat shows the Siri turn; on-device commands (12) |
-| 12 | Answers with sources | Voice → "Why can't I book Saturday?" → RAG (13) |
-| 13 | Goals instead of times | Meeting at 8; Tuesday by 7:30, the honest no (14) |
-| 14 | Booking from Claude Desktop | MCP in; Saturday refused (15) |
-| 15 | The cloud AI goes down | Outage on: what still works (16) |
-| 16 | Tracing every turn | Langfuse; outage off (17) |
-| 17 | How I know it works | (three layers of checking, one evaluation) (18) |
-| 18 | What evaluations caught | (baseline, four bugs) (18) |
-| 19 | Why apps like this are still rare | (the failure count; Siri, model and platform limits) (19) |
-| 20 | Architecture: from iPhone to Gemini | (everything from the iPhone through Docker to Gemini; five rules) (20) |
-| 21 | From prototype to full scale | (changes for full scale, cost, focus next) (21) |
-| 22 | What this means for our projects | (the pattern, the closing line, questions) (22) |
-| A1 | AI terms in plain English | (backup) |
+| 3 | AI terms in plain English | (eight AI words: LLM, agent, tool, RAG, MCP, on-device model, eval, trace) (2) |
+| 4 | iOS terms in plain English | (eight iOS words: App Intent, App Shortcut, Shortcuts app, widget, control, Live Activity, share extension, Foundation Models) (2) |
+| 5 | What just happened? | (App Intents, the backend, BookingService, no LLM) (2) |
+| 6 | What "my usual" means | Your commute card (3) |
+| 7 | Why the 7:15? It tells you, and you can change it | Siri books Monday's learned 7:15; pin and unpin (4, 5) |
+| 8 | Book without opening the app: widgets, Control Center and notifications | Widgets, Control Center → "Already booked"; reminder → Book (6, 7) |
+| 9 | When the week changes | Share the schedule photo → review → Apply (8) |
+| 10 | Your commute, live | Map, trip mode, Live Activity, time to leave, Siri tracking (9) |
+| 11 | A delay, and a better shuttle | Delay → Rebook (10) |
+| 12 | When AI needs to think | Siri "Should I leave now?": agent, tools, MCP weather (11) |
+| 13 | One conversation, and not every message needs the cloud | Chat shows the Siri turn; on-device commands (12) |
+| 14 | Answers with sources | Voice → "Why can't I book Saturday?" → RAG (13) |
+| 15 | Goals instead of times | Meeting at 8; Tuesday by 7:30, the honest no (14) |
+| 16 | Booking from Claude Desktop | MCP in; Saturday refused (15) |
+| 17 | The cloud AI goes down | Outage on: what still works (16) |
+| 18 | Tracing every turn | Langfuse; outage off (17) |
+| 19 | How I know it works | (three layers of checking, one evaluation) (18) |
+| 20 | What evaluations caught | (baseline, four bugs) (18) |
+| 21 | Why apps like this are still rare | (the failure count; Siri, model and platform limits) (19) |
+| 22 | Architecture: from iPhone to Gemini | (everything from the iPhone through Docker to Gemini; five rules) (20) |
+| 23 | From prototype to full scale | (changes for full scale, cost, focus next) (21) |
+| 24 | What this means for our projects | (the pattern, the closing line, questions) (22) |
 
-About 50 minutes plus questions.
+About 53 minutes plus questions.
 
 ## Demo day assumptions
 

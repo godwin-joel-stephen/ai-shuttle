@@ -5,7 +5,7 @@ Internal technical knowledge-sharing session at BUsoft Tech, Thursday
 3 December 2026, for developers, QA engineers, BAs and managers.
 
 This script is the source of truth for the talk, and the deck's speaker
-notes are the same text. There are 22 slides plus one backup slide. Each
+notes are the same text. There are 24 slides. Each
 slide has:
 
 - **Slide**: the deck slide id, the badge (definitions below) and the
@@ -20,7 +20,7 @@ Story pattern for every capability: **user experience → what happened →
 how it works → engineering decision → next experience.**
 
 How to operate the demo (prep, terminals, state checks, recovery) is in
-[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md); its run of show has the same 22 steps.
+[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md); its run of show has 22 steps (the AI and iOS terms slides are part of step 2).
 
 ## The three badges
 
@@ -31,7 +31,7 @@ Shown on every demo slide, always with these exact names:
 - **On-device AI**: Apple's models running on the iPhone: Foundation Models
   (the on-device language model), Vision text recognition, and speech
   recognition. Nothing goes to a cloud model.
-- **Cloud AI**: Gemini, called by the LangGraph agent on my Mac. On slide 14
+- **Cloud AI**: Gemini, called by the LangGraph agent on my Mac. On slide 16
   the cloud AI is Claude Desktop, an external client; Clear Path's own side
   of that step is No AI.
 
@@ -62,18 +62,18 @@ Learned usuals after the reset (from `app/db/ride_history.py` and
 | Slide | Change |
 |---|---|
 | 1 | Tomorrow (Fri) 7:30 booked by Siri; Earlier → 7:15, Later → back to 7:30 |
-| 5 | Next Monday 7:15 booked by Siri; pin the 8:00, then unpin (no bookings change) |
-| 6 | Control Center: tomorrow already booked, nothing changes. Reminder: next Thursday (10 Dec) 8:00 booked |
-| 7 | Import: next Mon keep, next Tue cancelled, next Wed booked, next Thu (offsite) cancelled |
-| 8 | `demo_trip` replays tomorrow's 7:30 as "now" (the trip clock starts) |
-| 9 | Delay → tomorrow moved 7:30 → 7:45; the simulation follows the 7:45 |
-| 10 | "Should I leave now?" answered for the 7:45 |
-| 11 | Next Monday moved 7:15 → 7:00 on device |
-| 13 | Tomorrow moved 7:45 → 7:15 (goal); next Tuesday "by 7:30" books nothing |
-| 14 | Next Thursday 8:00 booked from Claude Desktop |
-| 15 | Next Thursday cancelled on device during the outage, then booked again by Siri |
+| 7 | Next Monday 7:15 booked by Siri; pin the 8:00, then unpin (no bookings change) |
+| 8 | Control Center: tomorrow already booked, nothing changes. Reminder: next Thursday (10 Dec) 8:00 booked |
+| 9 | Import: next Mon keep, next Tue cancelled, next Wed booked, next Thu (offsite) cancelled |
+| 10 | `demo_trip` replays tomorrow's 7:30 as "now" (the trip clock starts) |
+| 11 | Delay → tomorrow moved 7:30 → 7:45; the simulation follows the 7:45 |
+| 12 | "Should I leave now?" answered for the 7:45 |
+| 13 | Next Monday moved 7:15 → 7:00 on device |
+| 15 | Tomorrow moved 7:45 → 7:15 (goal); next Tuesday "by 7:30" books nothing |
+| 16 | Next Thursday 8:00 booked from Claude Desktop |
+| 17 | Next Thursday cancelled on device during the outage, then booked again by Siri |
 
-## The trip clock (slides 8–10)
+## The trip clock (slides 10–12)
 
 `demo_trip` (defaults: start 11 simulated minutes before the 7:30 departs,
 2× speed, 4-minute walk) runs one continuous clock. Let **r** = real
@@ -98,19 +98,19 @@ the calculated answer is "No, leave in about 3–5 minutes". Both "No" and
 
 ## Time budget
 
-About 50 minutes plus questions.
+About 53 minutes plus questions.
 
 | Slides | Part | Minutes |
 |---|---|---|
-| 1–3 | Opening: the cold open, the idea, what just happened | 6 |
-| 4–6 | Habits and iOS entry points | 6.5 |
-| 7 | Schedule import | 3 |
-| 8–9 | Live commute, delay and rebook | 7 |
-| 10–13 | When AI needs to think | 10.5 |
-| 14 | Claude Desktop through MCP | 2.5 |
-| 15–16 | Engineering for failure | 5 |
-| 17–19 | Testing and limitations | 4.5 |
-| 20–22 | Architecture, full scale, close | 5.5 |
+| 1–5 | Opening: the cold open, the idea, AI and iOS terms, what just happened | 9 |
+| 6–8 | Habits and iOS entry points | 6.5 |
+| 9 | Schedule import | 3 |
+| 10–11 | Live commute, delay and rebook | 7 |
+| 12–15 | When AI needs to think | 10.5 |
+| 16 | Claude Desktop through MCP | 2.5 |
+| 17–18 | Engineering for failure | 5 |
+| 19–21 | Testing and limitations | 4.5 |
+| 22–24 | Architecture, full scale, close | 5.5 |
 
 ---
 
@@ -166,9 +166,44 @@ same output. On-device AI: Apple’s models on the iPhone. Cloud AI: a
 language model in the cloud, called by my backend. Keep an eye on how often
 it says No AI.”
 
+NEXT: “Before we look at what happened, eight words you’ll hear today.”
+
+## 3. AI terms in plain English
+
+Slide: `glossary` · Time: 1.5 min
+
+SAY: “You don’t need to remember these; each one comes back with a demo.
+An LLM is a model that reads and writes text; here, Gemini understands
+‘get me there by 8’. An agent is an LLM in a loop that calls tools until
+the job is done. A tool is a function the agent may call, like ‘book usual
+shuttle’ or ‘plan trip’. RAG: search your own documents first, then answer
+from them, with a citation. MCP is a standard plug for AI tools; Claude
+Desktop books through it. An on-device model is Apple’s model on the
+iPhone: no network, no cost, private. An evaluation is a test suite for AI
+behaviour. And a trace is a recording of every AI step.”
+
+NEXT: “And eight words from the iOS side.”
+
+## 4. iOS terms in plain English
+
+Slide: `ios-terms` · Time: 1.5 min
+
+SAY: “An App Intent is an action my app gives to iOS, written once in
+Swift; Siri, widgets, Control Center and Shortcuts all run that same code.
+An App Shortcut is a set of ready-made Siri phrases for an App Intent; they
+work right after install, with no setup. The Shortcuts app is where anyone
+can chain App Intents from many apps into their own automations. A widget
+is a small live view on the Home or Lock Screen, and its buttons run App
+Intents without opening the app. A control is the same idea in Control
+Center or on the Action button. A Live Activity is a live card on the Lock
+Screen and Dynamic Island for something in progress, like my trip. A share
+extension is my app’s entry in the share sheet; here it reads a schedule
+image. And Foundation Models is Apple’s framework for the on-device
+language model behind Apple Intelligence.”
+
 NEXT: “So, back to that first Siri request. What actually happened?”
 
-## 3. What just happened?
+## 5. What just happened?
 
 Slide: `what-happened` · Badge: No AI · Time: 2.5 min
 
@@ -202,7 +237,7 @@ intent with an optional day.”
 
 NEXT: “One question left: what does ‘my usual shuttle’ mean?”
 
-## 4. What “my usual” means
+## 6. What “my usual” means
 
 Slide: `habit` · Badge: No AI · Time: 1.5 min
 
@@ -232,7 +267,7 @@ default and gives no reason, rather than making one up.”
 
 NEXT: “That reason isn’t only on this card.”
 
-## 5. Why the 7:15? It tells you, and you can change it
+## 7. Why the 7:15? It tells you, and you can change it
 
 Slide: `siri-habit` · Badge: No AI · Time: 2 min
 
@@ -265,7 +300,7 @@ restore the 7:30. No later step depends on the default, but don’t claim
 NEXT: “Siri isn’t the only way in. Most of the time I won’t even open the
 app.”
 
-## 6. Book without opening the app: widgets, Control Center and notifications
+## 8. Book without opening the app: widgets, Control Center and notifications
 
 Slide: `one-tap` · Badge: No AI · Time: 3 min
 
@@ -304,14 +339,14 @@ the card’s Book button instead.
 
 NEXT: “Habits handle the normal week. But my weeks aren’t always normal.”
 
-## 7. When the week changes
+## 9. When the week changes
 
 Slide: `import` · Badge: On-device AI · Time: 3 min
 
 DO: Photos → `clearpath-schedule.png` → Share → **Clear Path**. Expected
-review: Monday office **keep** (booked by Siri on slide 5), Tuesday WFH
+review: Monday office **keep** (booked by Siri on slide 7), Tuesday WFH
 **cancel** (booked before the demo), Wednesday office **book**, Thursday
-offsite **cancel** (booked from the reminder on slide 6), Friday leave
+offsite **cancel** (booked from the reminder on slide 8), Friday leave
 **nothing needed**. Switch one row off and on. Point at “Read on this
 iPhone with Apple Intelligence” and “Text read from your document”. Tap
 **Apply 3 Changes**.
@@ -342,7 +377,7 @@ and why.”
 
 NEXT: “The week is planned. Now it’s the morning of the commute.”
 
-## 8. Your commute, live
+## 10. Your commute, live
 
 Slide: `where` · Badge: No AI · Time: 5 min
 
@@ -383,7 +418,7 @@ don’t let it push the delay past r ≈ 7.
 
 NEXT: “So far the commute is going to plan. Now let’s make it go wrong.”
 
-## 9. A delay, and a better shuttle
+## 11. A delay, and a better shuttle
 
 Slide: `delay` · Badge: No AI · Time: 2 min
 
@@ -406,12 +441,12 @@ a timetable, and arithmetic belongs in code.”
 
 IF IT FAILS (no Rebook button): “No faster shuttle could still be caught,
 because I started the delay too late. That’s correct behaviour.” Slide
-10’s answer will then be about the 7:30.
+12’s answer will then be about the 7:30.
 
 NEXT: “Everything so far was a predefined action: book, move, track,
 rebook. What happens when I ask something that isn’t?”
 
-## 10. When AI needs to think
+## 12. When AI needs to think
 
 Slide: `ask-siri` · Badge: Cloud AI · Time: 3.5 min
 
@@ -453,7 +488,7 @@ fail, it says honestly that the assistant is unavailable.” Count it.
 
 NEXT: “I asked that through Siri. What if I continue in the app?”
 
-## 11. One conversation, and not every message needs the cloud
+## 13. One conversation, and not every message needs the cloud
 
 Slide: `memory` · Badge: Cloud AI + On-device AI · Time: 2.5 min
 
@@ -485,7 +520,7 @@ cloud answered instead. That’s the safety design working.”
 NEXT: “Commands are easy. Explanations need knowledge the app has to look
 up.”
 
-## 12. Answers with sources
+## 14. Answers with sources
 
 Slide: `rag` · Badge: On-device AI (speech) + Cloud AI (answer) · Time: 2 min
 
@@ -510,7 +545,7 @@ says it doesn’t know.” If the mic isn’t available, type the question.
 
 NEXT: “One more kind of request: instead of a time, I give it a goal.”
 
-## 13. Goals instead of times
+## 15. Goals instead of times
 
 Slide: `goal` · Badge: Cloud AI (understanding) + No AI (the planner) ·
 Time: 2.5 min
@@ -543,7 +578,7 @@ never books it without my OK.”
 NEXT: “Everything so far happened in my app. Can other AI tools use Clear
 Path too?”
 
-## 14. Booking from Claude Desktop
+## 16. Booking from Claude Desktop
 
 Slide: `mcp` · Badge: Cloud AI (external client: Claude Desktop); Clear
 Path’s side is No AI · Time: 2.5 min
@@ -574,7 +609,7 @@ in Settings → Developer, then retry.
 NEXT: “That’s everything working as designed. Now let’s break something
 on purpose.”
 
-## 15. The cloud AI goes down
+## 17. The cloud AI goes down
 
 Slide: `outage` · Badge: Cloud AI (unavailable) + On-device AI + No AI ·
 Time: 3 min
@@ -604,7 +639,7 @@ enhancement, not a single point of failure.”
 
 NEXT: “When that happens for real, how do I find out what went wrong?”
 
-## 16. Tracing every turn
+## 18. Tracing every turn
 
 Slide: `trace` · Badge: No AI (it records the Cloud AI and On-device AI
 turns) · Time: 2 min
@@ -629,7 +664,7 @@ I’m switching the cloud back on.”
 NEXT: “Those were planned failures. How do I know the normal behaviour is
 reliable?”
 
-## 17. How I know it works
+## 19. How I know it works
 
 Slide: `tests` · Badge: No AI (tests and hard checks) + Cloud AI (agent
 evaluations and the AI judge) · Time: 1.5 min
@@ -653,7 +688,7 @@ if success drops more than 5 points from the saved baseline.”
 
 NEXT: “Here’s where the numbers stand, and what they caught.”
 
-## 18. What evaluations caught
+## 20. What evaluations caught
 
 Slide: `caught` · Badge: Cloud AI (the bugs) → No AI (most fixes moved
 the decision into code) · Time: 1.5 min
@@ -664,12 +699,12 @@ passed, the right tools every time, judge score 4.67 out of 5, median reply
 tier.
 
 The numbers matter less than what the evaluations found, each connected to
-something you saw today. Goals, slide 13: the agent did time arithmetic
+something you saw today. Goals, slide 15: the agent did time arithmetic
 and booked impossible trips; the trip planner took it from 4 of 9 to 9 of
-9. The habit reason, slide 5: the agent once said ‘4 of your last 5’ with
+9. The habit reason, slide 7: the agent once said ‘4 of your last 5’ with
 no data behind it; now it may only use the reason the tool returns. The
-policy answers, slide 12: a question didn’t find the FAQ; I reworded and
-re-indexed it. And ‘should I leave now’, slide 10: yes with 11 minutes to
+policy answers, slide 14: a question didn’t find the FAQ; I reworded and
+re-indexed it. And ‘should I leave now’, slide 12: yes with 11 minutes to
 spare; now computed in code. That’s why hard checks come first, and I read
 every failure myself.”
 
@@ -679,7 +714,7 @@ saved, replace them.
 NEXT: “So if this can be engineered, why don’t we see many apps like this
 yet?”
 
-## 19. Why apps like this are still rare
+## 21. Why apps like this are still rare
 
 Slide: `limits-siri` · Time: 1.5 min
 
@@ -707,7 +742,7 @@ work.”
 
 NEXT: “Let me put everything we’ve seen into one picture.”
 
-## 20. Architecture: from iPhone to Gemini
+## 22. Architecture: from iPhone to Gemini
 
 Slide: `arch` · Time: 2 min
 
@@ -738,7 +773,7 @@ cheapest model that measurably works; and be honest when something fails.”
 
 NEXT: “So what would it take to make this a real product?”
 
-## 21. From prototype to full scale
+## 23. From prototype to full scale
 
 Slide: `prod` · Time: 2 min
 
@@ -764,7 +799,7 @@ retrieval; and proper evaluations for the on-device model.”
 
 NEXT: “And what this means for the work we do here.”
 
-## 22. What this means for our projects
+## 24. What this means for our projects
 
 Slide: `busoft` · Time: 1.5 min
 
@@ -798,49 +833,38 @@ Prepared answers:
 - What if Siri doesn’t understand? Type to Siri, the widget, or the app;
   every surface reaches the same rules.
 - How do you test something non-deterministic? Hard checks on tools,
-  bookings and sources first, then a judge for wording (slide 17).
+  bookings and sources first, then a judge for wording (slide 19).
 
 ---
 
 # Appendix
 
-## A1. AI terms in plain English (backup)
-
-Slide: `glossary` · Show only if asked
-
-SAY (only if needed): LLM: a model that reads and writes text. Agent: an
-LLM in a loop that calls tools. Tool: a function the agent may call. RAG:
-search your documents, then answer from them with a citation. MCP: a
-standard plug for AI tools. On-device model: Apple’s model on the iPhone.
-Evaluation: a test suite for AI behaviour. Trace: a recording of every AI
-step.
-
-## A2. Coverage checklist
+## A1. Coverage checklist
 
 Everything built (PRODUCT.md flows F1–F14 and the supporting work), and
 where it appears:
 
 | Built | Slides |
 |---|---|
-| F1 Siri booking, optional day, Earlier/Later card, “Which day?” | 1, 3, 5, 19 |
-| F2 Home and Lock Screen widgets, Control Center, Action button, duplicate protection | 6 |
-| F3 Schedule import (share sheet, in-app photo/file/PDF, Vision OCR, Foundation Models, validation, rules fallback, review and Apply) | 7 |
-| F3/F13 Prompt-injection defences (no live demo) | 7, 22 (Q&A) |
-| F4 Delay alert with Rebook / Keep | 9 |
-| F5 Time to leave, “Should I leave now?”, weather | 8, 10 |
-| F6 Map, trip mode, Live Activity (Lock Screen, Dynamic Island), Siri tracking | 8 |
-| F7 Goal planning (book, question-only, honest no) | 13 |
-| F8 Rules + RAG with citations | 12 |
-| F9 Chat, voice input, Siri “Ask Clear Path”, shared memory, action rows and sources | 10, 11, 12 |
-| F10 Learned habits, reasons, pin, Your commute card, reminder with Book, donations to Siri Suggestions / Spotlight | 4, 5, 6 |
-| F11 Clear Path MCP server (13 tools, annotations) | 14 |
-| E Weather MCP server (agent as MCP client) | 10, 14 |
-| F12 Evaluation harness, AI judge, baseline, Langfuse tracing | 16, 17, 18 |
-| F13 LLM outage switch, honest 503, /health | 15 |
-| F14 On-device routing (chat and Siri) | 10, 11 |
-| Model choice, fallback chain, 8-second deadlines, unusable-reply rejection | 10, 19 |
-| Partial-failure honesty | 16 |
-| Backend tests (isolated database), Swift and UI tests, schedule extraction eval | 17 |
-| Alternative app names | 19 |
-| Infrastructure: FastAPI, Docker, Postgres + pgvector, Langfuse containers | 20 |
-| Production gaps, cost, next focus areas | 21 |
+| F1 Siri booking, optional day, Earlier/Later card, “Which day?” | 1, 5, 7, 21 |
+| F2 Home and Lock Screen widgets, Control Center, Action button, duplicate protection | 8 |
+| F3 Schedule import (share sheet, in-app photo/file/PDF, Vision OCR, Foundation Models, validation, rules fallback, review and Apply) | 9 |
+| F3/F13 Prompt-injection defences (no live demo) | 9, 24 (Q&A) |
+| F4 Delay alert with Rebook / Keep | 11 |
+| F5 Time to leave, “Should I leave now?”, weather | 10, 12 |
+| F6 Map, trip mode, Live Activity (Lock Screen, Dynamic Island), Siri tracking | 10 |
+| F7 Goal planning (book, question-only, honest no) | 15 |
+| F8 Rules + RAG with citations | 14 |
+| F9 Chat, voice input, Siri “Ask Clear Path”, shared memory, action rows and sources | 12, 13, 14 |
+| F10 Learned habits, reasons, pin, Your commute card, reminder with Book, donations to Siri Suggestions / Spotlight | 6, 7, 8 |
+| F11 Clear Path MCP server (13 tools, annotations) | 16 |
+| E Weather MCP server (agent as MCP client) | 12, 16 |
+| F12 Evaluation harness, AI judge, baseline, Langfuse tracing | 18, 19, 20 |
+| F13 LLM outage switch, honest 503, /health | 17 |
+| F14 On-device routing (chat and Siri) | 12, 13 |
+| Model choice, fallback chain, 8-second deadlines, unusable-reply rejection | 12, 21 |
+| Partial-failure honesty | 18 |
+| Backend tests (isolated database), Swift and UI tests, schedule extraction eval | 19 |
+| Alternative app names | 21 |
+| Infrastructure: FastAPI, Docker, Postgres + pgvector, Langfuse containers | 22 |
+| Production gaps, cost, next focus areas | 23 |
