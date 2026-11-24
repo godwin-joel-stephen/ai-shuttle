@@ -11,9 +11,13 @@ This file is the overview. The words for every slide are in
 [DEMO_SCRIPT.md](DEMO_SCRIPT.md) (the source of truth, and the deck's
 speaker notes); how to run it, step by step, is in
 [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Deck:
-https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (53 slides: 52 plus an
-appendix; private until shared). All facts were checked against the code
-on 2026-11-07/08.
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (24 slides; private
+until shared). All facts were checked against the
+code on 2026-11-07/08. On 2026-11-24 the deck was cut from 53 slides to 22
+around 22 demo steps: explanation slides were merged into their demo
+slides, the prompt-injection demo and the lessons-learned slide were
+dropped, and production and roadmap became one slide. The AI terms
+glossary then moved up to slide 3, followed by an iOS terms slide.
 
 ## What the session must convey
 
@@ -35,41 +39,54 @@ on 2026-11-07/08.
   knew the app, how it understood the request, which date, what "usual"
   means, and whether it needed an LLM.
 - **Each capability follows from the previous one**: the request → the
-  booking backend → learned habits → user control → other iOS entry
-  points → proactive reminders → schedule changes → the commute in real
-  time → the first question that needs reasoning → external AI → failure
-  on purpose → testing → limitations → architecture → production.
+  booking backend → learned habits and their reasons → user control →
+  widgets, Control Center and the reminder → schedule changes → the
+  commute in real time → the first question that needs reasoning → external
+  AI → failure on purpose → testing → limitations → architecture → full
+  scale.
+- **One slide per step**: each demo slide carries its own "under the hood"
+  (flow, iOS and backend points, badge), so there are no separate
+  explanation slides.
 - **Three badges** on every technical slide: **No AI** (deterministic
   code), **On-device AI** (Apple's models on the iPhone), **Cloud AI**
   (Gemini through the LangGraph agent; Claude Desktop as an external
   client).
 - **Live, with honest failures**: natural failures are explained (Siri
-  routing, free-tier latency); two are caused on purpose (a prompt
-  injection document, a cloud AI outage).
+  routing, free-tier latency); one is caused on purpose (a cloud AI
+  outage). Prompt-injection defences are mentioned on the import slide and
+  in the prepared Q&A, without a demo.
 - No "Act" naming; plain technical section titles.
 
 ## Structure
 
-| Section | Slides | Live steps |
+| # | Slide | Live steps (runbook step) |
 |---|---|---|
-| Opening | 1–4 | Cold open: Siri books tomorrow, Earlier → Later |
-| Understanding User Intent | 5–8 | (explains the cold open) |
-| Learning User Habits | 9–11 | Your commute card; Siri books Monday's learned 7:15; pin and unpin |
-| One Backend, Multiple Entry Points | 12 | Widgets, Control Center / Action button → "Already booked" |
-| Proactive Mobile Experiences | 13 | Habit reminder → Book from the notification |
-| Handling Schedule Changes | 14 | Share a schedule photo → review → Apply |
-| Real-Time Assistance | 15–18 | Simulated trip, trip mode, Live Activity, time to leave, Siri tracking, delay → Rebook |
-| When AI Needs to Think | 19–25 | Siri "Should I leave now?", agent and tools, MCP weather, shared memory, on-device chat, voice + RAG, goal booking and the honest no |
-| Connecting External AI Systems | 26 | Claude Desktop books through MCP; Saturday refused |
-| Engineering for Failure | 27–31 | Injection document; LLM outage; Langfuse traces |
-| Testing AI Behaviour | 32–36 | (tests, evaluations, measured results, bugs caught) |
-| Platform Limitations | 37–38 | (the failure count; Siri, model and platform limits) |
-| Architecture Overview | 39–41 | (one backend, where the AI runs, the five design rules) |
-| From Prototype to Production | 42–52 | (lessons, production gaps, cost, roadmap, BUsoft, close, Q&A) |
-| Appendix | A1 | AI terms in plain English (backup) |
+| 1 | Hey Siri, Welcome to the Agentic Era | Cold open: Siri books tomorrow, Earlier → Later (1) |
+| 2 | Not a chat box inside an app | (who I am, the idea, live failures, the three badges) (2) |
+| 3 | AI terms in plain English | (eight AI words: LLM, agent, tool, RAG, MCP, on-device model, eval, trace) (2) |
+| 4 | iOS terms in plain English | (eight iOS words: App Intent, App Shortcut, Shortcuts app, widget, control, Live Activity, share extension, Foundation Models) (2) |
+| 5 | What just happened? | (App Intents, the backend, BookingService, no LLM) (2) |
+| 6 | What "my usual" means | Your commute card (3) |
+| 7 | Why the 7:15? It tells you, and you can change it | Siri books Monday's learned 7:15; pin and unpin (4, 5) |
+| 8 | Book without opening the app: widgets, Control Center and notifications | Widgets, Control Center → "Already booked"; reminder → Book (6, 7) |
+| 9 | When the week changes | Share the schedule photo → review → Apply (8) |
+| 10 | Your commute, live | Map, trip mode, Live Activity, time to leave, Siri tracking (9) |
+| 11 | A delay, and a better shuttle | Delay → Rebook (10) |
+| 12 | When AI needs to think | Siri "Should I leave now?": agent, tools, MCP weather (11) |
+| 13 | One conversation, and not every message needs the cloud | Chat shows the Siri turn; on-device commands (12) |
+| 14 | Answers with sources | Voice → "Why can't I book Saturday?" → RAG (13) |
+| 15 | Goals instead of times | Meeting at 8; Tuesday by 7:30, the honest no (14) |
+| 16 | Booking from Claude Desktop | MCP in; Saturday refused (15) |
+| 17 | The cloud AI goes down | Outage on: what still works (16) |
+| 18 | Tracing every turn | Langfuse; outage off (17) |
+| 19 | How I know it works | (three layers of checking, one evaluation) (18) |
+| 20 | What evaluations caught | (baseline, four bugs) (18) |
+| 21 | Why apps like this are still rare | (the failure count; Siri, model and platform limits) (19) |
+| 22 | Architecture: from iPhone to Gemini | (everything from the iPhone through Docker to Gemini; five rules) (20) |
+| 23 | From prototype to full scale | (changes for full scale, cost, focus next) (21) |
+| 24 | What this means for our projects | (the pattern, the closing line, questions) (22) |
 
-About 75 minutes in full; the script marks cuts that bring it to about
-60.
+About 53 minutes plus questions.
 
 ## Demo day assumptions
 
