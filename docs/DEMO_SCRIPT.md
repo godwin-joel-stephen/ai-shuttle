@@ -119,12 +119,13 @@ About 53 minutes plus questions.
 Slide: `cover` · Badge: No AI · Time: 2 min
 
 DO (before any slide; phone on the Lock Screen, mirrored over the cable):
-“Hey Siri, book my usual shuttle with Clear Path.” Expected: “Done. You’re
+“Hey Siri, book my usual shuttle for tomorrow with Clear Path.” Expected: “Done. You’re
 on the 7:30 AM shuttle tomorrow, arriving at Office by 8:15 AM. That’s your
 usual: you took it on each of your last 5 Fridays.” plus a card with
 Earlier and Later. Tap **Earlier** (moves to the 7:15), then **Later**
 (back to the 7:30; the delay demo later needs the 7:30). Then show the
-title slide.
+title slide. If Siri asks “Which day should I book?”, it lost the day:
+answer “Tomorrow”.
 
 SAY: “Good morning, everyone. I just booked tomorrow’s shuttle with one
 sentence to Siri, and moved it with two taps, without opening an app.
@@ -214,8 +215,10 @@ phrases like ‘Book my usual shuttle with Clear Path’, which iOS registers
 at install, so the user sets nothing up.
 
 Which date? The intent has one optional parameter, the day, an enum:
-today, tomorrow or a weekday. I didn’t say a day, so it used tomorrow, and
-the reply always says the day back. iOS ran the intent without opening the
+today, tomorrow or a weekday. I said tomorrow, and the reply always says
+the day back. Siri sometimes loses the day on the way; then the app asks
+“Which day?” instead of guessing, because booking a day I didn’t say is
+worse than one extra question. iOS ran the intent without opening the
 app. It sends a plain HTTP request over this Wi-Fi to the backend on my
 Mac. The Earlier and Later buttons on the card are App Intents too.
 
@@ -290,6 +293,9 @@ But a learned habit can be wrong. If I start a new routine I don’t want to
 wait weeks: ‘Always use the 8:00’ pins it, and a pin beats anything
 learned. ‘Learn from my rides again’ hands control back. A pin changes no
 bookings. Learned behaviour must be visible, explainable and overridable.”
+
+IF SIRI ASKS “Which day should I book?”: answer “Monday”. “Siri lost the
+day on the way, so the app asked instead of guessing.”
 
 IF IT FAILS: Retry once; then Type to Siri. “Another one for the count.”
 

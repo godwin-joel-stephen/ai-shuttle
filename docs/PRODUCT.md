@@ -51,7 +51,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 
 ## Demo order (planned)
 
-1. Siri: "Book my usual shuttle with Clear Path", tap **Earlier** on the Siri card (F1)
+1. Siri: "Book my usual shuttle for tomorrow with Clear Path", tap **Earlier** on the Siri card (F1)
 2. Widget / Control Center one-tap booking (F2)
 3. Share sheet: schedule import from a photo of the week's schedule → review → Apply (F3); optionally the version with injected fine print
 4. Proactive delay alert → Rebook from the notification (F4)

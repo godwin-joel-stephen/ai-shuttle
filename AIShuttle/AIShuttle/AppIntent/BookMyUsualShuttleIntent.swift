@@ -14,7 +14,7 @@ public struct BookMyUsualShuttleIntent: AppIntent {
     // Siri's language model reads this metadata when deciding whether a
     // request belongs to this app, so describe the action plainly.
     public static var description = IntentDescription(
-        "Books a seat on your usual Clear Path commuter shuttle from Home to Office for a given day, such as tomorrow or Friday. Books tomorrow when no day is given.",
+        "Books a seat on your usual Clear Path commuter shuttle from Home to Office for the day the user names, such as tomorrow or Monday. Asks for the day when none is given.",
         categoryName: "Shuttle Booking",
         searchKeywords: ["shuttle", "book shuttle", "usual shuttle", "commute", "office shuttle", "Clear Path"]
     )
@@ -22,9 +22,13 @@ public struct BookMyUsualShuttleIntent: AppIntent {
     // One intent rather than separate "tomorrow" and "for a day" intents:
     // with two near-identical phrase sets, Siri on iOS 27 picked the
     // tomorrow intent even for an exactly typed "...for Friday..." phrase.
-    // No default either, so a missing day stays visible as nil; the dialog
-    // and card always name the day that was booked.
-    @Parameter(title: "Day")
+    // No default either, so a missing day stays visible as nil and is asked
+    // for; the dialog and card always name the day that was booked.
+    @Parameter(
+        title: "Day",
+        description: "The day the user said: today, tomorrow, or a weekday such as Monday.",
+        requestValueDialog: "Which day should I book?"
+    )
     public var day: BookingDay?
 
     public static var parameterSummary: some ParameterSummary {
@@ -47,15 +51,14 @@ public struct BookMyUsualShuttleIntent: AppIntent {
         // whether Siri filled the day from "…for Thursday…".
         Logger.siri.info("BookMyUsualShuttleIntent day=\(day?.rawValue ?? "nil", privacy: .public)")
 
-        // Siri on iOS 27 sometimes drops the spoken day. Defaulting to
-        // tomorrow on a Saturday then answered "Shuttles don't run on
-        // Sundays" to "…for Thursday…"; ask for the day instead.
-        let tomorrow = BookingDay.tomorrow.date()
-        if day == nil, Calendar.current.isDateInWeekend(tomorrow) {
-            throw $day.needsValueError("Shuttles don't run on \(tomorrow.formatted(.dateTime.weekday(.wide)))s. Which day should I book?")
+        // Siri on iOS 27 sometimes drops the spoken day: "…for Monday…"
+        // arrived as nil and, when nil meant tomorrow, booked (or reported)
+        // the wrong day. Never guess a day the rider didn't say; ask.
+        guard let day else {
+            throw $day.needsValueError("Which day should I book? Tomorrow, or a weekday like Monday.")
         }
 
-        let booked = try await ShuttleBooking.book(on: (day ?? .tomorrow).date(), using: apiClient)
+        let booked = try await ShuttleBooking.book(on: day.date(), using: apiClient)
         return .result(dialog: booked.dialog, snippetIntent: booked.snippet)
     }
 }

@@ -43,7 +43,7 @@ the code, confirm in rehearsal):
 
 | Step | Slide | Phrase |
 |---|---|---|
-| 1 | 1 | "Hey Siri, book my usual shuttle with Clear Path" |
+| 1 | 1 | "Hey Siri, book my usual shuttle for tomorrow with Clear Path" |
 | 4 | 7 | "Hey Siri, book my usual shuttle for Monday with Clear Path" |
 | 9 | 10 | "Hey Siri, track my shuttle with Clear Path" |
 | 10 | 12 | "Hey Siri, ask Clear Path" → "Should I leave now?" |
@@ -131,7 +131,7 @@ to leave behind.
 
 ### Step 1 · Siri books tomorrow (slide 1, before showing it) · No AI
 - Before: phone locked, mirrored; deck on slide 1 but not yet presented.
-- Show: "Hey Siri, book my usual shuttle with Clear Path." Expected: "Done.
+- Show: "Hey Siri, book my usual shuttle for tomorrow with Clear Path." Expected: "Done.
   You're on the 7:30 AM shuttle tomorrow, arriving at Office by 8:15 AM.
   That's your usual: you took it on each of your last 5 Fridays." Tap
   **Earlier** (7:15), then **Later** (back to 7:30). Then show slide 1.
@@ -334,6 +334,7 @@ to leave behind.
 | Symptom | Do | Say |
 |---|---|---|
 | Siri answers itself / "Clear Path doesn't support that" | Retry once, then Type to Siri | iOS 27 Siri routes with its own model; count it |
+| Siri asks "Which day should I book?" | Answer the day ("Tomorrow" on slide 1, "Monday" on slide 7) | Siri lost the day; the app asks rather than guessing |
 | "I couldn't reach Clear Path" | Check T1 is running (`scripts.serve`, not `uvicorn --host 0.0.0.0`); phone Safari opens `http://BUSOFT-MB30-7.local:8000/health`; both on the same network | Every surface reports it plainly |
 | Chat slow / "Working on it…" for long | Wait up to ~25 s (three 8 s attempts) | Free tier; deadlines and fallbacks |
 | Chat says unavailable when it shouldn't | **T3:** `python -m scripts.llm_outage` (shows the state); `off` if on | |

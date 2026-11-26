@@ -244,6 +244,25 @@ extension MockedNetworkTests {
             let _ = try await intent.perform()
         }
 
+        @Test func intentWithoutDayAsksInsteadOfBooking() async {
+            let client = makeTestClient()
+            var requestSent = false
+
+            MockURLProtocol.requestHandler = { request in
+                requestSent = true
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                return (response, Self.bookingResponseJSON.data(using: .utf8)!)
+            }
+
+            let intent = BookMyUsualShuttleIntent(day: nil, apiClient: client)
+            do {
+                _ = try await intent.perform()
+                Issue.record("Expected the intent to ask for the day")
+            } catch {
+                #expect(!requestSent)
+            }
+        }
+
         @Test func serverDetailBecomesSpokenError() async {
             let client = makeTestClient()
 

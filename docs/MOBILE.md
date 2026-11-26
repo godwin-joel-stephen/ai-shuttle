@@ -59,7 +59,7 @@ ScheduleImportEvals/   macOS eval + sample generator (not an Xcode target): run.
 
 | Intent | Phrases (`AIShuttleShortcuts.swift`) | Behaviour |
 |---|---|---|
-| `BookMyUsualShuttleIntent` (optional `day: BookingDay`) | "Book my usual shuttle (for {day}) with Clear Path", "Book my shuttle for {day} with…", "Clear Path book my…" | structured `POST /bookings`; dialog + interactive snippet (Earlier/Later buttons → `RescheduleBookingIntent`) |
+| `BookMyUsualShuttleIntent` (optional `day: BookingDay`) | "Book my usual shuttle (for {day}) with Clear Path", "Book my shuttle for {day} with…", "Clear Path book my…" | no day (Siri sometimes drops it) → asks "Which day?", never assumes tomorrow; structured `POST /bookings`; dialog + interactive snippet (Earlier/Later buttons → `RescheduleBookingIntent`) |
 | `WhereIsMyShuttleIntent` | **"Track my shuttle with Clear Path"**, "Clear Path, where's my shuttle", … | speaks status, starts Live Activity |
 | `AskClearPathIntent` (`request: String`) | "Ask Clear Path", "Talk to Clear Path" | Siri prompts for the request → agent; shares chat conversation |
 
