@@ -25,7 +25,7 @@ slide. About 50 minutes plus questions.
 
 | Terminal | Purpose |
 |---|---|
-| T1 | `uvicorn app.main:app --host 0.0.0.0 --port 8000` (leave running) |
+| T1 | `python -m scripts.serve` (leave running; IPv4 + IPv6) |
 | T2 | Trip commands: `python -m scripts.demo_trip`, then `python -m scripts.demo_trip --delay 20` |
 | T3 | Outage: `python -m scripts.llm_outage on` / `off`, and `curl localhost:8000/health` |
 
@@ -62,9 +62,9 @@ the count."
 ## 1. The day before (Wednesday 2 December)
 
 1. **Mac and phone on the venue Wi-Fi.** If you can, connect both to the
-   venue network today and note the Mac's IP: `ipconfig getifaddr en0`.
-   If it differs from `BOOKING_API_BASE_URL` in Xcode (Build Settings,
-   project AIShuttle), update it and reinstall the app.
+   venue network (or the mobile hotspot) today and open
+   `http://BUSOFT-MB30-7.local:8000/health` in Safari on the phone with
+   the backend running. The app uses that name, so no IP to update.
 2. **Install a Debug build** from Xcode (a build signed with the free
    account stops opening after 7 days, so install it today, not earlier):
    scheme **AIShuttle**, run on "Godwin's iPhone" (⌘R). "Preview reminder"
@@ -102,8 +102,8 @@ Run these in order. Each has a check; don't move on until it passes.
 | # | Do | Check |
 |---|---|---|
 | 1 | Start **Docker Desktop**. If the containers didn't start: `docker compose up -d` in the repo root, and `docker compose up -d` in `observability/` | `docker ps` lists `ai-shuttle-postgres` and the Langfuse containers |
-| 2 | `ipconfig getifaddr en0` | Same address as `BOOKING_API_BASE_URL`; if not, update in Xcode and reinstall (Debug) |
-| 3 | **T1:** `cd ~/Projects/ai-shuttle/backend && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000` | Log shows startup without errors (the weather MCP server starts with it) |
+| 2 | `scutil --get LocalHostName` | `BUSOFT-MB30-7` (the app's `BOOKING_API_BASE_URL` is `http://BUSOFT-MB30-7.local:8000`); if the Mac was renamed, update in Xcode and reinstall (Debug) |
+| 3 | **T1:** `cd ~/Projects/ai-shuttle/backend && source .venv/bin/activate && python -m scripts.serve` | Log shows startup without errors (the weather MCP server starts with it) |
 | 4 | **T3:** `python -m scripts.llm_outage off` | `curl localhost:8000/health` → `{"status":"ok","llm":"ok"}` |
 | 5 | **T2:** `python -m scripts.demo_trip --stop` | Clears any simulation left from rehearsal |
 | 6 | **T2:** `python -m scripts.reset_demo_db` | "Deleted N booking(s)." and "Added 24 past ride(s) for habit learning." Must run **this week** (ride history is placed relative to the current week; a run at the 26 November rehearsal is not enough) |
@@ -334,7 +334,7 @@ to leave behind.
 | Symptom | Do | Say |
 |---|---|---|
 | Siri answers itself / "Clear Path doesn't support that" | Retry once, then Type to Siri | iOS 27 Siri routes with its own model; count it |
-| "I couldn't reach Clear Path" | Check T1 is running; `ipconfig getifaddr en0` matches the app; both on the same Wi-Fi | Every surface reports it plainly |
+| "I couldn't reach Clear Path" | Check T1 is running (`scripts.serve`, not `uvicorn --host 0.0.0.0`); phone Safari opens `http://BUSOFT-MB30-7.local:8000/health`; both on the same network | Every surface reports it plainly |
 | Chat slow / "Working on it…" for long | Wait up to ~25 s (three 8 s attempts) | Free tier; deadlines and fallbacks |
 | Chat says unavailable when it shouldn't | **T3:** `python -m scripts.llm_outage` (shows the state); `off` if on | |
 | No "On device" label | Continue; the cloud answered | The model must agree with the rules gate |
