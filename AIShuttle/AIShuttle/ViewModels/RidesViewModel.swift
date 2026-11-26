@@ -85,10 +85,11 @@ public final class RidesViewModel {
         }
     }
 
-    /// Refreshes the habit and hands it to the OS: donations for new
-    /// bookings and reminders for usual days not booked yet.
+    /// Refreshes the habit and hands it to the OS: reminders for usual
+    /// days not booked yet. Clears stored booking donations, which Siri
+    /// would otherwise reuse for the day of a new request.
     private func syncHabits(bookings: [BookingDetailDTO]) async {
-        await HabitDonations.donateNewBookings(bookings)
+        await HabitDonations.clearBookingDonations()
         guard let fetched = try? await apiClient.fetchHabits(userId: 1) else { return }
         habits = fetched
         await HabitReminders.schedule(fetched)

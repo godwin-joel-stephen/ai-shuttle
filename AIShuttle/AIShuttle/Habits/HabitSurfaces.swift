@@ -5,10 +5,8 @@
 //  F10: hand the learned commute habit to the OS so it can suggest the
 //  booking before the rider asks.
 //
-//  - Donations: every booking, whatever surface made it (Siri, widget,
-//    Control Center, chat, schedule import, Claude Desktop), is donated as
-//    "Book my usual shuttle for <weekday>", so Siri Suggestions, Spotlight
-//    and the Lock Screen learn when the rider books.
+//  - No donations: Siri on iOS 27 reused a donated day for new requests
+//    and booked the wrong day, so stored booking donations are cleared.
 //  - Reminders: a local notification the evening before a day the rider
 //    usually rides but hasn't booked, with a Book button that books the
 //    usual shuttle without opening the app. No APNs needed.
@@ -19,29 +17,19 @@ import Foundation
 import UserNotifications
 
 enum HabitDonations {
-    private static let donatedKey = "habit.donatedBookingIds"
-    private static let remembered = 60
-
-    /// Donates bookings not donated before. Run after the rides list
-    /// loads: it's the one place that sees bookings from every surface,
-    /// including the widget extension and the backend's own agents.
-    static func donateNewBookings(_ bookings: [BookingDetailDTO]) async {
-        var donated = UserDefaults.standard.array(forKey: donatedKey) as? [Int] ?? []
-        let fresh = bookings.filter { !donated.contains($0.id) }
-        guard !fresh.isEmpty else { return }
-
-        for booking in fresh {
-            guard let date = BookingAPIClient.parseISODay(booking.bookingDate) else { continue }
-            await donate(day: date)
-            donated.append(booking.id)
-        }
-        UserDefaults.standard.set(Array(donated.suffix(remembered)), forKey: donatedKey)
-    }
-
-    static func donate(day: Date) async {
-        var intent = BookMyUsualShuttleIntent()
-        intent.day = BookingDay(weekdayOf: day)
-        _ = try? await IntentDonationManager.shared.donate(intent: intent)
+    /// Removes every stored "Book my usual shuttle" donation. Run after
+    /// each rides load.
+    ///
+    /// The app used to donate each booking as "Book my usual shuttle for
+    /// <weekday>". Siri on iOS 27 then reused a donated day for new
+    /// requests: "…for Monday…" booked the donated Friday, and a request
+    /// with no day booked the donated Tuesday. Siri also donates the
+    /// intents it runs, so clearing on every load keeps any stored day
+    /// from leaking into the next request.
+    static func clearBookingDonations() async {
+        try? await IntentDonationManager.shared.deleteDonations(
+            matching: .intentType(BookMyUsualShuttleIntent.self)
+        )
     }
 }
 
@@ -122,7 +110,6 @@ nonisolated enum HabitReminders {
         guard let date = BookingAPIClient.parseISODay(dayText) else { return }
         do {
             let response = try await BookingAPIClient.withTimeouts().bookUsualShuttle(userId: 1, on: date)
-            await HabitDonations.donate(day: date)
             await TripNotifications.post(
                 id: "habit-booked-\(dayText)",
                 title: response.alreadyBooked ? "Already booked" : "Shuttle booked",

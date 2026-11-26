@@ -41,7 +41,7 @@ AIShuttle/Tracking/    TrackingAPI (TripStatusDTO), TrackingView (MapKit), Shutt
                        TripMonitor (trip mode), TripNotifications (+ NotificationResponder, AppDelegate)
 AIShuttle/Views/       AppShellView (tabs, refresh on foreground), HomeView, RidesView, RideDetailsView, UpcomingRideCard
 AIShuttle/ViewModels/  RidesViewModel (joins in-flight loads; survives cancelled .task callers; after each
-                       load syncs habits: donations + reminders; bookUsual / pinUsual)
+                       load syncs habits: clear donations + reminders; bookUsual / pinUsual)
 AIShuttle/Habits/      HabitSurfaces (HabitDonations, HabitReminders), HabitCard (Home → Your commute)
 Shared/                BookingAPIClient (+ withTimeouts/forAssistant, ISO8601 decoder, NoContent),
                        BookingDTOs, BookingConfirmation (spoken text, BookingIntentError, notifier),
@@ -59,7 +59,7 @@ ScheduleImportEvals/   macOS eval + sample generator (not an Xcode target): run.
 
 | Intent | Phrases (`AIShuttleShortcuts.swift`) | Behaviour |
 |---|---|---|
-| `BookMyUsualShuttleIntent` (optional `day: BookingDay`) | "Book my usual shuttle (for {day}) with Clear Path", "Book my shuttle for {day} with…", "Clear Path book my…" | no day (Siri sometimes drops it) → asks "Which day?", never assumes tomorrow; structured `POST /bookings`; dialog + interactive snippet (Earlier/Later buttons → `RescheduleBookingIntent`) |
+| `BookMyUsualShuttleIntent` (optional `day: BookingDay`) | "Book my usual shuttle (for {day}) with Clear Path", "Book my shuttle for {day} with…", "Clear Path book my…" | structured `POST /bookings`; dialog + interactive snippet (Earlier/Later buttons → `RescheduleBookingIntent`) |
 | `WhereIsMyShuttleIntent` | **"Track my shuttle with Clear Path"**, "Clear Path, where's my shuttle", … | speaks status, starts Live Activity |
 | `AskClearPathIntent` (`request: String`) | "Ask Clear Path", "Talk to Clear Path" | Siri prompts for the request → agent; shares chat conversation |
 
@@ -92,13 +92,13 @@ Lessons (iOS 27 Siri routes with its own model):
 
 ## Learned habits (F10)
 
-- **Donations**: after every rides load, `HabitDonations` donates
-  `BookMyUsualShuttleIntent(day: <weekday>)` via `IntentDonationManager`
-  for each booking not donated before (ids kept in UserDefaults). The rides
-  list is the one place that sees bookings from every surface (widget
-  extension, chat, schedule import, Claude Desktop), so iOS can surface
-  "Book My Usual Shuttle" in Siri Suggestions / Spotlight / Lock Screen.
-  Siri runs donate themselves.
+- **No donations** (removed 2026-11-26): the app used to donate each
+  booking as `BookMyUsualShuttleIntent(day: <weekday>)`. Siri on iOS 27
+  reused a donated day for new requests ("…for Monday…" booked the
+  donated Friday; "book my usual shuttle" booked the donated Tuesday). Now
+  every rides load calls `HabitDonations.clearBookingDonations()`, which
+  deletes all stored donations of that intent, including the ones Siri
+  makes itself when it runs the intent.
 - **Reminders**: `HabitReminders.schedule` replaces pending
   `habit-reminder-<date>` notifications with one at 19:00 the evening
   before each upcoming day that is `regular` and not booked: "Book

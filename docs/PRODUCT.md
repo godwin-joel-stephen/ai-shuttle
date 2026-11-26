@@ -42,7 +42,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 | F7 | Goal-based booking ("get me to the office by 8:30", "I have a meeting at 8", "by 8 every day this week", "will I make it by 8:20?") via a deterministic trip planner the agent calls (`plan_trip` / `book_trip_plan`) | Chat / Siri Ask Clear Path / MCP | ✅ (tested on iPhone 2026-11-07) |
 | F8 | "Why can't I book Saturday?" — real rule + RAG over policies, cited sources | Chat / Siri | ✅ |
 | F9 | Ask Clear Path chat + on-device voice + Siri "Ask Clear Path", shared memory, activity log | Chat / Siri | ✅ |
-| F10 | Learned habits: "usual" is learned per weekday from recent rides ("you took the 7:15 on 4 of your last 5 Mondays") and explained wherever it's used; pin to override. Every booking is donated (Siri Suggestions/Spotlight); an evening-before reminder with a **Book** button for usual days not yet booked; Home → Your commute card. Never books by itself | Lock Screen / Spotlight / notification / Siri | ✅ merged 2026-11-07 (chat path verified on iPhone; rest of device checklist in PROGRESS.md) |
+| F10 | Learned habits: "usual" is learned per weekday from recent rides ("you took the 7:15 on 4 of your last 5 Mondays") and explained wherever it's used; pin to override. An evening-before reminder with a **Book** button for usual days not yet booked; Home → Your commute card. Never books by itself | notification / Siri | ✅ merged 2026-11-07 (chat path verified on iPhone; rest of device checklist in PROGRESS.md) |
 | F11 | MCP server: book from Claude Desktop with the same rules | Laptop | ✅ (verified in Claude Desktop) |
 | E | Agent uses an external MCP server (weather) | Chat | ✅ |
 | F12 | Evaluation harness + Langfuse tracing/dashboard | Laptop | ✅ (no CI by user choice) |
@@ -51,7 +51,7 @@ Legend: ✅ done and verified on device · 🟡 partial · ⏳ not started
 
 ## Demo order (planned)
 
-1. Siri: "Book my usual shuttle for tomorrow with Clear Path", tap **Earlier** on the Siri card (F1)
+1. Siri: "Book my usual shuttle with Clear Path", tap **Earlier** on the Siri card (F1)
 2. Widget / Control Center one-tap booking (F2)
 3. Share sheet: schedule import from a photo of the week's schedule → review → Apply (F3); optionally the version with injected fine print
 4. Proactive delay alert → Rebook from the notification (F4)

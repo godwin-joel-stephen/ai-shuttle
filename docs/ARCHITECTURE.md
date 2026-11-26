@@ -55,7 +55,7 @@ API (FastAPI routers)  →  Agent/Graph (LangGraph)  →  Tools (LangChain)  →
 | Ask Clear Path chat / Siri "Ask Clear Path", simple requests (F14) | on-device Foundation Models classify → structured `POST /bookings {booking_date}` / `reschedule` / `cancel` / `GET /bookings`, then `POST /assistant/on-device-turns` | On-device only |
 | Ask Clear Path chat / Siri "Ask Clear Path", everything else | `POST /assistant/messages` (tool-calling agent), `GET /assistant/conversations/{id}` | Yes |
 | Share sheet / Home → Import work schedule (`ClearPathShare` extension, `ScheduleImport/`) | on-device OCR + Foundation Models → `POST /schedule/plan` → review → `POST /schedule/apply` (typed days only) | On-device only |
-| Home → Your commute, habit reminder **Book** (F10) | `GET /habits` after each rides load → donations + local reminders; `POST /bookings {booking_date}`; `POST /habits/pin` | No |
+| Home → Your commute, habit reminder **Book** (F10) | `GET /habits` after each rides load → clear stored Siri donations + local reminders; `POST /bookings {booking_date}`; `POST /habits/pin` | No |
 | Claude Desktop | stdio MCP → `app.mcp_server` → same tools | (client's LLM) |
 | Natural-language `POST /bookings {message}` | booking graph with Gemini intent extraction | Yes (legacy path) |
 
