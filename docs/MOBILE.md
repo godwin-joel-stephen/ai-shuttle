@@ -20,8 +20,9 @@ automatically). Info.plist = generated + `AIShuttle-Info.plist` /
 `ClearPathWidgets-Info.plist` / `ClearPathShare-Info.plist`:
 
 - `BookingAPIBaseURL = $(BOOKING_API_BASE_URL)` — project build setting,
-  currently `http://192.168.1.6:8000` (the Mac's Wi-Fi IP; update when it
-  changes). Fallback constant in `Shared/BookingAPIClient.swift`.
+  currently `http://BUSOFT-MB30-7.local:8000` (the Mac's Bonjour name, so
+  it works on any network the phone shares with the Mac, including an
+  IPv6-only hotspot; update only if the Mac is renamed). Fallback constant in `Shared/BookingAPIClient.swift`.
 - `INAlternativeAppNames` (max 3, install fails with 4): ClearPath,
   Clear Path Shuttle, Clear Footpath (from a dictation test).
 - `UIBackgroundModes = [location]` (trip mode).
@@ -40,7 +41,7 @@ AIShuttle/Tracking/    TrackingAPI (TripStatusDTO), TrackingView (MapKit), Shutt
                        TripMonitor (trip mode), TripNotifications (+ NotificationResponder, AppDelegate)
 AIShuttle/Views/       AppShellView (tabs, refresh on foreground), HomeView, RidesView, RideDetailsView, UpcomingRideCard
 AIShuttle/ViewModels/  RidesViewModel (joins in-flight loads; survives cancelled .task callers; after each
-                       load syncs habits: donations + reminders; bookUsual / pinUsual)
+                       load syncs habits: clear donations + reminders; bookUsual / pinUsual)
 AIShuttle/Habits/      HabitSurfaces (HabitDonations, HabitReminders), HabitCard (Home → Your commute)
 Shared/                BookingAPIClient (+ withTimeouts/forAssistant, ISO8601 decoder, NoContent),
                        BookingDTOs, BookingConfirmation (spoken text, BookingIntentError, notifier),
@@ -73,6 +74,16 @@ Lessons (iOS 27 Siri routes with its own model):
 - Chained requests (tomorrow then Friday) can lose the day; demo one Siri
   booking per step. Fallbacks: personal Shortcut name, Type to Siri.
 - Avoid "ride" (Siri's ride-booking domain).
+- iOS 27 Siri can answer without the app name for apps that adopt its new
+  App Intents features: intent schemas (`@AppIntent(schema:)`,
+  `@AppEntity(schema:)`), `IndexedEntity` (the system semantic index) and
+  view annotations (`.appEntityIdentifier`). redBus does this ("Where's my
+  bus pickup point?" answered on the first try, no setup). Without them,
+  "track my shuttle" with no app name gets "Wallet or Clear Path?". The
+  project builds with Xcode 26.4.1 / iOS 26.4 SDK, which only has the iOS
+  18 schema domains (mail, photos, books…), so this needs Xcode 27; planned
+  after the demo (deck slide 22). Check which schema domains exist before
+  designing; the WWDC26 material names no travel/transit domain.
 
 ## Widgets, controls, Live Activity
 
@@ -91,13 +102,13 @@ Lessons (iOS 27 Siri routes with its own model):
 
 ## Learned habits (F10)
 
-- **Donations**: after every rides load, `HabitDonations` donates
-  `BookMyUsualShuttleIntent(day: <weekday>)` via `IntentDonationManager`
-  for each booking not donated before (ids kept in UserDefaults). The rides
-  list is the one place that sees bookings from every surface (widget
-  extension, chat, schedule import, Claude Desktop), so iOS can surface
-  "Book My Usual Shuttle" in Siri Suggestions / Spotlight / Lock Screen.
-  Siri runs donate themselves.
+- **No donations** (removed 2026-11-26): the app used to donate each
+  booking as `BookMyUsualShuttleIntent(day: <weekday>)`. Siri on iOS 27
+  reused a donated day for new requests ("…for Monday…" booked the
+  donated Friday; "book my usual shuttle" booked the donated Tuesday). Now
+  every rides load calls `HabitDonations.clearBookingDonations()`, which
+  deletes all stored donations of that intent, including the ones Siri
+  makes itself when it runs the intent.
 - **Reminders**: `HabitReminders.schedule` replaces pending
   `habit-reminder-<date>` notifications with one at 19:00 the evening
   before each upcoming day that is `regular` and not booked: "Book

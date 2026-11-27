@@ -5,7 +5,7 @@ Internal technical knowledge-sharing session at BUsoft Tech, Thursday
 3 December 2026, for developers, QA engineers, BAs and managers.
 
 This script is the source of truth for the talk, and the deck's speaker
-notes are the same text. There are 24 slides. Each
+notes are the same text. There are 28 slides. Each
 slide has:
 
 - **Slide**: the deck slide id, the badge (definitions below) and the
@@ -20,7 +20,7 @@ Story pattern for every capability: **user experience → what happened →
 how it works → engineering decision → next experience.**
 
 How to operate the demo (prep, terminals, state checks, recovery) is in
-[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md); its run of show has 22 steps (the AI and iOS terms slides are part of step 2).
+[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md); its run of show has 24 steps (the AI and iOS terms slides are part of step 2).
 
 ## The three badges
 
@@ -98,7 +98,7 @@ the calculated answer is "No, leave in about 3–5 minutes". Both "No" and
 
 ## Time budget
 
-About 53 minutes plus questions.
+About 57 minutes plus questions.
 
 | Slides | Part | Minutes |
 |---|---|---|
@@ -109,8 +109,8 @@ About 53 minutes plus questions.
 | 12–15 | When AI needs to think | 10.5 |
 | 16 | Claude Desktop through MCP | 2.5 |
 | 17–18 | Engineering for failure | 5 |
-| 19–21 | Testing and limitations | 4.5 |
-| 22–24 | Architecture, full scale, close | 5.5 |
+| 19–23 | Testing, limitations and what’s coming | 7.5 |
+| 24–28 | Architecture, full scale, close, thank you, questions | 5.5 |
 
 ---
 
@@ -282,9 +282,7 @@ appears in Your usual week) → card menu → **Learn from my rides again**.
 SAY: “Same intent as before, this time with a day. The backend asked
 HabitService for Monday’s usual, the 7:15, and the reason came back with
 the booking, so Siri says it. The same reason appears wherever ‘usual’ is
-used: Siri, this card, the reminder, the chat and Claude Desktop. The app
-also donates each booking to iOS, which feeds Siri Suggestions and
-Spotlight.
+used: Siri, this card, the reminder, the chat and Claude Desktop.
 
 But a learned habit can be wrong. If I start a new routine I don’t want to
 wait weeks: ‘Always use the 8:00’ pins it, and a pin beats anything
@@ -740,9 +738,116 @@ of these are bugs in my code, but a user would blame the app. The AI calls
 are a small part of this app; making them trustworthy is most of the
 work.”
 
+NEXT: “But this is already changing. Let me show you another app on the
+same phone.”
+
+## 22. Siri is catching up: iOS 27
+
+Slide: `siri-next` · Badge: No AI (Clear Path); the redBus app is
+someone else’s · Time: 1.5 min
+
+DO (phone mirrored): open redBus on the upcoming trip, then swipe home so
+it’s in the background. “Hey Siri, where’s my bus pickup point?”
+Expected: Siri answers from redBus with the boarding point and time; no
+app name, no Shortcut. Then, for contrast: “Hey Siri, track my shuttle.”
+Expected: Siri asks Wallet or Clear Path, or answers itself; either makes
+the point.
+
+SAY: “That was redBus. I never set anything up for it, and I’d never used
+Siri with it before; the first time I asked, it just answered. Compare
+Clear Path: I have to say ‘with Clear Path’, and without it Siri asks
+whether I mean Wallet.
+
+So what’s different? iOS 27 rebuilt Siri, and apps can now describe their
+actions and their data in shapes Siri already understands. Three pieces.
+Intent schemas: an App Intent marked with a schema, which Siri can run
+from natural language. No phrases to write, and it keeps working as Siri
+learns new languages. Apple’s own example is ‘When and where is my next
+meeting?’, answered from a calendar app without naming it. Indexed
+entities: the app puts its data, say my next trip with its pickup point
+and time, into the system’s semantic index, so Siri can find the answer
+and the app that holds it. Apple calls this the main way Siri retrieves
+app content. And screen awareness: the app tells Siri which booking is on
+screen, so ‘share this ticket’ works.
+
+Clear Path is built with the iOS 26.4 SDK, so it has none of this yet;
+it’s the first item on my list. These features are reaching apps slowly,
+one app at a time, but the direction is clear: the app name is becoming
+optional. The work moves from writing phrases to describing your data
+well.”
+
+IF IT FAILS (redBus doesn’t answer): “It answered when I tried it at
+home. Siri routing is live and not guaranteed, which is the previous
+slide’s point; the slide shows how it works.” Count it.
+
+IF ASKED (why not just add it now?): “It needs Xcode 27 and the iOS 27
+SDK; I didn’t want to change the toolchain in the week of a live demo.”
+
+Technical details (on the slide): `@AppIntent(schema:)` /
+`@AppEntity(schema:)` for intent schemas; `IndexedEntity`, indexed with
+`CSSearchableIndex.indexAppEntities`, for the semantic index;
+`.appEntityIdentifier` view annotations and `.userActivity` for screen
+awareness. Sources: Apple’s WWDC26 iOS guide and sessions 240, 343, 344
+and 345; redBus’s App Store listing (Siri answers boarding details, “Smart
+Screen Awareness”).
+
+NEXT: “And Siri is only one part of iOS 27.”
+
+## 23. More from iOS 27
+
+Slide: `ios27-more` · Time: 1.5 min
+
+SAY: “Siri is one part of iOS 27. Three more changes matter for an app
+like this.
+
+First, Private Cloud Compute is now open to developers. It’s Apple’s
+large server model, with a 32,000-token context and a reasoning level you
+choose: light, moderate or deep. No API keys, no accounts to set up; usage
+counts against each user’s iCloud account, with daily limits. Apple says
+there’s no cloud cost for apps under two million first-time downloads,
+though its pages differ on the exact terms, and it only runs on Apple
+Intelligence devices. For Clear Path that could replace the free-tier
+Gemini calls, with their daily limits and slow replies.
+
+Second, Foundation Models, the on-device framework, got a big upgrade. A
+rebuilt on-device model that Apple says is better at logic and tool
+calling, with twice the context. It accepts images, and comes with
+built-in OCR and barcode tools; my schedule import chains Vision OCR into
+the model by hand today. And one LanguageModel protocol covers the
+on-device model, Private Cloud Compute, and Swift packages from Google
+and Anthropic, so switching providers is a line of code. There’s also a
+new Evaluations framework in Xcode, which would finally let me evaluate
+the on-device model properly.
+
+Third, App Intents go beyond Siri phrases. RelevantEntities tells the
+system what’s relevant now, for proactive suggestions; I removed Siri
+donations because Siri reused an old day, so this is the replacement I’d
+test. LongRunningIntent runs past the 30-second limit and shows progress
+as a Live Activity. AppIntentsTesting tests intents in isolation, no Siri
+involved, which would catch the routing problems I’ve only found by hand.
+And Siri can act on a notification, so a delay alert on AirPods could be
+answered with ‘rebook it’.
+
+All of this needs Xcode 27, so it’s the plan after this demo, not part of
+it.”
+
+IF ASKED (is PCC really free?): “Apple says no cloud cost under two
+million first-time downloads; one page adds the Small Business Program,
+which needs a paid developer account. I’d confirm the terms before relying
+on it.”
+
+Technical details (on the slide): `PrivateCloudComputeLanguageModel`
+(`ContextOptions(reasoningLevel:)`: `.light`, `.moderate`, `.deep`);
+Foundation Models' `LanguageModel` protocol, image attachments,
+`OCRTool`, `BarcodeReaderTool`, the Evaluations framework;
+`RelevantEntities.shared.updateEntities(_:for:)`, `LongRunningIntent`,
+`AppIntentsTesting`, `UNMutableNotificationContent.appEntityIdentifiers`.
+Sources: WWDC26 sessions 241, 242, 319, 339 and 345. Not covered by
+Apple’s pages: AI notification summaries, Visual Intelligence.
+
 NEXT: “Let me put everything we’ve seen into one picture.”
 
-## 22. Architecture: from iPhone to Gemini
+## 24. Architecture: from iPhone to Gemini
 
 Slide: `arch` · Time: 2 min
 
@@ -773,7 +878,7 @@ cheapest model that measurably works; and be honest when something fails.”
 
 NEXT: “So what would it take to make this a real product?”
 
-## 23. From prototype to full scale
+## 25. From prototype to full scale
 
 Slide: `prod` · Time: 2 min
 
@@ -793,19 +898,23 @@ change. And cost: at about $0.002 per AI task, a thousand riders making
 four AI requests a day is roughly $8 a day; Siri, widgets, notifications
 and on-device chat cost nothing per request.
 
-Where I’d focus next: teach the on-device path more commands; push and
+Where I’d focus next: first, the iOS 27 Siri features we just saw,
+with the next trip indexed so Siri can answer without the app name; then
+teach the on-device path more commands; push and
 Smart Stack relevance; evaluations running on every change; better
 retrieval; and proper evaluations for the on-device model.”
 
 NEXT: “And what this means for the work we do here.”
 
-## 24. What this means for our projects
+## 26. What this means for our projects
 
 Slide: `busoft` · Time: 1.5 min
 
 SAY: “This isn’t really about shuttles. The same four steps apply to the
 client apps we build at BUsoft. Expose the app’s real actions as
-structured things: App Intents, widgets, notifications. Add AI only where
+structured things: App Intents, widgets, notifications, and describe
+your data so Siri can find it; that’s what makes the app name optional.
+Add AI only where
 it earns its place: on-device when it can, cloud when it must. Make
 evaluations part of QA from day one, hard checks first, then a judge. And
 design how each AI feature fails before it ships. Banking, retail,
@@ -813,8 +922,33 @@ healthcare, logistics: the domain changes, the pattern doesn’t.
 
 (Slowly, then pause.) The AI isn’t a chat box inside the app. It works
 through the parts of iOS people already use. That’s the agentic era, and
-it’s still being engineered. Thank you. Happy to take questions, and I can
-show any part again live.”
+it’s still being engineered.”
+
+NEXT: (move to the thank-you slide)
+
+## 27. Thank you
+
+Slide: `thanks` · Time: questions
+
+SAY: “Thank you. Happy to take questions, and I can show any part again
+live.”
+
+NEXT: (move to the last slide, the 429 joke; take questions there)
+
+## 28. Any questions? (429)
+
+Slide: `questions` · Time: questions
+
+On the slide, styled as an API rate-limit error: “Usage limit reached ·
+429 · ANY QUESTIONS? · Token limit exceeded. You’ve used all your free
+answers. · Upgrade to GODWIN PRO MAX™ · Subscribe now to unlock Q&A. ·
+Unlimited questions. Hallucinations may apply.”
+
+DO: show the slide and pause; let the room read it.
+
+SAY (deadpan, then smile): “I’m afraid you’ve hit the free tier. … Fine,
+this one’s on the house. Any questions?” Stay on this slide for
+questions.
 
 Prepared answers:
 - Why Gemini? Free tier and measured latency; in production the
@@ -849,14 +983,14 @@ where it appears:
 | F1 Siri booking, optional day, Earlier/Later card, “Which day?” | 1, 5, 7, 21 |
 | F2 Home and Lock Screen widgets, Control Center, Action button, duplicate protection | 8 |
 | F3 Schedule import (share sheet, in-app photo/file/PDF, Vision OCR, Foundation Models, validation, rules fallback, review and Apply) | 9 |
-| F3/F13 Prompt-injection defences (no live demo) | 9, 24 (Q&A) |
+| F3/F13 Prompt-injection defences (no live demo) | 9, 28 (Q&A) |
 | F4 Delay alert with Rebook / Keep | 11 |
 | F5 Time to leave, “Should I leave now?”, weather | 10, 12 |
 | F6 Map, trip mode, Live Activity (Lock Screen, Dynamic Island), Siri tracking | 10 |
 | F7 Goal planning (book, question-only, honest no) | 15 |
 | F8 Rules + RAG with citations | 14 |
 | F9 Chat, voice input, Siri “Ask Clear Path”, shared memory, action rows and sources | 12, 13, 14 |
-| F10 Learned habits, reasons, pin, Your commute card, reminder with Book, donations to Siri Suggestions / Spotlight | 6, 7, 8 |
+| F10 Learned habits, reasons, pin, Your commute card, reminder with Book | 6, 7, 8 |
 | F11 Clear Path MCP server (13 tools, annotations) | 16 |
 | E Weather MCP server (agent as MCP client) | 12, 16 |
 | F12 Evaluation harness, AI judge, baseline, Langfuse tracing | 18, 19, 20 |
@@ -866,5 +1000,7 @@ where it appears:
 | Partial-failure honesty | 18 |
 | Backend tests (isolated database), Swift and UI tests, schedule extraction eval | 19 |
 | Alternative app names | 21 |
-| Infrastructure: FastAPI, Docker, Postgres + pgvector, Langfuse containers | 22 |
-| Production gaps, cost, next focus areas | 23 |
+| iOS 27 Siri without the app name (redBus live; intent schemas, indexed entities, screen awareness) | 22, 25, 26 |
+| iOS 27 beyond Siri: Private Cloud Compute, Foundation Models upgrade, App Intents (RelevantEntities, LongRunningIntent, AppIntentsTesting) | 23 |
+| Infrastructure: FastAPI, Docker, Postgres + pgvector, Langfuse containers | 24 |
+| Production gaps, cost, next focus areas | 25 |

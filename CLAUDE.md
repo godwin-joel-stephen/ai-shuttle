@@ -49,15 +49,17 @@ docker-compose.yml         app Postgres (pgvector/pgvector:pg17-trixie)
 # Postgres (and Langfuse, if started once) run in Docker Desktop
 docker compose up -d
 cd backend && source .venv/bin/activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000      # backend for the iPhone
+python -m scripts.serve                             # backend for the iPhone (IPv4 + IPv6)
 python -m pytest -q                                 # 150 tests, ~6s, no network
 python -m scripts.demo_trip                         # live simulated trip for demos
 ```
 
 iOS: open `AIShuttle/AIShuttle.xcodeproj`, scheme **AIShuttle**, run on
 "Godwin's iPhone". The backend address is the `BOOKING_API_BASE_URL` build
-setting (currently `http://192.168.1.6:8000`; check with
-`ipconfig getifaddr en0` and update if the Mac's IP changes).
+setting, `http://BUSOFT-MB30-7.local:8000`: the Mac's Bonjour name
+(`scutil --get LocalHostName`), so it survives IP changes and works on an
+IPv6-only mobile hotspot. `scripts.serve` listens on IPv4 and IPv6;
+`uvicorn --host 0.0.0.0` would be IPv4 only and fail on the hotspot.
 
 ## Working agreements (from the user)
 

@@ -10,11 +10,11 @@ Three documents work together:
 
 | Document | Use it for |
 |---|---|
-| This runbook | Operating the demo: setup, the 22 steps, commands, state checks, recovery |
+| This runbook | Operating the demo: setup, the 24 steps, commands, state checks, recovery |
 | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | The full words for every slide (the deck's speaker notes are the same text) |
-| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 24 slides, Present mode; private until shared |
+| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 28 slides, Present mode; private until shared |
 
-Step numbers in the run of show are the 22 demo steps; each names its
+Step numbers in the run of show are the 24 demo steps; each names its
 slide. About 50 minutes plus questions.
 
 ---
@@ -25,7 +25,7 @@ slide. About 50 minutes plus questions.
 
 | Terminal | Purpose |
 |---|---|
-| T1 | `uvicorn app.main:app --host 0.0.0.0 --port 8000` (leave running) |
+| T1 | `python -m scripts.serve` (leave running; IPv4 + IPv6) |
 | T2 | Trip commands: `python -m scripts.demo_trip`, then `python -m scripts.demo_trip --delay 20` |
 | T3 | Outage: `python -m scripts.llm_outage on` / `off`, and `curl localhost:8000/health` |
 
@@ -52,6 +52,7 @@ the code, confirm in rehearsal):
 | 13 | 15 | Chat: "I have a meeting at 8 tomorrow, get me there in time", then "Get me to the office by 7:30 on Tuesday" |
 | 14 | 16 | Claude Desktop: "My offsite next Thursday was cancelled. Book my usual shuttle for Thursday 10 December", "What's my usual Monday?", "Book Saturday too" |
 | 15 | 17 | Chat: "Why can't I book Saturday?", then "Cancel Thursday"; Siri: "Hey Siri, book my usual shuttle for Thursday with Clear Path" |
+| 20 | 22 | redBus in the background: "Hey Siri, where's my bus pickup point?"; then "Hey Siri, track my shuttle" (no app name, on purpose) |
 
 **If Siri doesn't run the intent:** retry once, then Type to Siri (same
 phrase). Say: "That's iOS 27 Siri routing with its own model; one more for
@@ -62,9 +63,9 @@ the count."
 ## 1. The day before (Wednesday 2 December)
 
 1. **Mac and phone on the venue Wi-Fi.** If you can, connect both to the
-   venue network today and note the Mac's IP: `ipconfig getifaddr en0`.
-   If it differs from `BOOKING_API_BASE_URL` in Xcode (Build Settings,
-   project AIShuttle), update it and reinstall the app.
+   venue network (or the mobile hotspot) today and open
+   `http://BUSOFT-MB30-7.local:8000/health` in Safari on the phone with
+   the backend running. The app uses that name, so no IP to update.
 2. **Install a Debug build** from Xcode (a build signed with the free
    account stops opening after 7 days, so install it today, not earlier):
    scheme **AIShuttle**, run on "Godwin's iPhone" (⌘R). "Preview reminder"
@@ -83,6 +84,10 @@ the count."
      assign the same control (Settings → Action Button → Controls).
    - Focus / Do Not Disturb off; Low Power Mode off (it limits background
      location for trip mode).
+   - redBus (step 20): signed in, with an upcoming trip whose boarding
+     point shows in the app. Try "Hey Siri, where's my bus pickup point?"
+     once today with redBus in the background; it should answer without
+     the app name. If it doesn't, the step is talk-only.
 4. **Claude Desktop:** Settings → Developer shows the `clear-path` MCP
    server running (config in [MCP.md](MCP.md)). Don't book anything in it
    today.
@@ -102,8 +107,8 @@ Run these in order. Each has a check; don't move on until it passes.
 | # | Do | Check |
 |---|---|---|
 | 1 | Start **Docker Desktop**. If the containers didn't start: `docker compose up -d` in the repo root, and `docker compose up -d` in `observability/` | `docker ps` lists `ai-shuttle-postgres` and the Langfuse containers |
-| 2 | `ipconfig getifaddr en0` | Same address as `BOOKING_API_BASE_URL`; if not, update in Xcode and reinstall (Debug) |
-| 3 | **T1:** `cd ~/Projects/ai-shuttle/backend && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000` | Log shows startup without errors (the weather MCP server starts with it) |
+| 2 | `scutil --get LocalHostName` | `BUSOFT-MB30-7` (the app's `BOOKING_API_BASE_URL` is `http://BUSOFT-MB30-7.local:8000`); if the Mac was renamed, update in Xcode and reinstall (Debug) |
+| 3 | **T1:** `cd ~/Projects/ai-shuttle/backend && source .venv/bin/activate && python -m scripts.serve` | Log shows startup without errors (the weather MCP server starts with it) |
 | 4 | **T3:** `python -m scripts.llm_outage off` | `curl localhost:8000/health` → `{"status":"ok","llm":"ok"}` |
 | 5 | **T2:** `python -m scripts.demo_trip --stop` | Clears any simulation left from rehearsal |
 | 6 | **T2:** `python -m scripts.reset_demo_db` | "Deleted N booking(s)." and "Added 24 past ride(s) for habit learning." Must run **this week** (ride history is placed relative to the current week; a run at the 26 November rehearsal is not enough) |
@@ -123,7 +128,7 @@ depends on.
 
 ---
 
-## 3. Run of show: the 22 steps
+## 3. Run of show: the 24 steps
 
 For each step: **Before** = what must be true or run first; **Show** = what
 to do; **Say** = key points (full words in the script); **After** = state
@@ -310,20 +315,43 @@ to leave behind.
   a paid account; free-tier latency; making AI trustworthy is most of the
   work.
 
-### Step 20 · Architecture recap (slide 22)
+### Step 20 · Siri is catching up: redBus on iOS 27 (slide 22) · No AI (Clear Path)
+- Do: open redBus on the trip, swipe home. "Hey Siri, where's my bus
+  pickup point?" → Siri answers from redBus, no app name. Then "Hey Siri,
+  track my shuttle" (no app name) → Siri asks Wallet or Clear Path, or
+  answers itself. Don't pick an app; dismiss Siri.
+- Say: iOS 27 rebuilt Siri; intent schemas (`@AppIntent(schema:)`),
+  indexed entities (`IndexedEntity`), screen awareness
+  (`.appEntityIdentifier`); Clear Path is on the iOS 26.4 SDK, so none of
+  this yet; the app name is becoming optional.
+- If redBus doesn't answer: count it, explain from the slide.
+
+### Step 21 · More from iOS 27 (slide 23)
+- Show: slide only.
+- Say: Private Cloud Compute for developers (large server model, no API
+  keys, no cost under 2M downloads, eligibility terms differ); Foundation
+  Models upgrade (better tool calling, 8K context, image input, OCR and
+  barcode tools, one LanguageModel protocol, Evaluations framework); App
+  Intents beyond Siri (RelevantEntities, LongRunningIntent,
+  AppIntentsTesting, Siri acting on notifications); all need Xcode 27,
+  after the demo.
+
+### Step 22 · Architecture recap (slide 24)
 - Show: slide only.
 - Say: iPhone surfaces and on-device models → Wi-Fi → FastAPI with two
   paths (REST / LangGraph → Gemini) → services → Docker (Postgres 17 +
   pgvector; Langfuse's six containers); MCP in and out; evals; ₹0; the five
   design rules.
 
-### Step 21 · Prototype → full scale (slide 23)
+### Step 23 · Prototype → full scale (slide 25)
 - Show: slide only.
 - Say: four areas (users and security, platform, mobile, AI quality and
-  cost), the ~$8/day estimate, and the areas to focus on next.
+  cost), the ~$8/day estimate, and the areas to focus on next (iOS 27
+  Siri first).
 
-### Step 22 · Future scope, our projects, close and questions (slide 24)
-- Show: slide only; stay on it for questions.
+### Step 24 · Our projects, close and questions (slides 26–28)
+- Show: slide 26, the thank-you slide 27, then the 429 joke slide 28
+  (pause, let the room read it); stay on 28 for questions.
 - Say: the four-step pattern for any client app; the closing line;
   questions (prepared answers in the script, including prompt injection).
 
@@ -334,7 +362,7 @@ to leave behind.
 | Symptom | Do | Say |
 |---|---|---|
 | Siri answers itself / "Clear Path doesn't support that" | Retry once, then Type to Siri | iOS 27 Siri routes with its own model; count it |
-| "I couldn't reach Clear Path" | Check T1 is running; `ipconfig getifaddr en0` matches the app; both on the same Wi-Fi | Every surface reports it plainly |
+| "I couldn't reach Clear Path" | Check T1 is running (`scripts.serve`, not `uvicorn --host 0.0.0.0`); phone Safari opens `http://BUSOFT-MB30-7.local:8000/health`; both on the same network | Every surface reports it plainly |
 | Chat slow / "Working on it…" for long | Wait up to ~25 s (three 8 s attempts) | Free tier; deadlines and fallbacks |
 | Chat says unavailable when it shouldn't | **T3:** `python -m scripts.llm_outage` (shows the state); `off` if on | |
 | No "On device" label | Continue; the cloud answered | The model must agree with the rules gate |

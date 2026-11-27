@@ -11,13 +11,18 @@ This file is the overview. The words for every slide are in
 [DEMO_SCRIPT.md](DEMO_SCRIPT.md) (the source of truth, and the deck's
 speaker notes); how to run it, step by step, is in
 [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Deck:
-https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (24 slides; private
+https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ (28 slides; private
 until shared). All facts were checked against the
 code on 2026-11-07/08. On 2026-11-24 the deck was cut from 53 slides to 22
 around 22 demo steps: explanation slides were merged into their demo
 slides, the prompt-injection demo and the lessons-learned slide were
 dropped, and production and roadmap became one slide. The AI terms
-glossary then moved up to slide 3, followed by an iOS terms slide.
+glossary then moved up to slide 3, followed by an iOS terms slide. On
+2026-11-27 slide 22 was added: redBus answering Siri without the app
+name on iOS 27, and the APIs behind it; then slide 23, more from iOS 27
+(Private Cloud Compute, Foundation Models, App Intents beyond Siri), and
+a closing thank-you slide in the cover's style, then a joke 429
+“usage limit reached” slide for questions.
 
 ## What the session must convey
 
@@ -82,11 +87,15 @@ glossary then moved up to slide 3, followed by an iOS terms slide.
 | 19 | How I know it works | (three layers of checking, one evaluation) (18) |
 | 20 | What evaluations caught | (baseline, four bugs) (18) |
 | 21 | Why apps like this are still rare | (the failure count; Siri, model and platform limits) (19) |
-| 22 | Architecture: from iPhone to Gemini | (everything from the iPhone through Docker to Gemini; five rules) (20) |
-| 23 | From prototype to full scale | (changes for full scale, cost, focus next) (21) |
-| 24 | What this means for our projects | (the pattern, the closing line, questions) (22) |
+| 22 | Siri is catching up: iOS 27 | redBus answers “Where’s my bus pickup point?” with no app name; Clear Path still needs it; intent schemas, indexed entities, screen awareness (20) |
+| 23 | More from iOS 27 | (Private Cloud Compute, Foundation Models upgrade, App Intents beyond Siri; all after the demo) (21) |
+| 24 | Architecture: from iPhone to Gemini | (everything from the iPhone through Docker to Gemini; five rules) (22) |
+| 25 | From prototype to full scale | (changes for full scale, cost, focus next) (23) |
+| 26 | What this means for our projects | (the pattern, the closing line) (24) |
+| 27 | Thank you | (the thank-you line) (24) |
+| 28 | Any questions? (429) | (rate-limit joke; questions; prepared answers in the notes) (24) |
 
-About 53 minutes plus questions.
+About 57 minutes plus questions.
 
 ## Demo day assumptions
 

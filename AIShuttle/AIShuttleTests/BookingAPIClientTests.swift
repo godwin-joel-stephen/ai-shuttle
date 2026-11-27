@@ -244,6 +244,33 @@ extension MockedNetworkTests {
             let _ = try await intent.perform()
         }
 
+        @Test func noDayAfternoonOnThursdayMeansFriday() {
+            // Demo: "Book my usual shuttle" at 3 PM on Thursday 3 December
+            // must book Friday 4 December.
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = .current
+            let threePM = calendar.date(from: DateComponents(year: 2026, month: 12, day: 3, hour: 15))!
+            let tomorrow = BookingDay.tomorrow.date(from: threePM, calendar: calendar)
+            #expect(BookingAPIClient.isoDay(tomorrow) == "2026-12-04")
+        }
+
+        @Test func intentWithoutDayBooksTomorrow() async throws {
+            let tomorrow = BookingDay.tomorrow.date()
+            guard !Calendar.current.isDateInWeekend(tomorrow) else { return }  // asks instead
+            let client = makeTestClient()
+            let expectedDay = BookingAPIClient.isoDay(tomorrow)
+
+            MockURLProtocol.requestHandler = { request in
+                let body = try JSONSerialization.jsonObject(with: request.bodyData) as? [String: Any]
+                #expect(body?["booking_date"] as? String == expectedDay)
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+                return (response, Self.bookingResponseJSON.data(using: .utf8)!)
+            }
+
+            let intent = BookMyUsualShuttleIntent(day: nil, apiClient: client)
+            _ = try await intent.perform()
+        }
+
         @Test func serverDetailBecomesSpokenError() async {
             let client = makeTestClient()
 
