@@ -10,11 +10,11 @@ Three documents work together:
 
 | Document | Use it for |
 |---|---|
-| This runbook | Operating the demo: setup, the 23 steps, commands, state checks, recovery |
+| This runbook | Operating the demo: setup, the 24 steps, commands, state checks, recovery |
 | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | The full words for every slide (the deck's speaker notes are the same text) |
-| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 25 slides, Present mode; private until shared |
+| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 26 slides, Present mode; private until shared |
 
-Step numbers in the run of show are the 23 demo steps; each names its
+Step numbers in the run of show are the 24 demo steps; each names its
 slide. About 50 minutes plus questions.
 
 ---
@@ -128,7 +128,7 @@ depends on.
 
 ---
 
-## 3. Run of show: the 23 steps
+## 3. Run of show: the 24 steps
 
 For each step: **Before** = what must be true or run first; **Show** = what
 to do; **Say** = key points (full words in the script); **After** = state
@@ -326,20 +326,30 @@ to leave behind.
   this yet; the app name is becoming optional.
 - If redBus doesn't answer: count it, explain from the slide.
 
-### Step 21 · Architecture recap (slide 23)
+### Step 21 · More from iOS 27 (slide 23)
+- Show: slide only.
+- Say: Private Cloud Compute for developers (large server model, no API
+  keys, no cost under 2M downloads, eligibility terms differ); Foundation
+  Models upgrade (better tool calling, 8K context, image input, OCR and
+  barcode tools, one LanguageModel protocol, Evaluations framework); App
+  Intents beyond Siri (RelevantEntities, LongRunningIntent,
+  AppIntentsTesting, Siri acting on notifications); all need Xcode 27,
+  after the demo.
+
+### Step 22 · Architecture recap (slide 24)
 - Show: slide only.
 - Say: iPhone surfaces and on-device models → Wi-Fi → FastAPI with two
   paths (REST / LangGraph → Gemini) → services → Docker (Postgres 17 +
   pgvector; Langfuse's six containers); MCP in and out; evals; ₹0; the five
   design rules.
 
-### Step 22 · Prototype → full scale (slide 24)
+### Step 23 · Prototype → full scale (slide 25)
 - Show: slide only.
 - Say: four areas (users and security, platform, mobile, AI quality and
   cost), the ~$8/day estimate, and the areas to focus on next (iOS 27
   Siri first).
 
-### Step 23 · Future scope, our projects, close and questions (slide 25)
+### Step 24 · Future scope, our projects, close and questions (slide 26)
 - Show: slide only; stay on it for questions.
 - Say: the four-step pattern for any client app; the closing line;
   questions (prepared answers in the script, including prompt injection).
