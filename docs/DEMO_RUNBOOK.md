@@ -10,11 +10,11 @@ Three documents work together:
 
 | Document | Use it for |
 |---|---|
-| This runbook | Operating the demo: setup, the 22 steps, commands, state checks, recovery |
+| This runbook | Operating the demo: setup, the 23 steps, commands, state checks, recovery |
 | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | The full words for every slide (the deck's speaker notes are the same text) |
-| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 24 slides, Present mode; private until shared |
+| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 25 slides, Present mode; private until shared |
 
-Step numbers in the run of show are the 22 demo steps; each names its
+Step numbers in the run of show are the 23 demo steps; each names its
 slide. About 50 minutes plus questions.
 
 ---
@@ -52,6 +52,7 @@ the code, confirm in rehearsal):
 | 13 | 15 | Chat: "I have a meeting at 8 tomorrow, get me there in time", then "Get me to the office by 7:30 on Tuesday" |
 | 14 | 16 | Claude Desktop: "My offsite next Thursday was cancelled. Book my usual shuttle for Thursday 10 December", "What's my usual Monday?", "Book Saturday too" |
 | 15 | 17 | Chat: "Why can't I book Saturday?", then "Cancel Thursday"; Siri: "Hey Siri, book my usual shuttle for Thursday with Clear Path" |
+| 20 | 22 | redBus in the background: "Hey Siri, where's my bus pickup point?"; then "Hey Siri, track my shuttle" (no app name, on purpose) |
 
 **If Siri doesn't run the intent:** retry once, then Type to Siri (same
 phrase). Say: "That's iOS 27 Siri routing with its own model; one more for
@@ -83,6 +84,10 @@ the count."
      assign the same control (Settings → Action Button → Controls).
    - Focus / Do Not Disturb off; Low Power Mode off (it limits background
      location for trip mode).
+   - redBus (step 20): signed in, with an upcoming trip whose boarding
+     point shows in the app. Try "Hey Siri, where's my bus pickup point?"
+     once today with redBus in the background; it should answer without
+     the app name. If it doesn't, the step is talk-only.
 4. **Claude Desktop:** Settings → Developer shows the `clear-path` MCP
    server running (config in [MCP.md](MCP.md)). Don't book anything in it
    today.
@@ -123,7 +128,7 @@ depends on.
 
 ---
 
-## 3. Run of show: the 22 steps
+## 3. Run of show: the 23 steps
 
 For each step: **Before** = what must be true or run first; **Show** = what
 to do; **Say** = key points (full words in the script); **After** = state
@@ -310,19 +315,31 @@ to leave behind.
   a paid account; free-tier latency; making AI trustworthy is most of the
   work.
 
-### Step 20 · Architecture recap (slide 22)
+### Step 20 · Siri is catching up: redBus on iOS 27 (slide 22) · No AI (Clear Path)
+- Do: open redBus on the trip, swipe home. "Hey Siri, where's my bus
+  pickup point?" → Siri answers from redBus, no app name. Then "Hey Siri,
+  track my shuttle" (no app name) → Siri asks Wallet or Clear Path, or
+  answers itself. Don't pick an app; dismiss Siri.
+- Say: iOS 27 rebuilt Siri; intent schemas (`@AppIntent(schema:)`),
+  indexed entities (`IndexedEntity`), screen awareness
+  (`.appEntityIdentifier`); Clear Path is on the iOS 26.4 SDK, so none of
+  this yet; the app name is becoming optional.
+- If redBus doesn't answer: count it, explain from the slide.
+
+### Step 21 · Architecture recap (slide 23)
 - Show: slide only.
 - Say: iPhone surfaces and on-device models → Wi-Fi → FastAPI with two
   paths (REST / LangGraph → Gemini) → services → Docker (Postgres 17 +
   pgvector; Langfuse's six containers); MCP in and out; evals; ₹0; the five
   design rules.
 
-### Step 21 · Prototype → full scale (slide 23)
+### Step 22 · Prototype → full scale (slide 24)
 - Show: slide only.
 - Say: four areas (users and security, platform, mobile, AI quality and
-  cost), the ~$8/day estimate, and the areas to focus on next.
+  cost), the ~$8/day estimate, and the areas to focus on next (iOS 27
+  Siri first).
 
-### Step 22 · Future scope, our projects, close and questions (slide 24)
+### Step 23 · Future scope, our projects, close and questions (slide 25)
 - Show: slide only; stay on it for questions.
 - Say: the four-step pattern for any client app; the closing line;
   questions (prepared answers in the script, including prompt injection).

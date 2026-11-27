@@ -74,6 +74,16 @@ Lessons (iOS 27 Siri routes with its own model):
 - Chained requests (tomorrow then Friday) can lose the day; demo one Siri
   booking per step. Fallbacks: personal Shortcut name, Type to Siri.
 - Avoid "ride" (Siri's ride-booking domain).
+- iOS 27 Siri can answer without the app name for apps that adopt its new
+  App Intents features: intent schemas (`@AppIntent(schema:)`,
+  `@AppEntity(schema:)`), `IndexedEntity` (the system semantic index) and
+  view annotations (`.appEntityIdentifier`). redBus does this ("Where's my
+  bus pickup point?" answered on the first try, no setup). Without them,
+  "track my shuttle" with no app name gets "Wallet or Clear Path?". The
+  project builds with Xcode 26.4.1 / iOS 26.4 SDK, which only has the iOS
+  18 schema domains (mail, photos, books…), so this needs Xcode 27; planned
+  after the demo (deck slide 22). Check which schema domains exist before
+  designing; the WWDC26 material names no travel/transit domain.
 
 ## Widgets, controls, Live Activity
 
