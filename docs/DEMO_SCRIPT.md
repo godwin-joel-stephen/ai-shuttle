@@ -5,7 +5,7 @@ Internal technical knowledge-sharing session at BUsoft Tech, Thursday
 3 December 2026, for developers, QA engineers, BAs and managers.
 
 This script is the source of truth for the talk, and the deck's speaker
-notes are the same text. There are 27 slides. Each
+notes are the same text. There are 28 slides. Each
 slide has:
 
 - **Slide**: the deck slide id, the badge (definitions below) and the
@@ -110,7 +110,7 @@ About 57 minutes plus questions.
 | 16 | Claude Desktop through MCP | 2.5 |
 | 17–18 | Engineering for failure | 5 |
 | 19–23 | Testing, limitations and what’s coming | 7.5 |
-| 24–27 | Architecture, full scale, close, thank you | 5.5 |
+| 24–28 | Architecture, full scale, close, thank you, questions | 5.5 |
 
 ---
 
@@ -931,7 +931,24 @@ NEXT: (move to the thank-you slide)
 Slide: `thanks` · Time: questions
 
 SAY: “Thank you. Happy to take questions, and I can show any part again
-live.” Stay on this slide for questions.
+live.”
+
+NEXT: (move to the last slide, the 429 joke; take questions there)
+
+## 28. Any questions? (429)
+
+Slide: `questions` · Time: questions
+
+On the slide, styled as an API rate-limit error: “Usage limit reached ·
+429 · ANY QUESTIONS? · Token limit exceeded. You’ve used all your free
+answers. · Upgrade to GODWIN PRO MAX™ · Subscribe now to unlock Q&A. ·
+Unlimited questions. Hallucinations may apply.”
+
+DO: show the slide and pause; let the room read it.
+
+SAY (deadpan, then smile): “I’m afraid you’ve hit the free tier. … Fine,
+this one’s on the house. Any questions?” Stay on this slide for
+questions.
 
 Prepared answers:
 - Why Gemini? Free tier and measured latency; in production the
@@ -966,7 +983,7 @@ where it appears:
 | F1 Siri booking, optional day, Earlier/Later card, “Which day?” | 1, 5, 7, 21 |
 | F2 Home and Lock Screen widgets, Control Center, Action button, duplicate protection | 8 |
 | F3 Schedule import (share sheet, in-app photo/file/PDF, Vision OCR, Foundation Models, validation, rules fallback, review and Apply) | 9 |
-| F3/F13 Prompt-injection defences (no live demo) | 9, 27 (Q&A) |
+| F3/F13 Prompt-injection defences (no live demo) | 9, 28 (Q&A) |
 | F4 Delay alert with Rebook / Keep | 11 |
 | F5 Time to leave, “Should I leave now?”, weather | 10, 12 |
 | F6 Map, trip mode, Live Activity (Lock Screen, Dynamic Island), Siri tracking | 10 |
