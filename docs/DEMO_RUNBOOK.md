@@ -12,7 +12,7 @@ Three documents work together:
 |---|---|
 | This runbook | Operating the demo: setup, the 24 steps, commands, state checks, recovery |
 | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) | The full words for every slide (the deck's speaker notes are the same text) |
-| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 26 slides, Present mode; private until shared |
+| Deck: https://claude.ai/artifact/HZYoYJ5KyrqThf3Z7GCKmZ | 27 slides, Present mode; private until shared |
 
 Step numbers in the run of show are the 24 demo steps; each names its
 slide. About 50 minutes plus questions.
@@ -349,8 +349,8 @@ to leave behind.
   cost), the ~$8/day estimate, and the areas to focus on next (iOS 27
   Siri first).
 
-### Step 24 · Future scope, our projects, close and questions (slide 26)
-- Show: slide only; stay on it for questions.
+### Step 24 · Our projects, close and questions (slides 26–27)
+- Show: slide 26, then the thank-you slide 27; stay on 27 for questions.
 - Say: the four-step pattern for any client app; the closing line;
   questions (prepared answers in the script, including prompt injection).
 

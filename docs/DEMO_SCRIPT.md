@@ -5,7 +5,7 @@ Internal technical knowledge-sharing session at BUsoft Tech, Thursday
 3 December 2026, for developers, QA engineers, BAs and managers.
 
 This script is the source of truth for the talk, and the deck's speaker
-notes are the same text. There are 26 slides. Each
+notes are the same text. There are 27 slides. Each
 slide has:
 
 - **Slide**: the deck slide id, the badge (definitions below) and the
@@ -110,7 +110,7 @@ About 57 minutes plus questions.
 | 16 | Claude Desktop through MCP | 2.5 |
 | 17–18 | Engineering for failure | 5 |
 | 19–23 | Testing, limitations and what’s coming | 7.5 |
-| 24–26 | Architecture, full scale, close | 5.5 |
+| 24–27 | Architecture, full scale, close, thank you | 5.5 |
 
 ---
 
@@ -922,8 +922,16 @@ healthcare, logistics: the domain changes, the pattern doesn’t.
 
 (Slowly, then pause.) The AI isn’t a chat box inside the app. It works
 through the parts of iOS people already use. That’s the agentic era, and
-it’s still being engineered. Thank you. Happy to take questions, and I can
-show any part again live.”
+it’s still being engineered.”
+
+NEXT: (move to the thank-you slide)
+
+## 27. Thank you
+
+Slide: `thanks` · Time: questions
+
+SAY: “Thank you. Happy to take questions, and I can show any part again
+live.” Stay on this slide for questions.
 
 Prepared answers:
 - Why Gemini? Free tier and measured latency; in production the
@@ -958,7 +966,7 @@ where it appears:
 | F1 Siri booking, optional day, Earlier/Later card, “Which day?” | 1, 5, 7, 21 |
 | F2 Home and Lock Screen widgets, Control Center, Action button, duplicate protection | 8 |
 | F3 Schedule import (share sheet, in-app photo/file/PDF, Vision OCR, Foundation Models, validation, rules fallback, review and Apply) | 9 |
-| F3/F13 Prompt-injection defences (no live demo) | 9, 26 (Q&A) |
+| F3/F13 Prompt-injection defences (no live demo) | 9, 27 (Q&A) |
 | F4 Delay alert with Rebook / Keep | 11 |
 | F5 Time to leave, “Should I leave now?”, weather | 10, 12 |
 | F6 Map, trip mode, Live Activity (Lock Screen, Dynamic Island), Siri tracking | 10 |
